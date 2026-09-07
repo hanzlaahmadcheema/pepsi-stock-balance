@@ -1,0 +1,541 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. USER & ACCESS CONTROL
+// ==========================================
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+model User {
+  id         String   @id @default(uuid()) @db.Uuid
+  authUserId String   @unique
+  name       String
+  role       Role     @default(STAFF)
+  pinHash    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relationships
+  salesCreated          Sale[]              @relation("SaleCreatedBy")
+  salesUpdated          Sale[]              @relation("SaleUpdatedBy")
+  receivingsCreated     Receiving[]         @relation("ReceivingCreatedBy")
+  paymentsReceived      Payment[]           @relation("PaymentReceivedBy")
+  stockMovementsCreated StockMovement[]     @relation("StockMovementCreatedBy")
+  adjustmentsRequested  StockAdjustment[]   @relation("AdjustmentRequestedBy")
+  adjustmentsApproved   StockAdjustment[]   @relation("AdjustmentApprovedBy")
+  returnsCreated        Return[]            @relation("ReturnCreatedBy")
+  returnsInspected      Return[]            @relation("ReturnInspectedBy")
+  damageRecorded        DamageRecord[]      @relation("DamageRecordedBy")
+  containerMovesCreated ContainerMovement[] @relation("ContainerMovementCreatedBy")
+  dailyClosingsClosed   DailyClosing[]      @relation("DailyClosingClosedBy")
+  stockCountsCounted    StockCount[]        @relation("StockCountCountedBy")
+  auditLogs             AuditLog[]
+  pricesCreated         Price[]             @relation("PriceCreatedBy")
+
+  @@index([authUserId])
+  @@index([role, isActive])
+}
+
+// ==========================================
+// 2. PRODUCT & PRICING
+// ==========================================
+
+model Product {
+  id                  String   @id @default(uuid()) @db.Uuid
+  name                String   @unique
+  brand               String
+  sku                 String?  @unique
+  minimumStockLevel   Int      @default(0) // Full crates/cases threshold
+  latestPurchasePrice Decimal  @default(0) @db.Decimal(12, 2) // Latest manual delivery cost per crate
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relationships
+  prices           Price[]
+  receivingItems   ReceivingItem[]
+  saleItems        SaleItem[]
+  stockMovements   StockMovement[]
+  returnItems      ReturnItem[]
+  damageRecords    DamageRecord[]
+  stockCounts      StockCount[]
+  stockAdjustments StockAdjustment[]
+
+  @@index([name, isActive])
+  @@index([minimumStockLevel])
+}
+
+enum PriceTier {
+  RETAIL
+  WHOLESALE
+  KEY_ACCOUNT
+}
+
+model Price {
+  id            String    @id @default(uuid()) @db.Uuid
+  productId     String    @db.Uuid
+  tier          PriceTier
+  amount        Decimal   @db.Decimal(12, 2) // Selling price per crate
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime? // null indicates currently active price
+  createdById   String    @db.Uuid
+  createdAt     DateTime  @default(now())
+
+  // Relationships
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("PriceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([productId, tier, effectiveTo])
+  @@index([effectiveFrom, effectiveTo])
+}
+
+// ==========================================
+// 3. SUPPLIERS & STOCK RECEIVING (STOCK IN)
+// ==========================================
+
+model Supplier {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  contactPerson String?
+  phone         String?
+  address       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  receivings Receiving[]
+
+  @@index([name, isActive])
+}
+
+model Receiving {
+  id              String   @id @default(uuid()) @db.Uuid
+  supplierId      String   @db.Uuid
+  referenceNumber String?
+  receivedAt      DateTime @default(now())
+  notes           String?
+  createdById     String   @db.Uuid
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  supplier  Supplier        @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy User            @relation("ReceivingCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  items     ReceivingItem[]
+
+  @@index([receivedAt])
+  @@index([supplierId])
+}
+
+model ReceivingItem {
+  id            String  @id @default(uuid()) @db.Uuid
+  receivingId   String  @db.Uuid
+  productId     String  @db.Uuid
+  quantity      Int // Number of full crates received
+  purchasePrice Decimal @db.Decimal(12, 2) // Purchase cost per crate for this delivery
+  totalCost     Decimal @db.Decimal(12, 2) // quantity * purchasePrice
+
+  // Relationships
+  receiving Receiving @relation(fields: [receivingId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([receivingId])
+  @@index([productId])
+}
+
+// ==========================================
+// 4. CUSTOMERS & CREDIT LEDGER
+// ==========================================
+
+model Customer {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  phone         String?
+  address       String?
+  priceTier     PriceTier @default(RETAIL)
+  creditAllowed Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relationships
+  sales              Sale[]
+  payments           Payment[]
+  returns            Return[]
+  containerMovements ContainerMovement[]
+
+  @@index([name, isActive])
+  @@index([phone])
+}
+
+// ==========================================
+// 5. SALES & DISPATCH (STOCK OUT)
+// ==========================================
+
+enum SaleType {
+  RETAIL
+  WHOLESALE
+  KEY_ACCOUNT
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model Sale {
+  id                 String     @id @default(uuid()) @db.Uuid
+  invoiceNumber      String     @unique
+  customerId         String?    @db.Uuid // Nullable: anonymous over-the-counter retail
+  saleType           SaleType   @default(RETAIL)
+  status             SaleStatus @default(COMPLETED)
+  subtotal           Decimal    @db.Decimal(12, 2)
+  discount           Decimal    @default(0) @db.Decimal(12, 2)
+  totalAmount        Decimal    @db.Decimal(12, 2) // subtotal - discount
+  paidAmount         Decimal    @default(0) @db.Decimal(12, 2)
+  creditAmount       Decimal    @default(0) @db.Decimal(12, 2) // totalAmount - paidAmount
+  soldAt             DateTime   @default(now())
+  cancellationReason String?
+  cancelledAt        DateTime?
+  createdById        String     @db.Uuid
+  updatedById        String?    @db.Uuid
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // Relationships
+  customer  Customer?  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy User       @relation("SaleCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User?      @relation("SaleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  items     SaleItem[]
+  payments  Payment[]
+
+  @@index([soldAt, status])
+  @@index([customerId])
+  @@index([invoiceNumber])
+  @@index([status])
+}
+
+model SaleItem {
+  id                 String  @id @default(uuid()) @db.Uuid
+  saleId             String  @db.Uuid
+  productId          String  @db.Uuid
+  quantity           Int // Number of full crates sold
+  unitPrice          Decimal @db.Decimal(12, 2) // Selling price per crate at transaction time
+  totalAmount        Decimal @db.Decimal(12, 2) // quantity * unitPrice
+  purchaseCostAtSale Decimal @db.Decimal(12, 2) // Historical snapshot of Product.latestPurchasePrice
+
+  // Relationships
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+// ==========================================
+// 6. PAYMENTS & CASH COLLECTION
+// ==========================================
+
+enum PaymentMethod {
+  CASH
+  EASYPAISA
+  JAZZCASH
+  MPESA
+  QR
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  saleId          String?       @db.Uuid // Linked if paid against specific invoice
+  customerId      String?       @db.Uuid // Linked if paid against customer account
+  paymentMethod   PaymentMethod
+  amount          Decimal       @db.Decimal(12, 2)
+  referenceNumber String?
+  paidAt          DateTime      @default(now())
+  receivedById    String        @db.Uuid
+  createdAt       DateTime      @default(now())
+
+  // Relationships
+  sale       Sale?     @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  receivedBy User      @relation("PaymentReceivedBy", fields: [receivedById], references: [id], onDelete: Restrict)
+
+  @@index([paidAt, paymentMethod])
+  @@index([saleId])
+  @@index([customerId])
+}
+
+// ==========================================
+// 7. STOCK LEDGER (IMMUTABLE MOVEMENTS)
+// ==========================================
+
+enum MovementType {
+  RECEIVING
+  SALE
+  SALE_CANCELLATION
+  RETURN_RESTOCK
+  DAMAGE_WRITEOFF
+  ADJUSTMENT_ADD
+  ADJUSTMENT_SUB
+}
+
+model StockMovement {
+  id            String       @id @default(uuid()) @db.Uuid
+  productId     String       @db.Uuid
+  movementType  MovementType
+  quantity      Int // Full crates moved (positive integer)
+  referenceType String // "Receiving", "Sale", "Return", "DamageRecord", "StockAdjustment"
+  referenceId   String       @db.Uuid
+  notes         String?
+  createdById   String       @db.Uuid
+  createdAt     DateTime     @default(now())
+
+  // Relationships
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("StockMovementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([productId, createdAt])
+  @@index([movementType, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+// ==========================================
+// 8. RETURNS & QUARANTINE INSPECTION
+// ==========================================
+
+enum ReturnStatus {
+  QUARANTINED
+  INSPECTED
+  COMPLETED
+  REJECTED
+}
+
+enum InspectionResult {
+  PENDING
+  APPROVED_FOR_STOCK
+  REJECTED_DAMAGED
+  DISPOSED
+}
+
+model Return {
+  id            String       @id @default(uuid()) @db.Uuid
+  customerId    String?      @db.Uuid
+  status        ReturnStatus @default(QUARANTINED)
+  returnedAt    DateTime     @default(now())
+  reason        String?
+  notes         String?
+  createdById   String       @db.Uuid
+  inspectedById String?      @db.Uuid
+  inspectedAt   DateTime?
+  createdAt     DateTime     @default(now())
+
+  // Relationships
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy   User         @relation("ReturnCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  inspectedBy User?        @relation("ReturnInspectedBy", fields: [inspectedById], references: [id], onDelete: SetNull)
+  items       ReturnItem[]
+
+  @@index([returnedAt, status])
+  @@index([customerId])
+}
+
+model ReturnItem {
+  id               String           @id @default(uuid()) @db.Uuid
+  returnId         String           @db.Uuid
+  productId        String           @db.Uuid
+  quantity         Int // Full crates returned
+  inspectionResult InspectionResult @default(PENDING)
+  notes            String?
+
+  // Relationships
+  return  Return  @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+  @@index([productId])
+}
+
+// ==========================================
+// 9. DAMAGED & EXPIRED GOODS
+// ==========================================
+
+enum DamageType {
+  DAMAGED_TRANSIT
+  DAMAGED_WAREHOUSE
+  EXPIRED
+  LEAKAGE
+  OTHER
+}
+
+model DamageRecord {
+  id           String     @id @default(uuid()) @db.Uuid
+  productId    String     @db.Uuid
+  quantity     Int // Full crates written off
+  damageType   DamageType
+  reason       String?
+  referenceId  String?    @db.Uuid
+  recordedById String     @db.Uuid
+  recordedAt   DateTime   @default(now())
+  notes        String?
+
+  // Relationships
+  product    Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  recordedBy User    @relation("DamageRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([productId, recordedAt])
+  @@index([damageType])
+}
+
+// ==========================================
+// 10. EMPTY CONTAINER / CRATE LEDGER
+// ==========================================
+
+enum ContainerType {
+  GLASS_BOTTLE
+  PLASTIC_CRATE
+}
+
+enum ContainerMovementType {
+  DEBIT
+  CREDIT
+}
+
+model ContainerMovement {
+  id            String                @id @default(uuid()) @db.Uuid
+  customerId    String                @db.Uuid
+  containerType ContainerType
+  movementType  ContainerMovementType
+  quantity      Int // Integer count of returnable containers/crates
+  referenceId   String?               @db.Uuid
+  createdById   String                @db.Uuid
+  createdAt     DateTime              @default(now())
+  notes         String?
+
+  // Relationships
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy User     @relation("ContainerMovementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([customerId, containerType])
+  @@index([createdAt])
+}
+
+// ==========================================
+// 11. STOCK ADJUSTMENTS & PHYSICAL COUNT APPROVAL
+// ==========================================
+
+enum AdjustmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model StockAdjustment {
+  id              String           @id @default(uuid()) @db.Uuid
+  productId       String           @db.Uuid
+  oldQuantity     Int // System stock before adjustment
+  newQuantity     Int // Physical counted stock
+  difference      Int // newQuantity - oldQuantity
+  reason          String // Mandatory explanation
+  requestedById   String           @db.Uuid
+  status          AdjustmentStatus @default(PENDING)
+  approvedById    String?          @db.Uuid // Exactly one Owner/Manager
+  approvedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime         @default(now())
+
+  // Relationships
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  requestedBy User    @relation("AdjustmentRequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  approvedBy  User?   @relation("AdjustmentApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([productId, status])
+  @@index([status, createdAt])
+}
+
+// ==========================================
+// 12. DAILY CLOSING & CASH BALANCING
+// ==========================================
+
+enum DailyClosingStatus {
+  OPEN
+  IN_REVIEW
+  CLOSED
+}
+
+model DailyClosing {
+  id                   String             @id @default(uuid()) @db.Uuid
+  businessDate         DateTime           @unique @db.Date
+  totalSales           Decimal            @db.Decimal(12, 2)
+  totalCashExpected    Decimal            @db.Decimal(12, 2)
+  totalDigitalPayments Decimal            @db.Decimal(12, 2)
+  totalCredit          Decimal            @db.Decimal(12, 2)
+  physicalCash         Decimal            @db.Decimal(12, 2)
+  cashDifference       Decimal            @db.Decimal(12, 2)
+  stockVerified        Boolean            @default(false)
+  status               DailyClosingStatus @default(OPEN)
+  closedById           String             @db.Uuid
+  closedAt             DateTime?
+  notes                String?
+
+  // Relationships
+  closedBy    User         @relation("DailyClosingClosedBy", fields: [closedById], references: [id], onDelete: Restrict)
+  stockCounts StockCount[]
+
+  @@index([businessDate])
+  @@index([status])
+}
+
+model StockCount {
+  id               String   @id @default(uuid()) @db.Uuid
+  closingId        String   @db.Uuid
+  productId        String   @db.Uuid
+  systemQuantity   Int
+  physicalQuantity Int
+  difference       Int
+  countedById      String   @db.Uuid
+  countedAt        DateTime @default(now())
+
+  // Relationships
+  closing   DailyClosing @relation(fields: [closingId], references: [id], onDelete: Cascade)
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  countedBy User         @relation("StockCountCountedBy", fields: [countedById], references: [id], onDelete: Restrict)
+
+  @@unique([closingId, productId])
+  @@index([closingId])
+  @@index([productId])
+}
+
+// ==========================================
+// 13. IMMUTABLE AUDIT LOG
+// ==========================================
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  action     String
+  entityType String
+  entityId   String   @db.Uuid
+  oldValues  Json?
+  newValues  Json?
+  reason     String
+  createdAt  DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}

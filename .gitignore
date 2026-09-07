@@ -1,0 +1,40 @@
+# Environment variables and secrets (STRICT - NEVER COMMIT)
+.env
+.env*
+!.env.example
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build and Production Outputs
+.next/
+out/
+build/
+dist/
+
+# Debug and Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+logs/
+*.log
+
+# OS & Editor Files
+.DS_Store
+*.pem
+Thumbs.db
+.vscode/
+.idea/
+
+# Database files & local dumps
+*.db
+*.db-journal
+*.sql.bak
+*.dump

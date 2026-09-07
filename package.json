@@ -1,0 +1,24 @@
+{
+  "name": "pepsi-stock-balance",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "prisma": "^6.19.3",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "frontend-design-pro": {
+      "source": "PGraeff/frontend-design-pro-agent-skill",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design-pro/SKILL.md",
+      "computedHash": "2208955e4631a4dfbdf7e7586285674a8231212f2cc47dedfd33d9343aa77aa2"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",

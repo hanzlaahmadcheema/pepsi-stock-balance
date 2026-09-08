@@ -84,7 +84,7 @@ export function CrateStepper({
         disabled={disabled || isMin}
         aria-label={`Decrease ${ariaLabel}`}
         tabIndex={-1}
-        className={`w-10 h-10 flex items-center justify-center rounded-l-lg border text-base font-bold select-none transition-colors ${
+        className={`w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-l-lg border text-lg sm:text-base font-bold select-none touch-manipulation transition-all duration-75 active:scale-95 disabled:active:scale-100 ${
           disabled || isMin
             ? "border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
             : "border-zinc-300 dark:border-zinc-700 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer active:bg-zinc-300 dark:active:bg-zinc-600"
@@ -103,7 +103,7 @@ export function CrateStepper({
         step={step}
         disabled={disabled}
         aria-label={ariaLabel}
-        className={`w-16 h-10 text-center font-bold text-base border-y bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+        className={`w-16 h-11 sm:h-10 text-center font-bold text-base tabular-nums border-y bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
           isError
             ? "border-red-500 ring-1 ring-red-500"
             : "border-zinc-300 dark:border-zinc-700"
@@ -115,7 +115,7 @@ export function CrateStepper({
         disabled={disabled || isMax}
         aria-label={`Increase ${ariaLabel}`}
         tabIndex={-1}
-        className={`w-10 h-10 flex items-center justify-center rounded-r-lg border text-base font-bold select-none transition-colors ${
+        className={`w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-r-lg border text-lg sm:text-base font-bold select-none touch-manipulation transition-all duration-75 active:scale-95 disabled:active:scale-100 ${
           disabled || isMax
             ? "border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
             : "border-zinc-300 dark:border-zinc-700 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer active:bg-zinc-300 dark:active:bg-zinc-600"

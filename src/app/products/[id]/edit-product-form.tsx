@@ -129,7 +129,7 @@ export function EditProductForm({
               min="0"
               step="0.01"
               defaultValue={initialData.latestPurchasePrice || "0.00"}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 tabular-nums"
             />
             <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5 block">
               Confidential (Hidden from staff)
@@ -141,8 +141,11 @@ export function EditProductForm({
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-50 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-xs focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-50 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-[0.98] shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:active:scale-100 transition-all cursor-pointer"
           >
+            {isPending && (
+              <span className="inline-block w-4 h-4 border-2 border-zinc-400 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
+            )}
             {isPending ? "Saving..." : "Save Changes"}
           </button>
         </div>

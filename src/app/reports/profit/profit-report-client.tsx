@@ -175,15 +175,15 @@ export function ProfitReportClient({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Revenue</span>
-          <div className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">
+          <div className="text-xl font-black tabular-nums text-blue-600 dark:text-blue-400 mt-1">
             {formatCurrency(data.summary.totalRevenue)}
           </div>
-          <div className="text-[11px] text-zinc-400">{data.summary.cratesSold} crates sold</div>
+          <div className="text-[11px] text-zinc-400 tabular-nums">{data.summary.cratesSold} crates sold</div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Cost Basis</span>
-          <div className="text-xl font-black text-zinc-700 dark:text-zinc-300 mt-1">
+          <div className="text-xl font-black tabular-nums text-zinc-700 dark:text-zinc-300 mt-1">
             {formatCurrency(data.summary.totalCost)}
           </div>
           <div className="text-[11px] text-zinc-400">Snapshot cost at sale</div>
@@ -193,7 +193,7 @@ export function ProfitReportClient({
           <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
             Gross Profit
           </span>
-          <div className="text-xl font-black text-purple-700 dark:text-purple-300 mt-1">
+          <div className="text-xl font-black tabular-nums text-purple-700 dark:text-purple-300 mt-1">
             {formatCurrency(data.summary.totalGrossProfit)}
           </div>
           <div className="text-[11px] text-purple-600">Net revenue minus cost</div>
@@ -201,7 +201,7 @@ export function ProfitReportClient({
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Gross Margin %</span>
-          <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="text-xl font-black tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
             {data.summary.marginPercent.toFixed(1)}%
           </div>
           <div className="text-[11px] text-zinc-400">Overall return</div>
@@ -209,7 +209,7 @@ export function ProfitReportClient({
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Profit / Crate</span>
-          <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
+          <div className="text-xl font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {formatCurrency(data.summary.cratesSold > 0 ? (data.summary.totalGrossProfit / data.summary.cratesSold) : 0)}
           </div>
           <div className="text-[11px] text-zinc-400">Average crate yield</div>
@@ -285,19 +285,19 @@ export function ProfitReportClient({
                         {p.productName}
                       </td>
                       <td className="px-5 py-3 text-zinc-500">{p.brand}</td>
-                      <td className="px-5 py-3 text-center font-bold text-zinc-800 dark:text-zinc-200">
+                      <td className="px-5 py-3 text-center font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                         {p.cratesSold}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(p.revenue)}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono text-zinc-500">
+                      <td className="px-5 py-3 text-right font-mono tabular-nums text-zinc-500">
                         {formatCurrency(p.cost)}
                       </td>
-                      <td className="px-5 py-3 text-right font-black text-purple-700 dark:text-purple-300">
+                      <td className="px-5 py-3 text-right font-black tabular-nums text-purple-700 dark:text-purple-300">
                         {formatCurrency(p.profit)}
                       </td>
-                      <td className="px-5 py-3 text-center font-black text-emerald-600">
+                      <td className="px-5 py-3 text-center font-black tabular-nums text-emerald-600">
                         {p.marginPercent.toFixed(1)}%
                       </td>
                     </tr>
@@ -335,19 +335,19 @@ export function ProfitReportClient({
                       <td className="px-5 py-3 font-semibold text-zinc-900 dark:text-zinc-100">
                         {c.customerName}
                       </td>
-                      <td className="px-5 py-3 text-center font-bold text-zinc-800 dark:text-zinc-200">
+                      <td className="px-5 py-3 text-center font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                         {c.cratesSold}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                      <td className="px-5 py-3 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(c.revenue)}
                       </td>
-                      <td className="px-5 py-3 text-right font-mono text-zinc-500">
+                      <td className="px-5 py-3 text-right font-mono tabular-nums text-zinc-500">
                         {formatCurrency(c.cost)}
                       </td>
-                      <td className="px-5 py-3 text-right font-black text-purple-700 dark:text-purple-300">
+                      <td className="px-5 py-3 text-right font-black tabular-nums text-purple-700 dark:text-purple-300">
                         {formatCurrency(c.profit)}
                       </td>
-                      <td className="px-5 py-3 text-center font-black text-emerald-600">
+                      <td className="px-5 py-3 text-center font-black tabular-nums text-emerald-600">
                         {c.marginPercent.toFixed(1)}%
                       </td>
                     </tr>
@@ -395,16 +395,16 @@ export function ProfitReportClient({
                         <td className="px-5 py-3 font-semibold text-zinc-900 dark:text-zinc-100">
                           {inv.customerName}
                         </td>
-                        <td className="px-5 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                        <td className="px-5 py-3 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                           {formatCurrency(inv.totalAmount)}
                         </td>
-                        <td className="px-5 py-3 text-right font-mono text-zinc-500">
+                        <td className="px-5 py-3 text-right font-mono tabular-nums text-zinc-500">
                           {formatCurrency(inv.totalCost)}
                         </td>
-                        <td className="px-5 py-3 text-right font-black text-purple-700 dark:text-purple-300">
+                        <td className="px-5 py-3 text-right font-black tabular-nums text-purple-700 dark:text-purple-300">
                           {formatCurrency(inv.profit)}
                         </td>
-                        <td className="px-5 py-3 text-center font-black text-emerald-600">
+                        <td className="px-5 py-3 text-center font-black tabular-nums text-emerald-600">
                           {inv.marginPercent.toFixed(1)}%
                         </td>
                       </tr>

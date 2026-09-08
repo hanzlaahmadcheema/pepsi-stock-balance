@@ -40,3 +40,11 @@ Thumbs.db
 *.db-journal
 *.sql.bak
 *.dump
+
+# Process ID files
+*.pid
+
+# Python cache
+__pycache__/
+*.pyc
+

@@ -168,35 +168,35 @@ export function SalesReportClient({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Revenue</span>
-          <div className="text-lg font-black text-blue-600 dark:text-blue-400 mt-1">
+          <div className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400 mt-1">
             {formatCurrency(data.summary.totalRevenue)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Collected</span>
-          <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="text-lg font-black tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
             {formatCurrency(data.summary.totalPaid)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Credit (Unpaid)</span>
-          <div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1">
+          <div className="text-lg font-black tabular-nums text-amber-600 dark:text-amber-400 mt-1">
             {formatCurrency(data.summary.totalCredit)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Crates Sold</span>
-          <div className="text-lg font-black text-zinc-900 dark:text-zinc-50 mt-1">
+          <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalCratesSold}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase">Invoices</span>
-          <div className="text-lg font-black text-zinc-900 dark:text-zinc-50 mt-1">
+          <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalInvoices}
           </div>
         </div>
@@ -206,17 +206,17 @@ export function SalesReportClient({
             <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
               Gross Profit
             </span>
-            <div className="text-lg font-black text-purple-700 dark:text-purple-300 mt-1">
+            <div className="text-lg font-black tabular-nums text-purple-700 dark:text-purple-300 mt-1">
               {formatCurrency(data.summary.totalProfit)}
             </div>
-            <div className="text-[10px] text-purple-600">
+            <div className="text-[10px] text-purple-600 tabular-nums">
               Margin: {data.summary.marginPercent?.toFixed(1)}%
             </div>
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
             <span className="text-[11px] font-semibold text-zinc-500 uppercase">Avg Invoice</span>
-            <div className="text-lg font-black text-zinc-900 dark:text-zinc-50 mt-1">
+            <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
               {formatCurrency(data.summary.averageInvoiceValue)}
             </div>
           </div>
@@ -276,27 +276,27 @@ export function SalesReportClient({
                         {inv.saleType}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-center font-bold text-zinc-800 dark:text-zinc-200">
+                    <td className="px-5 py-3 text-center font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                       {inv.totalCrates}
                     </td>
-                    <td className="px-5 py-3 text-right font-black text-zinc-900 dark:text-zinc-100">
+                    <td className="px-5 py-3 text-right font-black tabular-nums text-zinc-900 dark:text-zinc-100">
                       {formatCurrency(inv.totalAmount)}
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-emerald-600">
+                    <td className="px-5 py-3 text-right font-medium tabular-nums text-emerald-600">
                       {formatCurrency(inv.paidAmount)}
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-amber-600">
+                    <td className="px-5 py-3 text-right font-medium tabular-nums text-amber-600">
                       {formatCurrency(inv.creditAmount)}
                     </td>
                     {isOwner && (
                       <>
-                        <td className="px-5 py-3 text-right text-zinc-500 font-mono">
+                        <td className="px-5 py-3 text-right text-zinc-500 font-mono tabular-nums">
                           {formatCurrency(inv.cost || 0)}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold text-purple-700 dark:text-purple-300">
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-purple-700 dark:text-purple-300">
                           {formatCurrency(inv.profit || 0)}
                         </td>
-                        <td className="px-5 py-3 text-center text-purple-600 font-bold">
+                        <td className="px-5 py-3 text-center text-purple-600 font-bold tabular-nums">
                           {(inv.margin || 0).toFixed(1)}%
                         </td>
                       </>

@@ -125,7 +125,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                           {/* Current Stock with Low-Stock Indicator */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+                              <span className="font-bold text-base tabular-nums text-zinc-900 dark:text-zinc-100">
                                 {product.currentStock}
                               </span>
                               <span className="text-xs text-zinc-500 dark:text-zinc-400">crates</span>
@@ -138,7 +138,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             </div>
                           </td>
 
-                          <td className="px-6 py-4 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
+                          <td className="px-6 py-4 whitespace-nowrap tabular-nums text-zinc-600 dark:text-zinc-400">
                             {product.minimumStockLevel} crates
                           </td>
 
@@ -147,19 +147,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             <div className="flex flex-col gap-0.5 text-xs">
                               <div>
                                 <span className="text-zinc-400">Retail:</span>{" "}
-                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
                                   {retailPrice ? `Rs. ${retailPrice}` : "—"}
                                 </span>
                               </div>
                               <div>
                                 <span className="text-zinc-400">Wholesale:</span>{" "}
-                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
                                   {wholesalePrice ? `Rs. ${wholesalePrice}` : "—"}
                                 </span>
                               </div>
                               <div>
                                 <span className="text-zinc-400">Key Account:</span>{" "}
-                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
                                   {keyAccountPrice ? `Rs. ${keyAccountPrice}` : "—"}
                                 </span>
                               </div>
@@ -168,7 +168,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
                           {/* Owner-only: Purchase Cost */}
                           {isOwner && (
-                            <td className="px-6 py-4 whitespace-nowrap text-zinc-700 dark:text-zinc-300 font-medium">
+                            <td className="px-6 py-4 whitespace-nowrap text-zinc-700 dark:text-zinc-300 font-medium tabular-nums">
                               Rs. {"latestPurchasePrice" in product ? product.latestPurchasePrice : "0.00"}
                             </td>
                           )}

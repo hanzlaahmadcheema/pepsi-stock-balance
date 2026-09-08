@@ -120,7 +120,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
             <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
               Total Invoiced (Completed)
             </span>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">
+            <div className="text-2xl font-bold tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
               {formatCurrency(customer.totalBilled)}
             </div>
             <p className="text-xs text-zinc-400 mt-1">Cumulative sales billed to account</p>
@@ -130,7 +130,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
             <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
               Total Payments Received
             </span>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+            <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
               {formatCurrency(customer.totalPaid)}
             </div>
             <p className="text-xs text-zinc-400 mt-1">Cash, online &amp; lump-sum payments</p>
@@ -141,7 +141,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
               Current Outstanding Balance
             </span>
             <div
-              className={`text-2xl font-extrabold mt-1 ${
+              className={`text-2xl font-extrabold tabular-nums mt-1 ${
                 customer.outstandingBalance > 0
                   ? "text-amber-600 dark:text-amber-400"
                   : "text-zinc-900 dark:text-zinc-50"
@@ -160,7 +160,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
               Plastic Crate Balance
             </span>
             <div
-              className={`text-2xl font-bold mt-1 ${
+              className={`text-2xl font-bold tabular-nums mt-1 ${
                 customer.plasticCrateBalance > 0
                   ? "text-orange-600 dark:text-orange-400"
                   : "text-zinc-900 dark:text-zinc-50"
@@ -176,9 +176,9 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
               Glass Bottle Balance
             </span>
             <div
-              className={`text-2xl font-bold mt-1 ${
+              className={`text-2xl font-bold tabular-nums mt-1 ${
                 customer.glassBottleBalance > 0
-                  ? "text-orange-600 dark:text-orange-400"
+                  ? "text-blue-600 dark:text-blue-400"
                   : "text-zinc-900 dark:text-zinc-50"
               }`}
             >
@@ -272,10 +272,10 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
                       <td className="px-6 py-4 text-xs text-zinc-600 dark:text-zinc-300">
                         {entry.description}
                       </td>
-                      <td className="px-6 py-4 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                      <td className="px-6 py-4 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                         {entry.debit > 0 ? formatCurrency(entry.debit) : "—"}
                       </td>
-                      <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                      <td className="px-6 py-4 text-right font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
                         {entry.credit > 0 ? formatCurrency(entry.credit) : "—"}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -344,7 +344,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
                           {cm.movementType === "DEBIT" ? "Dispatched" : "Returned"}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
+                      <td className="px-6 py-3 text-right font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
                         {cm.quantity}
                       </td>
                       <td className="px-6 py-3 text-xs text-zinc-500">{cm.notes || "—"}</td>

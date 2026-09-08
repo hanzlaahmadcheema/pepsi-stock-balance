@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #09090b;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
 }
 
 @theme inline {
@@ -12,12 +19,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 html {
   scroll-behavior: smooth;
@@ -54,3 +55,22 @@ a[role="button"]:active {
 table {
   font-variant-numeric: tabular-nums;
 }
+
+/* Sidebar Shell Layout Integration (Desktop lg+) */
+@media (min-width: 1024px) {
+  body:has(.app-sidebar:not(.app-sidebar-collapsed)) main {
+    padding-left: 18rem !important;
+    padding-right: 2.5rem !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  body:has(.app-sidebar.app-sidebar-collapsed) main {
+    padding-left: 6.5rem !important;
+    padding-right: 2.5rem !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+

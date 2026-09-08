@@ -101,7 +101,7 @@ export default async function ReceivingPage() {
                           {r.referenceNumber || "—"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                          <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
                             {r.totalCrates}
                           </span>{" "}
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -109,7 +109,7 @@ export default async function ReceivingPage() {
                           </span>
                         </td>
                         {isOwner && (
-                          <td className="px-6 py-4 whitespace-nowrap font-semibold text-zinc-900 dark:text-zinc-50">
+                          <td className="px-6 py-4 whitespace-nowrap font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
                             {formatCurrency(r.totalCost)}
                           </td>
                         )}

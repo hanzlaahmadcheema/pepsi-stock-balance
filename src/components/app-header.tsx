@@ -1,255 +1,701 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/login/actions";
 import { Role } from "@prisma/client";
 import type { DbUser } from "@/lib/auth";
-import { IconMenu, IconClose } from "@/components/ui/icons";
+import {
+  IconMenu,
+  IconClose,
+  IconChevronRight,
+  IconChartBar,
+  IconReceipt,
+  IconUsers,
+  IconPackage,
+  IconTruck,
+  IconRotateCcw,
+  IconAlertTriangle,
+  IconClipboardList,
+  IconScale,
+  IconFileSpreadsheet,
+  IconShield,
+  IconBox,
+  IconPlus,
+  IconArrowLeft,
+  IconArrowRight,
+  IconSun,
+  IconMoon,
+} from "@/components/ui/icons";
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  ownerOnly?: boolean;
+}
+
+interface NavGroup {
+  id: string;
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "front-office",
+    title: "Front Office",
+    items: [
+      { name: "Dashboard", href: "/", icon: IconChartBar },
+      { name: "Sales & Invoicing", href: "/sales", icon: IconReceipt },
+      { name: "Customers & Credit", href: "/customers", icon: IconUsers },
+    ],
+  },
+  {
+    id: "warehouse",
+    title: "Warehouse Operations",
+    items: [
+      { name: "Products & Pricing", href: "/products", icon: IconPackage },
+      { name: "Receiving Deliveries", href: "/receiving", icon: IconTruck },
+      { name: "Returns & Quarantine", href: "/returns", icon: IconRotateCcw },
+      { name: "Damaged Stock", href: "/damage", icon: IconAlertTriangle },
+      { name: "Stock Counts", href: "/stock-counts", icon: IconClipboardList },
+    ],
+  },
+  {
+    id: "admin",
+    title: "Admin & Reconciliation",
+    items: [
+      { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
+      { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
+      { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
+      { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+      { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
+    ],
+  },
+];
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
+  if (pathname === "/" || pathname === "/dashboard") {
+    return [
+      { label: "Front Office" },
+      { label: "Dashboard", href: "/" },
+    ];
+  }
+
+  const parts = pathname.split("/").filter(Boolean);
+  const first = parts[0];
+
+  if (first === "sales") {
+    const items: BreadcrumbItem[] = [
+      { label: "Front Office" },
+      { label: "Sales & Invoicing", href: "/sales" },
+    ];
+    if (parts[1] === "new") items.push({ label: "New Invoice" });
+    else if (parts[2] === "edit") {
+      items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
+      items.push({ label: "Edit" });
+    } else if (parts[1]) {
+      items.push({ label: `Invoice #${parts[1].slice(0, 8)}` });
+    }
+    return items;
+  }
+
+  if (first === "customers") {
+    const items: BreadcrumbItem[] = [
+      { label: "Front Office" },
+      { label: "Customers & Credit", href: "/customers" },
+    ];
+    if (parts[2] === "payments") {
+      items.push({ label: "Customer Ledger", href: `/customers/${parts[1]}` });
+      items.push({ label: "Record Payment" });
+    } else if (parts[1]) {
+      items.push({ label: "Customer Ledger" });
+    }
+    return items;
+  }
+
+  if (first === "products") {
+    const items: BreadcrumbItem[] = [
+      { label: "Warehouse" },
+      { label: "Products & Pricing", href: "/products" },
+    ];
+    if (parts[1] === "new") items.push({ label: "New Product" });
+    else if (parts[1]) items.push({ label: "Product Details" });
+    return items;
+  }
+
+  if (first === "receiving") {
+    const items: BreadcrumbItem[] = [
+      { label: "Warehouse" },
+      { label: "Receiving Deliveries", href: "/receiving" },
+    ];
+    if (parts[1] === "new") items.push({ label: "New Delivery Intake" });
+    else if (parts[1]) items.push({ label: "Intake Voucher" });
+    return items;
+  }
+
+  if (first === "returns") {
+    const items: BreadcrumbItem[] = [
+      { label: "Warehouse" },
+      { label: "Returns & Quarantine", href: "/returns" },
+    ];
+    if (parts[1] === "new") items.push({ label: "Initiate Return" });
+    else if (parts[1]) items.push({ label: "Inspection & Voucher" });
+    return items;
+  }
+
+  if (first === "damage") {
+    return [
+      { label: "Warehouse" },
+      { label: "Damaged Stock", href: "/damage" },
+    ];
+  }
+
+  if (first === "stock-counts") {
+    const items: BreadcrumbItem[] = [
+      { label: "Warehouse" },
+      { label: "Stock Counts", href: "/stock-counts" },
+    ];
+    if (parts[1] === "new") items.push({ label: "New Count Session" });
+    else if (parts[1]) items.push({ label: "Count Audit & Discrepancies" });
+    return items;
+  }
+
+  if (first === "daily-closing") {
+    const items: BreadcrumbItem[] = [
+      { label: "Admin" },
+      { label: "Daily Closing", href: "/daily-closing" },
+    ];
+    if (parts[1]) items.push({ label: "Reconciliation Session" });
+    return items;
+  }
+
+  if (first === "reports") {
+    const items: BreadcrumbItem[] = [
+      { label: "Admin" },
+      { label: "Business Reports", href: "/reports" },
+    ];
+    const reportNames: Record<string, string> = {
+      sales: "Sales & Invoicing",
+      profit: "Gross Profit & Margins",
+      stock: "Inventory Valuation",
+      receiving: "Supplier Intake",
+      damage: "Damaged Goods",
+      dispatch: "Stock Dispatch",
+      customers: "Customer Balances",
+      prices: "Price Tiers & History",
+      "fast-slow": "Product Velocity",
+    };
+    if (parts[1] && reportNames[parts[1]]) {
+      items.push({ label: reportNames[parts[1]] });
+    }
+    return items;
+  }
+
+  if (first === "approvals") {
+    return [
+      { label: "Admin" },
+      { label: "Pending Approvals", href: "/approvals" },
+    ];
+  }
+
+  if (first === "suppliers") {
+    return [
+      { label: "Admin" },
+      { label: "Suppliers Directory", href: "/suppliers" },
+    ];
+  }
+
+  if (first === "settings" && parts[1] === "users") {
+    return [
+      { label: "Admin" },
+      { label: "Staff User Provisioning", href: "/settings/users" },
+    ];
+  }
+
+  return [
+    { label: "Operational Workspace" },
+    { label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Home", href: `/${first || ""}` },
+  ];
+}
 
 export function AppHeader({ user }: { user: DbUser }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const isOwner = user.role === Role.OWNER;
 
+  // Restore desktop collapsed preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pepsi_erp_sidebar_collapsed");
+      if (saved !== null) {
+        setCollapsed(saved === "true");
+      }
+    } catch {}
+  }, []);
+
+  // Sync theme state with DOM on mount
+  useEffect(() => {
+    try {
+      const isDark = document.documentElement.classList.contains("dark");
+      setTheme(isDark ? "dark" : "light");
+    } catch {}
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try {
+      localStorage.setItem("pepsi_theme", next);
+      if (next === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
+  };
+
+  const toggleCollapse = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem("pepsi_erp_sidebar_collapsed", String(next));
+    } catch {}
+  };
+
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/") return pathname === "/" || pathname === "/dashboard";
     return pathname === href || pathname.startsWith(href + "/");
   };
 
-  const linkClass = (href: string) => {
-    const active = isActive(href);
-    return active
-      ? "px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs"
-      : "px-2.5 py-1 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors";
-  };
-
-  const mobileLinkClass = (href: string) => {
-    const active = isActive(href);
-    return active
-      ? "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-      : "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors";
-  };
+  const breadcrumbs = resolveBreadcrumbs(pathname);
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-30 shadow-2xs">
-      {/* Top Bar: Brand, User Identity & Controls */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-base text-zinc-900 dark:text-zinc-50">
-            <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-2xs">
+    <>
+      {/* ========================================================================= */}
+      {/* 1. DESKTOP ENTERPRISE SIDEBAR (lg+ screen size)                           */}
+      {/* ========================================================================= */}
+      <aside
+        className={`app-sidebar hidden lg:flex lg:flex-col fixed inset-y-0 left-0 z-40 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-r border-zinc-200 dark:border-zinc-800/80 transition-all duration-200 ${
+          collapsed ? "app-sidebar-collapsed w-20" : "w-64"
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0">
+          <Link href="/" className="flex items-center gap-3 overflow-hidden group">
+            <span className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-base font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
               P
             </span>
-            <span className="tracking-tight">Pepsi Stock Balance</span>
+            {!collapsed && (
+              <div className="leading-tight overflow-hidden">
+                <span className="font-bold text-sm text-zinc-900 dark:text-zinc-50 tracking-tight block truncate">
+                  Pepsi Distribution
+                </span>
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block truncate">
+                  Stock &amp; Balance ERP
+                </span>
+              </div>
+            )}
           </Link>
         </div>
 
-        {/* User Identity & Logout on Desktop */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-right">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hidden sm:inline">
-              {user.name}
-            </span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${
+        {/* User Identity Snapshot */}
+        <div className="px-3 py-3 border-b border-zinc-200 dark:border-zinc-800/60 bg-zinc-50/80 dark:bg-zinc-900/40 shrink-0">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                 isOwner
-                  ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
-                  : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80"
+              }`}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate leading-tight">
+                  {user.name}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                      isOwner
+                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-300 border border-purple-200 dark:border-purple-700/60"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60"
+                    }`}
+                  >
+                    {user.role}
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Operational Navigation Groups */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {NAV_GROUPS.map((group) => {
+            const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={group.id} className="space-y-1">
+                {!collapsed ? (
+                  <div className="px-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    {group.title}
+                  </div>
+                ) : (
+                  <div className="h-2 border-t border-zinc-200 dark:border-zinc-800/60 mx-1 mb-2" />
+                )}
+
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => {
+                    const active = isActive(item.href);
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        title={collapsed ? item.name : undefined}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 group ${
+                          active
+                            ? "bg-blue-600 text-white font-semibold shadow-xs shadow-blue-500/20"
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900/80"
+                        } ${collapsed ? "justify-center px-0" : ""}`}
+                      >
+                        <Icon
+                          className={`w-4 h-4 shrink-0 transition-colors ${
+                            active
+                              ? "text-white"
+                              : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
+                          }`}
+                        />
+                        {!collapsed && (
+                          <span className="truncate flex-1">{item.name}</span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer Controls */}
+        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-900/40 shrink-0 space-y-1.5">
+          {/* Theme Switcher Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer ${
+              collapsed ? "px-0" : ""
+            }`}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <>
+                <IconSun className="w-4 h-4 text-amber-500" />
+                {!collapsed && <span>Light Theme</span>}
+              </>
+            ) : (
+              <>
+                <IconMoon className="w-4 h-4 text-indigo-500" />
+                {!collapsed && <span>Dark Theme</span>}
+              </>
+            )}
+          </button>
+
+          {/* Desktop Collapse Toggle */}
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer ${
+              collapsed ? "px-0" : ""
+            }`}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <IconArrowRight className="w-4 h-4" />
+            ) : (
+              <>
+                <IconArrowLeft className="w-4 h-4" />
+                <span>Collapse Sidebar</span>
+              </>
+            )}
+          </button>
+
+          {/* Sign Out Action */}
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 border border-transparent hover:border-red-200 dark:hover:border-red-900/50 transition-colors cursor-pointer ${
+                collapsed ? "px-0" : ""
+              }`}
+              title="Sign Out"
+            >
+              <IconClose className="w-3.5 h-3.5" />
+              {!collapsed && <span>Sign Out</span>}
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      {/* ========================================================================= */}
+      {/* 2. TOP WORKSPACE HEADER (Sticky across all viewpoints)                    */}
+      {/* ========================================================================= */}
+      <header
+        className={`app-topbar sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md transition-all duration-200 ${
+          collapsed ? "lg:pl-20" : "lg:pl-64"
+        }`}
+      >
+        <div className="px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+          {/* Left: Mobile Brand & Hamburger OR Desktop Breadcrumb Trail */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile Menu Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0"
+              aria-label="Open navigation menu"
+            >
+              <IconMenu className="w-5 h-5" />
+            </button>
+
+            {/* Mobile Brand Title */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+                P
+              </span>
+              <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                Pepsi ERP
+              </span>
+            </div>
+
+            {/* Desktop Dynamic Breadcrumbs */}
+            <nav aria-label="Breadcrumbs" className="hidden lg:flex items-center gap-1.5 text-xs">
+              {breadcrumbs.map((crumb, idx) => {
+                const isLast = idx === breadcrumbs.length - 1;
+                return (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    {idx > 0 && (
+                      <IconChevronRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
+                    )}
+                    {crumb.href && !isLast ? (
+                      <Link
+                        href={crumb.href}
+                        className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors font-medium"
+                      >
+                        {crumb.label}
+                      </Link>
+                    ) : (
+                      <span
+                        className={
+                          isLast
+                            ? "font-bold text-zinc-900 dark:text-zinc-50"
+                            : "text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[11px]"
+                        }
+                      >
+                        {crumb.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Right: Operational Controls & Utilities */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Theme Toggle Button in Topbar */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-medium"
+              title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+              aria-label={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            >
+              {theme === "dark" ? (
+                <>
+                  <IconSun className="w-4 h-4 text-amber-500" />
+                  <span className="hidden sm:inline">Light</span>
+                </>
+              ) : (
+                <>
+                  <IconMoon className="w-4 h-4 text-indigo-500" />
+                  <span className="hidden sm:inline">Dark</span>
+                </>
+              )}
+            </button>
+
+            {/* Quick Register Action */}
+            <Link
+              href="/sales/new"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
+            >
+              <IconPlus className="w-3.5 h-3.5" />
+              <span>New Sale</span>
+            </Link>
+
+            {/* Role Badge (Visible on mobile/tablet too) */}
+            <span
+              className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                isOwner
+                  ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                  : "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
               }`}
             >
               {user.role}
             </span>
-          </div>
 
-          <form action={logoutAction} className="hidden sm:block">
-            <button
-              type="submit"
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-            >
-              Sign Out
-            </button>
-          </form>
-
-          {/* Mobile Menu Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <IconClose className="w-5 h-5" /> : <IconMenu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Second Tier: Logically Grouped Navigation Bar (Desktop lg+) */}
-      <div className="hidden lg:block border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-stretch text-xs">
-          <nav className="flex items-stretch gap-0">
-            {/* Front Office Group */}
-            <div className="flex flex-col justify-center px-3 py-1.5 border-r border-zinc-200 dark:border-zinc-800">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 whitespace-nowrap">
-                Front Office
-              </span>
-              <div className="flex items-center gap-1">
-                <Link href="/" className={linkClass("/")}>
-                  Dashboard
-                </Link>
-                <Link href="/sales" className={linkClass("/sales")}>
-                  Sales
-                </Link>
-                <Link href="/customers" className={linkClass("/customers")}>
-                  Customers
-                </Link>
-              </div>
-            </div>
-
-            {/* Warehouse / Stock Group */}
-            <div className="flex flex-col justify-center px-3 py-1.5 border-r border-zinc-200 dark:border-zinc-800">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 whitespace-nowrap">
-                Warehouse
-              </span>
-              <div className="flex items-center gap-1">
-                <Link href="/products" className={linkClass("/products")}>
-                  Products
-                </Link>
-                <Link href="/receiving" className={linkClass("/receiving")}>
-                  Receiving
-                </Link>
-                <Link href="/returns" className={linkClass("/returns")}>
-                  Returns
-                </Link>
-                <Link href="/damage" className={linkClass("/damage")}>
-                  Damage
-                </Link>
-                <Link href="/stock-counts" className={linkClass("/stock-counts")}>
-                  Stock Counts
-                </Link>
-              </div>
-            </div>
-
-            {/* Reconciliation / Admin Group */}
-            <div className="flex flex-col justify-center px-3 py-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 whitespace-nowrap">
-                Admin
-              </span>
-              <div className="flex items-center gap-1">
-                <Link href="/daily-closing" className={linkClass("/daily-closing")}>
-                  Daily Closing
-                </Link>
-                <Link href="/reports" className={linkClass("/reports")}>
-                  Reports
-                </Link>
-
-                {isOwner && (
-                  <>
-                    <Link href="/approvals" className={linkClass("/approvals")}>
-                      Approvals
-                    </Link>
-                    <Link href="/suppliers" className={linkClass("/suppliers")}>
-                      Suppliers
-                    </Link>
-                    <Link href="/settings/users" className={linkClass("/settings/users")}>
-                      Users
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </nav>
-        </div>
-      </div>
-
-      {/* Mobile Drawer / Responsive Dropdown Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 pt-3 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-150">
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500">
-            <span>Signed in as <b>{user.name}</b> ({user.role})</span>
-            <form action={logoutAction}>
+            {/* Mobile Sign Out (When drawer is closed) */}
+            <form action={logoutAction} className="lg:hidden">
               <button
                 type="submit"
-                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                className="p-2 rounded-lg text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Sign Out"
+                aria-label="Sign Out"
               >
-                Sign Out
+                <IconClose className="w-4 h-4" />
               </button>
             </form>
           </div>
+        </div>
+      </header>
 
-          <div className="space-y-4">
-            {/* Front Office */}
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 px-3 mb-1">
-                Front Office
+      {/* ========================================================================= */}
+      {/* 3. MOBILE / TABLET RESPONSIVE SLIDE-OVER DRAWER (<lg screens)             */}
+      {/* ========================================================================= */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Content */}
+          <div className="relative w-72 max-w-[85vw] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 h-full flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200 border-r border-zinc-200 dark:border-zinc-800">
+            {/* Drawer Header */}
+            <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-sm">
+                  P
+                </span>
+                <div>
+                  <div className="font-bold text-sm text-zinc-900 dark:text-zinc-50 leading-tight">
+                    Pepsi ERP
+                  </div>
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                    Stock &amp; Balance
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Link href="/" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/")}>
-                  <span>Dashboard</span>
-                </Link>
-                <Link href="/sales" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/sales")}>
-                  <span>Sales & Invoicing</span>
-                </Link>
-                <Link href="/customers" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/customers")}>
-                  <span>Customers & Credit</span>
-                </Link>
-              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                aria-label="Close navigation menu"
+              >
+                <IconClose className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Warehouse / Stock */}
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 px-3 mb-1">
-                Warehouse / Stock
+            {/* User Identity Banner in Drawer */}
+            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-zinc-900 dark:text-zinc-200">{user.name}</div>
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">
+                  {user.role} Session
+                </div>
               </div>
-              <div className="space-y-1">
-                <Link href="/products" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/products")}>
-                  <span>Products & Catalog</span>
-                </Link>
-                <Link href="/receiving" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/receiving")}>
-                  <span>Receiving / Purchases</span>
-                </Link>
-                <Link href="/returns" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/returns")}>
-                  <span>Returns & Quarantine</span>
-                </Link>
-                <Link href="/damage" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/damage")}>
-                  <span>Damage / Expiry</span>
-                </Link>
-                <Link href="/stock-counts" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/stock-counts")}>
-                  <span>Stock Counts</span>
-                </Link>
-              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
 
-            {/* Reconciliation / Admin */}
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 px-3 mb-1">
-                Reconciliation & Management
-              </div>
-              <div className="space-y-1">
-                <Link href="/daily-closing" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/daily-closing")}>
-                  <span>Daily Closing</span>
-                </Link>
-                <Link href="/reports" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/reports")}>
-                  <span>Reports Hub</span>
-                </Link>
+            {/* Categorized Navigation Links */}
+            <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+              {NAV_GROUPS.map((group) => {
+                const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
+                if (visibleItems.length === 0) return null;
 
-                {isOwner && (
+                return (
+                  <div key={group.id} className="space-y-1.5">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 px-2.5">
+                      {group.title}
+                    </div>
+                    <div className="space-y-1">
+                      {visibleItems.map((item) => {
+                        const active = isActive(item.href);
+                        const Icon = item.icon;
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                              active
+                                ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                            }`}
+                          >
+                            <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-zinc-500 dark:text-zinc-400"}`} />
+                            <span>{item.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </nav>
+
+            {/* Drawer Footer / Theme & Sign Out */}
+            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                {theme === "dark" ? (
                   <>
-                    <Link href="/approvals" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/approvals")}>
-                      <span>Pending Approvals</span>
-                    </Link>
-                    <Link href="/suppliers" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/suppliers")}>
-                      <span>Suppliers</span>
-                    </Link>
-                    <Link href="/settings/users" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass("/settings/users")}>
-                      <span>Staff User Management</span>
-                    </Link>
+                    <IconSun className="w-4 h-4 text-amber-500" />
+                    <span>Switch to Light Theme</span>
+                  </>
+                ) : (
+                  <>
+                    <IconMoon className="w-4 h-4 text-indigo-500" />
+                    <span>Switch to Dark Theme</span>
                   </>
                 )}
-              </div>
+              </button>
+
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/60 border border-red-200 dark:border-red-900/60 transition-colors cursor-pointer"
+                >
+                  <IconClose className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </form>
             </div>
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

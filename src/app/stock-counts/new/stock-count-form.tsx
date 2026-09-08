@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { submitStockCountAction } from "../actions";
 import { CrateStepper } from "@/components/ui/crate-stepper";
+import { ScrollableTable } from "@/components/ui/scrollable-table";
 import { IconClipboardList } from "@/components/ui/icons";
 
 export type ProductStockItem = {
@@ -171,21 +172,21 @@ export function StockCountForm({
         <div className="flex items-center gap-3 text-xs">
           <div className="p-3 px-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-750 text-center">
             <span className="text-zinc-500 dark:text-zinc-400 font-medium">Products Counted</span>
-            <div className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+            <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-100">
               {totalCounted} / {products.length}
             </div>
           </div>
 
           <div className="p-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-center">
             <span className="text-emerald-700 dark:text-emerald-400 font-bold">Exact Matches</span>
-            <div className="text-lg font-black text-emerald-800 dark:text-emerald-300">
+            <div className="text-lg font-black tabular-nums text-emerald-800 dark:text-emerald-300">
               {totalMatched}
             </div>
           </div>
 
           <div className="p-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-center">
             <span className="text-amber-700 dark:text-amber-400 font-bold">Discrepancies</span>
-            <div className="text-lg font-black text-amber-800 dark:text-amber-300">
+            <div className="text-lg font-black tabular-nums text-amber-800 dark:text-amber-300">
               {totalDiscrepancies}
             </div>
           </div>
@@ -205,7 +206,7 @@ export function StockCountForm({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <ScrollableTable>
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
               <tr>
@@ -242,7 +243,7 @@ export function StockCountForm({
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-black text-sm">
+                      <span className="inline-block px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-black text-sm tabular-nums">
                         {p.systemStock} crates
                       </span>
                     </td>
@@ -269,12 +270,12 @@ export function StockCountForm({
 
                     <td className="px-6 py-4 text-center">
                       {diff === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full tabular-nums">
                           ✓ Matched (0)
                         </span>
                       ) : (
                         <span
-                          className={`inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full border ${
+                          className={`inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full border tabular-nums ${
                             diff > 0
                               ? "text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800"
                               : "text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800"
@@ -316,7 +317,7 @@ export function StockCountForm({
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollableTable>
       </div>
 
       {/* Remarks and submit footer */}
@@ -341,15 +342,18 @@ export function StockCountForm({
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <Link
             href="/stock-counts"
-            className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+            className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+            className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 inline-flex items-center gap-2"
           >
+            {isPending && (
+              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
             {isPending ? "Submitting Count..." : "Submit Count"}
           </button>
         </div>

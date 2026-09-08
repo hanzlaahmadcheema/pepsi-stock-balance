@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
@@ -10,8 +11,9 @@ export type { DbUser, SupabaseAuthUser };
 /**
  * Retrieves the current authenticated user from Supabase Auth.
  * Uses getUser() to securely validate the JWT against Supabase servers.
+ * Cached per request to eliminate redundant remote calls.
  */
-export async function getAuthUser(): Promise<SupabaseAuthUser | null> {
+export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,13 +25,14 @@ export async function getAuthUser(): Promise<SupabaseAuthUser | null> {
   }
 
   return user;
-}
+});
 
 /**
  * Retrieves the database user record associated with the current Supabase auth session
  * via the `authUserId` unique relation.
+ * Cached per request to eliminate duplicate DB lookups across layout and page.
  */
-export async function getCurrentDbUser(): Promise<DbUser | null> {
+export const getCurrentDbUser = cache(async (): Promise<DbUser | null> => {
   const authUser = await getAuthUser();
   if (!authUser) {
     return null;
@@ -55,7 +58,8 @@ export async function getCurrentDbUser(): Promise<DbUser | null> {
   }
 
   return dbUser;
-}
+});
+
 
 /**
  * Ensures the request is authenticated via Supabase.

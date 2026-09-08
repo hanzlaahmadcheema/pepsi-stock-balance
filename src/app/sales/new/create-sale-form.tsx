@@ -480,7 +480,7 @@ export function CreateSaleForm({
                         });
                       }}
                       required
-                      className="w-full h-10 px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                      className="w-full h-10 px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 tabular-nums"
                     />
                   </div>
 
@@ -489,7 +489,7 @@ export function CreateSaleForm({
                     <div className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
                       Line Total
                     </div>
-                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 py-1.5">
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 py-1.5 tabular-nums">
                       {formatCurrency(lineTotal)}
                     </div>
                   </div>
@@ -502,7 +502,7 @@ export function CreateSaleForm({
                       disabled={items.length <= 1}
                       title="Remove product"
                       aria-label={`Remove product line ${index + 1}`}
-                      className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-2 min-h-[40px] sm:min-h-0 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all active:scale-95 disabled:active:scale-100"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -518,7 +518,7 @@ export function CreateSaleForm({
           <button
             type="button"
             onClick={handleAddItem}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-blue-500 dark:hover:border-blue-500 text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-blue-500 dark:hover:border-blue-500 text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -656,7 +656,7 @@ export function CreateSaleForm({
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
                 <span>Subtotal:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
                   {formatCurrency(subtotal)}
                 </span>
               </div>
@@ -664,18 +664,18 @@ export function CreateSaleForm({
               {discountNum > 0 && (
                 <div className="flex items-center justify-between text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
                   <span>Discount:</span>
-                  <span>-{formatCurrency(discountNum)}</span>
+                  <span className="tabular-nums">-{formatCurrency(discountNum)}</span>
                 </div>
               )}
 
               <div className="flex items-center justify-between text-lg font-black text-zinc-900 dark:text-zinc-50 border-t border-zinc-200 dark:border-zinc-700 pt-2.5">
                 <span>Total Invoice:</span>
-                <span>{formatCurrency(totalAmount)}</span>
+                <span className="tabular-nums">{formatCurrency(totalAmount)}</span>
               </div>
 
               <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
                 <span>Paid at Counter:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(paidAmountNum)}
                 </span>
               </div>
@@ -683,26 +683,26 @@ export function CreateSaleForm({
               <div className="flex items-center justify-between text-base font-black border-t border-zinc-200 dark:border-zinc-700 pt-2.5">
                 <span>Credit (Balance Due):</span>
                 <span
-                  className={creditAmount > 0 ? "text-amber-600 dark:text-amber-400 font-black text-lg" : "text-zinc-500"}
+                  className={creditAmount > 0 ? "text-amber-600 dark:text-amber-400 font-black text-lg tabular-nums" : "text-zinc-500 tabular-nums"}
                 >
                   {formatCurrency(creditAmount)}
                 </span>
               </div>
 
               {creditAmount > 0 && !customerId && (
-                <div className="p-3 text-xs rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold">
+                <div role="alert" className="p-3 text-xs rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold">
                   ⚠️ Anonymous sales cannot be on credit. Please collect the full amount or select a registered Customer.
                 </div>
               )}
 
               {creditAmount > 0 && selectedCustomer && !selectedCustomer.creditAllowed && (
-                <div className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
+                <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
                   ⚠️ Customer &ldquo;{selectedCustomer.name}&rdquo; is not approved for credit purchases. Full counter payment is required.
                 </div>
               )}
 
               {hasOverStock && (
-                <div className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
+                <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
                   ⚠️ One or more crate quantities exceed available warehouse stock.
                 </div>
               )}
@@ -712,7 +712,7 @@ export function CreateSaleForm({
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
               <Link
                 href="/sales"
-                className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+                className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400"
               >
                 Cancel
               </Link>
@@ -724,8 +724,11 @@ export function CreateSaleForm({
                   (creditAmount > 0 && !customerId) ||
                   Boolean(creditAmount > 0 && selectedCustomer && !selectedCustomer.creditAllowed)
                 }
-                className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 inline-flex items-center gap-2"
               >
+                {isPending && (
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                )}
                 {isPending ? "Creating Sale..." : "Create Sale"}
               </button>
             </div>

@@ -215,13 +215,13 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
                       <td className="px-6 py-4">
                         <StatusBadge status={s.status} />
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-zinc-900 dark:text-zinc-100">
+                      <td className="px-6 py-4 text-right font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(s.totalAmount)}
                       </td>
-                      <td className="px-6 py-4 text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                      <td className="px-6 py-4 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-medium">
                         {formatCurrency(s.paidAmount)}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right tabular-nums">
                         {s.creditAmount > 0 ? (
                           <span className="font-bold text-amber-600 dark:text-amber-400">
                             {formatCurrency(s.creditAmount)}
@@ -231,7 +231,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
                         )}
                       </td>
                       {isOwner && (
-                        <td className="px-6 py-4 text-right font-semibold">
+                        <td className="px-6 py-4 text-right font-semibold tabular-nums">
                           {s.grossProfit !== undefined ? (
                             <span
                               className={

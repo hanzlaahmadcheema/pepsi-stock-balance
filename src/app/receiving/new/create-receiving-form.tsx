@@ -328,7 +328,7 @@ export function CreateReceivingForm({
                       value={row.purchasePrice}
                       onChange={(e) => updateItemRow(idx, "purchasePrice", e.target.value)}
                       placeholder="0.00"
-                      className="w-full h-10 px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                      className="w-full h-10 px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 tabular-nums"
                     />
                   </div>
 
@@ -337,7 +337,7 @@ export function CreateReceivingForm({
                     <div className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
                       Line Total
                     </div>
-                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 py-1.5">
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 py-1.5 tabular-nums">
                       {formatCurrency(parseFloat(lineTotal))}
                     </div>
                   </div>
@@ -350,7 +350,7 @@ export function CreateReceivingForm({
                       disabled={items.length <= 1}
                       title="Remove product"
                       aria-label={`Remove product line ${idx + 1}`}
-                      className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-2 min-h-[40px] sm:min-h-0 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all active:scale-95 disabled:active:scale-100"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -366,7 +366,7 @@ export function CreateReceivingForm({
           <button
             type="button"
             onClick={addItemRow}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-blue-500 dark:hover:border-blue-500 text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-blue-500 dark:hover:border-blue-500 text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -385,7 +385,7 @@ export function CreateReceivingForm({
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold">
                   Total Crates
                 </span>
-                <p className="text-lg font-black text-zinc-900 dark:text-zinc-50">
+                <p className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50">
                   {formatCrates(totalCrates)}
                 </p>
               </div>
@@ -394,7 +394,7 @@ export function CreateReceivingForm({
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold">
                   Total Delivery Cost
                 </span>
-                <p className="text-lg font-black text-blue-600 dark:text-blue-400">
+                <p className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400">
                   {formatCurrency(totalCost)}
                 </p>
               </div>
@@ -417,7 +417,7 @@ export function CreateReceivingForm({
         <div className="flex items-center gap-3 shrink-0">
           <Link
             href="/receiving"
-            className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+            className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400"
           >
             Cancel
           </Link>
@@ -427,8 +427,11 @@ export function CreateReceivingForm({
             name="postImmediately"
             value="false"
             disabled={isPending}
-            className="px-5 py-2.5 text-sm font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="px-5 py-2.5 text-sm font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-[0.98] disabled:active:scale-100 disabled:opacity-50 cursor-pointer shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-zinc-400 inline-flex items-center gap-2"
           >
+            {isPending && (
+              <span className="inline-block w-3.5 h-3.5 border-2 border-zinc-500/30 border-t-zinc-600 dark:border-t-zinc-300 rounded-full animate-spin" />
+            )}
             {isPending ? "Saving..." : "Save Draft"}
           </button>
 
@@ -437,8 +440,11 @@ export function CreateReceivingForm({
             name="postImmediately"
             value="true"
             disabled={isPending}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs focus:ring-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:active:scale-100 text-white shadow-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-all disabled:opacity-50 cursor-pointer"
           >
+            {isPending && (
+              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
             {isPending ? "Posting Stock..." : "Post Receiving"}
           </button>
         </div>

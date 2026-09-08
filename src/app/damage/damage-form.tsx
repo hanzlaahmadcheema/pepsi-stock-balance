@@ -150,8 +150,11 @@ export function DamageForm({ products }: { products: Product[] }) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-2.5 text-sm font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+          className="w-full py-2.5 min-h-[44px] text-sm font-bold rounded-lg bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 inline-flex items-center justify-center gap-2"
         >
+          {isPending && (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
           {isPending ? "Saving..." : "Record Damaged Stock"}
         </button>
       </form>

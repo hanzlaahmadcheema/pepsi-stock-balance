@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createReturnAction } from "../actions";
 import { CrateStepper } from "@/components/ui/crate-stepper";
+import { ScrollableTable } from "@/components/ui/scrollable-table";
 import type { SaleReturnEligibility } from "@/lib/returns/service";
 import { IconShield } from "@/components/ui/icons";
 
@@ -210,8 +211,11 @@ export function CreateReturnForm({
                 type="button"
                 onClick={() => handleSearchInvoice(invoiceSearch)}
                 disabled={searchLoading || !invoiceSearch.trim()}
-                className="px-4 py-2 text-xs font-bold rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 transition-colors cursor-pointer shadow-2xs"
+                className="px-4 py-2 text-xs font-bold rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 active:scale-95 disabled:active:scale-100 disabled:opacity-50 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
               >
+                {searchLoading && (
+                  <span className="inline-block w-3 h-3 border-2 border-zinc-400 border-t-white dark:border-t-zinc-900 rounded-full animate-spin" />
+                )}
                 {searchLoading ? "Searching..." : "Find Invoice"}
               </button>
             </div>
@@ -289,7 +293,7 @@ export function CreateReturnForm({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <ScrollableTable>
             <table className="w-full text-left text-sm">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                 <tr>
@@ -350,13 +354,13 @@ export function CreateReturnForm({
                         </div>
                         <div className="text-xs text-zinc-500">{item.productBrand}</div>
                       </td>
-                      <td className="px-6 py-4 text-center font-semibold text-zinc-700 dark:text-zinc-300">
+                      <td className="px-6 py-4 text-center font-semibold tabular-nums text-zinc-700 dark:text-zinc-300">
                         {item.soldQuantity}
                       </td>
-                      <td className="px-6 py-4 text-center text-zinc-500">
+                      <td className="px-6 py-4 text-center tabular-nums text-zinc-500">
                         {item.alreadyReturned}
                       </td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="px-6 py-4 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                         {item.eligibleQuantity}
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -388,7 +392,7 @@ export function CreateReturnForm({
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollableTable>
         </div>
       )}
 
@@ -484,15 +488,18 @@ export function CreateReturnForm({
               <div className="flex items-center justify-end gap-3 pt-6 border-t border-zinc-200 dark:border-zinc-800">
                 <Link
                   href="/returns"
-                  className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+                  className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400"
                 >
                   Cancel
                 </Link>
                 <button
                   type="submit"
                   disabled={isPending || payloadItems.length === 0}
-                  className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                  className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 inline-flex items-center gap-2"
                 >
+                  {isPending && (
+                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  )}
                   {isPending ? "Submitting Return..." : "Submit Return"}
                 </button>
               </div>

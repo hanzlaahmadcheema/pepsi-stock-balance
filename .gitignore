@@ -17,6 +17,8 @@ node_modules/
 out/
 build/
 dist/
+.vercel/
+*.tsbuildinfo
 
 # Debug and Logs
 npm-debug.log*

@@ -166,3 +166,105 @@ export async function toggleUserStatusAction(userId: string): Promise<{ error?: 
   revalidatePath("/settings/users");
   return { success: true };
 }
+
+export type EditStaffState = {
+  error?: string;
+  success?: boolean;
+  message?: string;
+};
+
+/**
+ * Server action for an OWNER to update a STAFF user's details.
+ */
+export async function updateStaffUserAction(
+  _prevState: EditStaffState | null,
+  formData: FormData
+): Promise<EditStaffState> {
+  let ownerUser;
+  try {
+    ownerUser = await requireRole(Role.OWNER);
+  } catch {
+    return { error: "Unauthorized: Only an Owner can update staff accounts." };
+  }
+
+  const userId = (formData.get("userId") as string)?.trim();
+  const name = (formData.get("name") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const password = (formData.get("password") as string)?.trim();
+
+  if (!userId) {
+    return { error: "User ID is required." };
+  }
+
+  if (!name || name.length < 2) {
+    return { error: "Full name must be at least 2 characters long." };
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!targetUser) {
+    return { error: "Staff member not found." };
+  }
+
+  if (targetUser.role === Role.OWNER && targetUser.id !== ownerUser.id) {
+    return { error: "Security restriction: Cannot modify another Owner account." };
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const authUpdates: { email?: string; password?: string; user_metadata?: { name: string } } = {
+    user_metadata: { name },
+  };
+
+  if (email && email.includes("@")) {
+    authUpdates.email = email;
+  }
+
+  if (password) {
+    if (password.length < 8) {
+      return { error: "New password must be at least 8 characters long." };
+    }
+    authUpdates.password = password;
+  }
+
+  try {
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      targetUser.authUserId,
+      authUpdates
+    );
+
+    if (authError) {
+      return { error: authError.message || "Failed to update authentication account." };
+    }
+  } catch (err: unknown) {
+    console.error("Supabase update error:", err);
+    return { error: "Failed to update user credentials in authentication service." };
+  }
+
+  // Update Prisma User
+  await prisma.user.update({
+    where: { id: userId },
+    data: { name },
+  });
+
+  // Audit log
+  await prisma.auditLog.create({
+    data: {
+      userId: ownerUser.id,
+      action: "UPDATE_USER",
+      entityType: "User",
+      entityId: targetUser.id,
+      oldValues: { name: targetUser.name },
+      newValues: { name, email: email || undefined, passwordUpdated: Boolean(password) },
+      reason: `Staff account details updated for "${name}" by Owner`,
+    },
+  });
+
+  revalidatePath("/settings/users");
+  return {
+    success: true,
+    message: `Staff member "${name}" updated successfully.`,
+  };
+}

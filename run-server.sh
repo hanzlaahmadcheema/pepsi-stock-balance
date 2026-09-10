@@ -18,7 +18,7 @@ WATCHDOG_PID_FILE="$PROJECT_DIR/.watchdog.pid"
 cd "$PROJECT_DIR"
 
 is_running() {
-  curl -s -f --connect-timeout 2 "http://localhost:$PORT/health" > /dev/null 2>&1
+  curl -s -f --connect-timeout 5 --max-time 8 "http://localhost:$PORT/health" > /dev/null 2>&1
 }
 
 start_server_loop() {
@@ -39,30 +39,47 @@ start_server_loop() {
   }
   trap cleanup SIGINT SIGTERM
 
+  FAIL_COUNT=0
+
   while true; do
-    if ! is_running; then
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] Server is down or not responding. Launching Next.js server..." | tee -a "$WATCHDOG_LOG"
-
-      # Free port 3000 if hung
-      fuser -k "$PORT/tcp" > /dev/null 2>&1 || true
-      sleep 1
-
-      # Start Next.js in production mode
-      npx next start -p "$PORT" >> "$LOG_FILE" 2>&1 &
-      SERVER_PID=$!
-      echo "$SERVER_PID" > "$PID_FILE"
-
-      # Wait up to 15 seconds for health check to pass
-      for i in {1..15}; do
-        if is_running; then
-          echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Server is healthy and active on http://localhost:$PORT (PID $SERVER_PID)" | tee -a "$WATCHDOG_LOG"
-          break
-        fi
-        sleep 1
-      done
+    SERVER_ALIVE=false
+    if [ -f "$PID_FILE" ]; then
+      CURR_PID=$(cat "$PID_FILE" 2>/dev/null || echo "")
+      if [ -n "$CURR_PID" ] && kill -0 "$CURR_PID" 2>/dev/null; then
+        SERVER_ALIVE=true
+      fi
     fi
 
-    sleep 3
+    if is_running; then
+      FAIL_COUNT=0
+    else
+      FAIL_COUNT=$((FAIL_COUNT + 1))
+      # If process already exited, or if 3 consecutive health checks failed (over 15s)
+      if [ "$SERVER_ALIVE" = false ] || [ "$FAIL_COUNT" -ge 3 ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Server not responding (Fail count: $FAIL_COUNT, Alive: $SERVER_ALIVE). Restarting Next.js server..." | tee -a "$WATCHDOG_LOG"
+
+        # Free port 3000 cleanly
+        fuser -k "$PORT/tcp" > /dev/null 2>&1 || true
+        sleep 1
+
+        # Start Next.js in production mode
+        npx next start -p "$PORT" >> "$LOG_FILE" 2>&1 &
+        SERVER_PID=$!
+        echo "$SERVER_PID" > "$PID_FILE"
+        FAIL_COUNT=0
+
+        # Wait up to 20 seconds for health check to pass
+        for i in {1..20}; do
+          if is_running; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Server is healthy and active on http://localhost:$PORT (PID $SERVER_PID)" | tee -a "$WATCHDOG_LOG"
+            break
+          fi
+          sleep 1
+        done
+      fi
+    fi
+
+    sleep 5
   done
 }
 

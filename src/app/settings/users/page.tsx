@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppHeader } from "@/components/app-header";
 import { CreateStaffUserForm } from "./create-user-form";
-import { UserStatusButton } from "./user-status-button";
+import { UserRowActions } from "./user-row-actions";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 
 export const dynamic = "force-dynamic";
@@ -127,10 +127,15 @@ export default async function UsersSettingsPage() {
                           })}
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <UserStatusButton
-                            userId={u.id}
-                            isActive={u.isActive}
-                            isOwner={isOwner}
+                          <UserRowActions
+                            user={{
+                              id: u.id,
+                              name: u.name,
+                              email,
+                              role: u.role,
+                              isActive: u.isActive,
+                            }}
+                            isCurrentOwner={currentUser.role === Role.OWNER}
                           />
                         </td>
                       </tr>

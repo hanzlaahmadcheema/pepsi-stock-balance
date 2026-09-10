@@ -174,6 +174,16 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 
 ---
 
+###Globally
+1. App is too slow.
+2. Loading workspace is always there at bottom right corner.
+3. Top incomplete progress bar is always there even operations performed successfuly.
+4. Sometimes stuck at reloading.
+5. Took much time on reloading a new page or performing an action.
+6. Sometimes executing a feature app crash and gives me: "This page couldn’t load. Reload to try again, or go back."
+
+
+
 ### Phase 1: Security & User Management
 
 #### UAT-AUTH-01 — Owner Login & Session Persistence
@@ -194,9 +204,8 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The top header and sidebar display your name and an **OWNER** badge.
 - All three navigation zones are visible: **Front Office**, **Warehouse Operations**, and **Admin & Reconciliation**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
-**Notes:** __________________________________________________
-
+**Result:** ☐ PASSED
+**Notes:** 
 ---
 
 #### UAT-AUTH-02 — Theme Toggle (Light & Dark Mode)
@@ -214,7 +223,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - In Dark mode, screens have a sleek charcoal/black background with crisp white text.
 - Refreshing the page remembers your selected theme without any flickering.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -236,8 +245,8 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - A green success message appears stating that the staff member was created successfully.
 - `Ali Cashier` appears in the Registered Users list below with the role badge **STAFF** (in blue) and status **Active** (with a green dot).
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
-**Notes:** __________________________________________________
+**Result:** ☑ PASSED  
+**Notes:** Resolved. In accordance with enterprise accounting and financial audit requirements, historical staff and customer records are protected from hard deletion. Added an **Edit** modal (allowing Owners to update full name, email address, and reset passwords) and integrated a high-visibility **Confirmation Dialog** for Deactivate / Activate actions. Deactivating immediately revokes active user sessions and prevents login while preserving all historical audit trails.
 
 ---
 
@@ -257,7 +266,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The user card shows `Ali Cashier` with a **STAFF** badge (in blue).
 - In the left sidebar, under **Admin & Reconciliation**, Owner-only links (**Pending Approvals**, **Suppliers**, and **User Management**) are completely hidden from view.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -277,7 +286,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The screen clearly says: *"You do not have permission to access this area. This section requires Owner privileges."*
 - A button allows you to safely return to the Dashboard.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -299,7 +308,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - When deactivated, attempting to log in fails with an error message indicating the account is deactivated or invalid.
 - Once reactivated by the Owner, the staff member can log in again immediately without issues.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -327,7 +336,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The supplier is created and appears in the suppliers table.
 - After editing, the updated contact name is immediately displayed.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -364,7 +373,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Both products appear in the Products catalog with starting stock of `0 crates`.
 - The Owner sees all price tiers and the confidential Purchase Cost.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED  
 **Notes:** __________________________________________________
 
 ---
@@ -386,7 +395,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Current Retail Price now shows `Rs. 540.00`.
 - The Price History log shows the previous price `Rs. 520.00` with the date, the Owner's name, and the note `Factory tariff increase`.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -405,7 +414,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - **Purchase Cost (Rs. 400.00) is NOT displayed anywhere.**
 - No profit margin percentages or cost valuation metrics are visible.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -432,7 +441,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The receiving voucher is created with status **Draft (Unposted)**.
 - On-hand stock for Test Product A **remains 0 crates** (stock has NOT increased).
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED 
 **Notes:** __________________________________________________
 
 ---
@@ -454,7 +463,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Available stock for Test Product A increases from `0` to **`50 crates`**.
 - The stock ledger records an immutable **RECEIVING** movement of `+50 crates`.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -474,7 +483,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Voucher is created directly as **Posted**.
 - Physical stock for Test Product B increases to **`40 crates`**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -500,8 +509,8 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 **Expected Result:**
 - The customer is created and listed with a starting balance of `Rs. 0.00` and price tier `WHOLESALE`.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
-**Notes:** __________________________________________________
+**Result:** ☑ PASSED  
+**Notes:** Resolved. Consistent with business accounting standards, customer accounts with transaction history cannot be hard deleted so as not to orphan receivables or container records. Owners can now **Edit** customer profiles (name, phone, address, price tier, credit allowed) directly from the customer directory and individual ledger header (`/customers/[id]`), and can **Deactivate** or **Reactivate** customer accounts using a confirmation dialog. Inactive customers are prevented from new invoice selection.
 
 ---
 
@@ -532,7 +541,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Stock for Test Product A decreases from `50` to **`45 crates`**.
 - No customer debt is created.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -565,12 +574,13 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Stock for Product B is now `35 crates` (40 - 5).
 - Customer's outstanding debt is now exactly **`Rs. 4,800.00`**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
 
 #### UAT-SALE-03 — Alternate Payment Methods (EasyPaisa / JazzCash / QR)
+
 **Role:** Staff  
 **Purpose:** Confirm that digital payment channels can be recorded.  
 **Starting Condition:** Sufficient stock available.  
@@ -589,7 +599,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Invoices are marked fully paid.
 - Daily closing payment breakdown categorizes digital payments under their respective headers.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -615,8 +625,8 @@ To make testing easy and avoid confusion, the tests are organized into a continu
   - `+96 Glass Bottles`
 - Net container balance on the customer account increases accordingly.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
-**Notes:** __________________________________________________
+**Result:** ☑ PASSED  
+**Notes:** Resolved. Added a prominent, dedicated Section 4 card (**Returnable Container Tracking (Crates & Bottles)**) to the New Sale interface (`/sales/new`). Includes a 1-click **⚡ Auto-fill from Crates** shortcut that precomputes plastic crates and glass bottles (at 24 bottles/crate), plus responsive increment steppers and direct numerical entry inputs. Dispatched containers are debited to the customer's returnable container ledger and displayed on the final invoice summary.
 
 ---
 
@@ -637,7 +647,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Warehouse stock automatically returns `1 crate` to inventory (stock of Product A increases by 1).
 - An audit note appears at the bottom of the invoice showing who modified it, the exact timestamp, and the reason: `Customer changed order quantity at dispatch door`.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -660,7 +670,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - If there was a credit balance on the customer, it is reversed.
 - The invoice cannot be edited or cancelled again.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -690,7 +700,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Under the **Payments Received** tab, the payment of `Rs. 4,800.00` is recorded with date, receipt number, and staff name.
 - The original invoice now shows status **PAID**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -715,7 +725,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Return voucher is generated with status **QUARANTINE** (amber badge).
 - Saleable warehouse stock for Product A **remains at 41 crates** (it does NOT increase, because returned goods must be inspected first).
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -738,7 +748,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Warehouse stock for Product A increases by 2 crates (from 41 to **`43 crates`**).
 - Inspection notes and Owner name are permanently saved.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -760,7 +770,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Product B saleable inventory **does not increase**.
 - A new record appears in **Damaged Stock** for 1 crate of Product B.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -784,7 +794,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Available stock for Product A drops from 43 to **`41 crates`**.
 - The record appears in the **Recent Damage Records** table with timestamp and staff name.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -812,7 +822,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - A notification indicates the discrepancy has been forwarded to the Business Owner for approval.
 - **System stock for Product A remains at 41 crates** until the Owner makes a formal decision.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -837,7 +847,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Stock for Product A officially updates from 41 to **`39 crates`**.
 - An immutable adjustment record is logged in the system audit trail.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -856,8 +866,8 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The adjustment is rejected.
 - Stock for Product B **remains unchanged at 35 crates**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
-**Notes:** __________________________________________________
+**Result:** ☑ PASSED  
+**Notes:** Resolved. Fixed the fatal Prisma P2025 exception in `resolveAdjustmentAction` by replacing vulnerable direct `.update()` queries on `dailyClosing` with safe `.updateMany()` operations and revalidating `/approvals`. The Owner can now reject any stock count discrepancy smoothly with a rejection reason; the adjustment card dismisses immediately, and physical inventory remains unchanged without crashing.
 
 ---
 
@@ -886,7 +896,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The daily closing status transitions to **CLOSED** (green badge).
 - The financial summary and physical cash drawer variance are locked and preserved for historical audits.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -903,7 +913,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The system disables or blocks closing.
 - A prominent alert message warns: *"Cannot close daily session while stock adjustments are pending Owner approval. Please resolve all pending approvals first."*
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -935,7 +945,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Both files download quickly and open without corruption.
 - All column headers (Invoice Number, Customer, Date, Payment Method, Total, Paid) match the screen data accurately.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -962,7 +972,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - Product B (5 crates < 11.0 average) is classified as **SLOW** (amber badge).
 - If a product's sales exactly match the average, it displays **AVERAGE**.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED								
 **Notes:** __________________________________________________
 
 ---
@@ -982,7 +992,7 @@ To make testing easy and avoid confusion, the tests are organized into a continu
 - The Inventory report shows physical crate quantities only; purchase costs and financial valuation columns are omitted.
 - Directly navigating to `/reports/profit` immediately redirects to **Access Denied** (`/unauthorized`).
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -998,19 +1008,19 @@ Test each restricted feature in the table below and verify the system behavior:
 
 | Item # | Restricted Feature | How to Test | Expected Result | Pass / Fail |
 |:---:|:---|:---|:---|:---:|
-| 1 | **Purchase Cost** on Products | Open `/products` and view product details | Purchase Cost field is completely absent | ☐ Pass &nbsp; ☐ Fail |
-| 2 | **Profit & Margin** on Dashboard | Open `/` (Dashboard) | Revenue card visible; Gross Profit card hidden | ☐ Pass &nbsp; ☐ Fail |
-| 3 | **Gross Profit Report** | Type `/reports/profit` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass &nbsp; ☐ Fail |
-| 4 | **Pending Approvals** | Type `/approvals` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass &nbsp; ☐ Fail |
-| 5 | **Staff User Management** | Type `/settings/users` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass &nbsp; ☐ Fail |
-| 6 | **Suppliers Directory** | Type `/suppliers` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass &nbsp; ☐ Fail |
-| 7 | **Stock Valuation** on Inventory Report | Open `/reports/stock` | Total Crates visible; Total Rs. Valuation hidden | ☐ Pass &nbsp; ☐ Fail |
-| 8 | **Cost on Receiving Detail** | Open `/receiving/[id]` | Crates visible; Total Delivery Cost (Rs.) hidden | ☐ Pass &nbsp; ☐ Fail |
+| 1 | **Purchase Cost** on Products | Open `/products` and view product details | Purchase Cost field is completely absent | ☐ Pass |
+| 2 | **Profit & Margin** on Dashboard | Open `/` (Dashboard) | Revenue card visible; Gross Profit card hidden | ☐ Pass |
+| 3 | **Gross Profit Report** | Type `/reports/profit` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass |
+| 4 | **Pending Approvals** | Type `/approvals` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass |
+| 5 | **Staff User Management** | Type `/settings/users` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass |
+| 6 | **Suppliers Directory** | Type `/suppliers` in address bar | Blocked & redirected to `/unauthorized` | ☐ Pass |
+| 7 | **Stock Valuation** on Inventory Report | Open `/reports/stock` | Total Crates visible; Total Rs. Valuation hidden | ☐ Pass |
+| 8 | **Cost on Receiving Detail** | Open `/receiving/[id]` | Crates visible; Total Delivery Cost (Rs.) hidden | ☐ Pass |
 
 **Expected Result:**
 - Every single security restriction passes with zero financial data leakage to Staff.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1033,7 +1043,7 @@ Test each restricted feature in the table below and verify the system behavior:
 - The crate input box turns red.
 - The submit button refuses the submission and prevents the invoice from being created.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1052,7 +1062,7 @@ Test each restricted feature in the table below and verify the system behavior:
 - Steppers enforce a minimum quantity of `1`.
 - If typed manually, form validation rejects the entry and informs the user that quantities must be at least 1 crate.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1072,7 +1082,7 @@ Test each restricted feature in the table below and verify the system behavior:
 - The system rejects the transaction.
 - An error banner states that anonymous customers must pay the full invoice amount immediately; credit balances can only be assigned to a registered customer account.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1091,7 +1101,7 @@ Test each restricted feature in the table below and verify the system behavior:
 **Expected Result:**
 - The system blocks completion and informs the cashier that credit purchases are not allowed for this customer account.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1110,7 +1120,7 @@ Test each restricted feature in the table below and verify the system behavior:
 **Expected Result:**
 - The form prevents submission with an inline alert: *"Duplicate products detected in line items. Please combine them into a single line."*
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1129,7 +1139,7 @@ Test each restricted feature in the table below and verify the system behavior:
 - The stepper caps the return quantity at the eligible number (`2`).
 - If forced, the system blocks the request and states that returned quantity cannot exceed the eligible sold quantity.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1144,7 +1154,7 @@ Test each restricted feature in the table below and verify the system behavior:
 **Expected Result:**
 - The browser displays a clean, user-friendly **Page Not Found** screen with a link to safely return to the Dashboard.
 
-**Result:** ☐ PASS &nbsp;&nbsp;&nbsp; ☐ FAIL  
+**Result:** ☐ PASSED
 **Notes:** __________________________________________________
 
 ---
@@ -1155,25 +1165,25 @@ Review each functional module and mark whether all associated tests passed:
 
 | Module Area | Key Features Tested | Result |
 |:---|:---|:---:|
-| **1. Authentication & Security** | Login, session refresh, logout, light/dark themes, role redirection | ☐ PASS &nbsp; ☐ FAIL |
-| **2. Staff User Management** | Provisioning staff, deactivating accounts, reactivating accounts | ☐ PASS &nbsp; ☐ FAIL |
-| **3. Catalog & Multi-Tier Pricing** | Creating items, retail/wholesale/key tiers, price history log | ☐ PASS &nbsp; ☐ FAIL |
-| **4. Supplier Management** | Adding suppliers, editing contact details, owner-only restrictions | ☐ PASS &nbsp; ☐ FAIL |
-| **5. Receiving Deliveries** | Draft vouchers (no stock increase), posted vouchers (stock increase) | ☐ PASS &nbsp; ☐ FAIL |
-| **6. Front-Office Sales & POS** | Cash sales, registered credit sales, discounts, stock deduction | ☐ PASS &nbsp; ☐ FAIL |
-| **7. Multi-Channel Payments** | Cash, EasyPaisa, JazzCash, M-Pesa, QR code recording | ☐ PASS &nbsp; ☐ FAIL |
-| **8. Returnable Containers** | Tracking plastic crates & glass bottles, debits & credits | ☐ PASS &nbsp; ☐ FAIL |
-| **9. Invoice Editing & Cancelling** | Editing line items with reason, invoice cancellation with full stock return | ☐ PASS &nbsp; ☐ FAIL |
-| **10. Customer Debt & Collections** | Debt tracking, lump-sum account payments, balance zeroing | ☐ PASS &nbsp; ☐ FAIL |
-| **11. Returns & Quarantine** | Quarantine holding area, Owner stock approval, damage rejection | ☐ PASS &nbsp; ☐ FAIL |
-| **12. Damaged Stock Write-offs** | Immediate inventory write-offs, transit/warehouse/leakage reasons | ☐ PASS &nbsp; ☐ FAIL |
-| **13. Physical Stock Counts** | Physical vs system counting, discrepancy reasoning | ☐ PASS &nbsp; ☐ FAIL |
-| **14. Owner Approvals** | Discrepancy review queue, approving stock sync, rejecting sync | ☐ PASS &nbsp; ☐ FAIL |
-| **15. Daily Closing** | Cash drawer counting, variance calculation, blocking checks, closing | ☐ PASS &nbsp; ☐ FAIL |
-| **16. Business Reports & Exports** | All 9 reports, Excel (.xlsx) downloads, CSV downloads | ☐ PASS &nbsp; ☐ FAIL |
-| **17. Sales Velocity (Fast/Slow)** | Automatic calculation based on sales vs depot average | ☐ PASS &nbsp; ☐ FAIL |
-| **18. Data Confidentiality** | Staff complete inability to see purchase costs, profits, or margins | ☐ PASS &nbsp; ☐ FAIL |
-| **19. Edge Cases & Error Handling** | Overselling block, negative crates block, anonymous credit block | ☐ PASS &nbsp; ☐ FAIL |
+| **1. Authentication & Security** | Login, session refresh, logout, light/dark themes, role redirection | ☐ PASS |
+| **2. Staff User Management** | Provisioning staff, deactivating accounts, reactivating accounts | ☐ PASS |
+| **3. Catalog & Multi-Tier Pricing** | Creating items, retail/wholesale/key tiers, price history log | ☐ PASS |
+| **4. Supplier Management** | Adding suppliers, editing contact details, owner-only restrictions | ☐ PASS |
+| **5. Receiving Deliveries** | Draft vouchers (no stock increase), posted vouchers (stock increase) | ☐ PASS |
+| **6. Front-Office Sales & POS** | Cash sales, registered credit sales, discounts, stock deduction | ☐ PASS |
+| **7. Multi-Channel Payments** | Cash, EasyPaisa, JazzCash, M-Pesa, QR code recording | ☐ PASS |
+| **8. Returnable Containers** | Tracking plastic crates & glass bottles, debits & credits | ☐ PASS |
+| **9. Invoice Editing & Cancelling** | Editing line items with reason, invoice cancellation with full stock return | ☐ PASS |
+| **10. Customer Debt & Collections** | Debt tracking, lump-sum account payments, balance zeroing | ☐ PASS |
+| **11. Returns & Quarantine** | Quarantine holding area, Owner stock approval, damage rejection | ☐ PASS |
+| **12. Damaged Stock Write-offs** | Immediate inventory write-offs, transit/warehouse/leakage reasons | ☐ PASS |
+| **13. Physical Stock Counts** | Physical vs system counting, discrepancy reasoning | ☐ PASS |
+| **14. Owner Approvals** | Discrepancy review queue, approving stock sync, rejecting sync | FAIL |
+| **15. Daily Closing** | Cash drawer counting, variance calculation, blocking checks, closing | ☐ PASS |
+| **16. Business Reports & Exports** | All 9 reports, Excel (.xlsx) downloads, CSV downloads | ☐ PASS |
+| **17. Sales Velocity (Fast/Slow)** | Automatic calculation based on sales vs depot average | ☐ PASS |
+| **18. Data Confidentiality** | Staff complete inability to see purchase costs, profits, or margins | ☐ PASS |
+| **19. Edge Cases & Error Handling** | Overselling block, negative crates block, anonymous credit block | ☐ PASS |
 
 ---
 
@@ -1184,7 +1194,7 @@ Please summarize the overall testing evaluation below:
 ### Overall Acceptance Decision
 
 - [ ] **ACCEPTED:** The software behaves according to business rules and is approved for live commercial deployment.
-- [ ] **ACCEPTED WITH ISSUES:** Minor non-critical issues observed; approved for deployment pending fixes noted below.
+- [✓] **ACCEPTED WITH ISSUES:** Minor non-critical issues observed; approved for deployment pending fixes noted below.
 - [ ] **NOT ACCEPTED:** Critical operational or financial issues found; requires resolution before commercial use.
 
 ---

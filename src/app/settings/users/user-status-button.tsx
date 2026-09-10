@@ -2,17 +2,20 @@
 
 import { useState, useTransition } from "react";
 import { toggleUserStatusAction } from "./actions";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 export function UserStatusButton({
   userId,
   isActive,
   isOwner,
+  userName,
 }: {
   userId: string;
   isActive: boolean;
   isOwner: boolean;
+  userName?: string;
 }) {
-  const [confirming, setConfirming] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -31,63 +34,48 @@ export function UserStatusButton({
       if (result?.error) {
         setError(result.error);
       }
-      setConfirming(false);
+      setModalOpen(false);
     });
   };
 
-  if (error) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
-        <span>{error}</span>
-        <button
-          type="button"
-          onClick={() => setError(null)}
-          className="underline hover:text-red-700 cursor-pointer"
-        >
-          Dismiss
-        </button>
-      </span>
-    );
-  }
-
-  if (confirming) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs">
-        <span className="text-zinc-600 dark:text-zinc-400">
-          {isActive ? "Deactivate?" : "Activate?"}
-        </span>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleToggle}
-          className="px-2 py-0.5 rounded font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
-        >
-          {isPending ? "..." : "Yes"}
-        </button>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => setConfirming(false)}
-          className="px-2 py-0.5 rounded font-medium border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-        >
-          Cancel
-        </button>
-      </span>
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      disabled={isPending}
-      className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50 ${
-        isActive
-          ? "bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 border border-red-200 dark:border-red-800"
-          : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-      }`}
-    >
-      {isActive ? "Deactivate" : "Activate"}
-    </button>
+    <>
+      <div className="inline-flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          disabled={isPending}
+          className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50 ${
+            isActive
+              ? "bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 border border-red-200 dark:border-red-800"
+              : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+          }`}
+        >
+          {isActive ? "Deactivate" : "Activate"}
+        </button>
+
+        {error && (
+          <span className="text-xs text-red-600 dark:text-red-400">
+            {error}
+          </span>
+        )}
+      </div>
+
+      <ConfirmModal
+        isOpen={modalOpen}
+        title={isActive ? "Deactivate Staff Member" : "Activate Staff Member"}
+        description={
+          isActive
+            ? `Are you sure you want to deactivate ${userName ? `"${userName}"` : "this staff member"}? They will be signed out and unable to access the system.`
+            : `Are you sure you want to reactivate ${userName ? `"${userName}"` : "this staff member"}? They will regain access to perform daily operations.`
+        }
+        confirmLabel={isActive ? "Confirm Deactivate" : "Confirm Activate"}
+        cancelLabel={isActive ? "Keep Active" : "Keep Inactive"}
+        variant={isActive ? "danger" : "primary"}
+        isPending={isPending}
+        onConfirm={handleToggle}
+        onClose={() => setModalOpen(false)}
+      />
+    </>
   );
 }

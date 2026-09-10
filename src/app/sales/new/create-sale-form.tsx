@@ -147,6 +147,16 @@ export function CreateSaleForm({
     return acc + item.quantity * item.unitPrice;
   }, 0);
 
+  const totalCratesSold = items.reduce((acc, item) => {
+    if (!item.productId) return acc;
+    return acc + (parseInt(item.quantity.toString(), 10) || 0);
+  }, 0);
+
+  const handleAutoFillContainers = () => {
+    setPlasticCrates(totalCratesSold);
+    setGlassBottles(totalCratesSold * 24);
+  };
+
   const discountNum = parseFloat(discount) || 0;
   const totalAmount = Math.max(0, Math.round((subtotal - discountNum) * 100) / 100);
   const paidAmountNum = parseFloat(paidAmount) || 0;
@@ -247,7 +257,7 @@ export function CreateSaleForm({
             </span>
             Customer & Pricing Tier
           </h2>
-          <span className="text-xs text-zinc-500">Step 1 of 3</span>
+          <span className="text-xs text-zinc-500">Step 1 of 4</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -345,24 +355,27 @@ export function CreateSaleForm({
       {/* Section 2: Products & Crate Quantities */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
-              2
-            </span>
-            <div>
-              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Products & Crate Quantities
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Full crates only. Enter quantity using steppers or direct typing.
-              </p>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                2
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                  Products & Crate Quantities
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Full crates only. Enter quantity using steppers or direct typing.
+                </p>
+              </div>
             </div>
+            <span className="text-xs text-zinc-500 mr-4">Step 2 of 4</span>
           </div>
 
           <button
             type="button"
             onClick={handleAddItem}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-colors cursor-pointer shrink-0"
           >
             + Add Another Product
           </button>
@@ -529,130 +542,218 @@ export function CreateSaleForm({
       </div>
 
       {/* Section 3: Payment & Totals */}
+      {/* Section 3: Payment & Discount */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
         <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
           <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
               3
             </span>
-            Payment Collection & Invoice Summary
+            Payment Collection & Discount
           </h2>
-          <span className="text-xs text-zinc-500">Step 3 of 3</span>
+          <span className="text-xs text-zinc-500">Step 3 of 4</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label
+              htmlFor="paymentMethod"
+              className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
+            >
+              Payment Method *
+            </label>
+            <select
+              id="paymentMethod"
+              name="paymentMethod"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+              className="w-full px-3 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={PaymentMethod.CASH}>CASH</option>
+              <option value={PaymentMethod.EASYPAISA}>EASYPAISA</option>
+              <option value={PaymentMethod.JAZZCASH}>JAZZCASH</option>
+              <option value={PaymentMethod.MPESA}>MPESA</option>
+              <option value={PaymentMethod.QR}>QR CODE</option>
+            </select>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="paidAmount"
+                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300"
+              >
+                Amount Paid At Counter (Rs.) *
+              </label>
+              <button
+                type="button"
+                onClick={handlePayInFull}
+                className="px-2 py-0.5 text-xs font-bold rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 cursor-pointer transition-colors"
+              >
+                Full ({formatCurrency(totalAmount)})
+              </button>
+            </div>
+            <input
+              id="paidAmount"
+              type="number"
+              name="paidAmount"
+              step="0.01"
+              min={0}
+              max={totalAmount}
+              value={paidAmount}
+              onChange={(e) => setPaidAmount(e.target.value)}
+              className="w-full px-3 py-2 text-base font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="discount"
+              className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
+            >
+              Special Discount (Rs.)
+            </label>
+            <input
+              id="discount"
+              type="number"
+              name="discount"
+              step="0.01"
+              min={0}
+              max={subtotal}
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              className="w-full px-3 py-2 text-base rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 4: Returnable Container Tracking */}
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                4
+              </span>
+              Returnable Container Tracking (Crates & Bottles)
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Debited to customer&apos;s returnable container ledger. Leave 0 if customer returned empty crates or brought their own.
+            </p>
+          </div>
+          {customerId && totalCratesSold > 0 && (
+            <button
+              type="button"
+              onClick={handleAutoFillContainers}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+            >
+              <span>⚡ Auto-fill from Crates ({totalCratesSold} crates, {totalCratesSold * 24} bottles)</span>
+            </button>
+          )}
+        </div>
+
+        {customerId ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-1">
+            <div className="bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <label htmlFor="plasticCratesInput" className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  Plastic Crates Dispatched
+                </label>
+                <span className="text-xs text-zinc-400 font-medium">Debits customer ledger</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  id="plasticCratesInput"
+                  type="number"
+                  min={0}
+                  value={plasticCrates}
+                  onChange={(e) => setPlasticCrates(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-24 px-3 py-2 text-center font-bold text-base rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+                <CrateStepper
+                  value={plasticCrates}
+                  min={0}
+                  onChange={setPlasticCrates}
+                  ariaLabel="Plastic Crates dispatched"
+                />
+              </div>
+            </div>
+
+            <div className="bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <label htmlFor="glassBottlesInput" className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  Glass Bottles Dispatched
+                </label>
+                <span className="text-xs text-zinc-400 font-medium">Standard 24 per crate</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  id="glassBottlesInput"
+                  type="number"
+                  min={0}
+                  value={glassBottles}
+                  onChange={(e) => setGlassBottles(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-24 px-3 py-2 text-center font-bold text-base rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+                <CrateStepper
+                  value={glassBottles}
+                  min={0}
+                  step={24}
+                  onChange={setGlassBottles}
+                  ariaLabel="Glass Bottles dispatched"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-750 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+            <span>ℹ️</span>
+            <span>
+              <strong>Anonymous Sale:</strong> Returnable container tracking is disabled for counter anonymous customers. To record loaned crates and bottles against a balance, select a customer in <strong>Step 1</strong>.
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Invoice Summary & Final Submission */}
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+          <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+            Invoice Summary & Final Settlement
+          </h2>
+          <span className="text-xs font-medium text-zinc-500">Review and Submit</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Payment Configuration */}
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="paymentMethod"
-                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Payment Method *
-              </label>
-              <select
-                id="paymentMethod"
-                name="paymentMethod"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full px-3 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={PaymentMethod.CASH}>CASH</option>
-                <option value={PaymentMethod.EASYPAISA}>EASYPAISA</option>
-                <option value={PaymentMethod.JAZZCASH}>JAZZCASH</option>
-                <option value={PaymentMethod.MPESA}>MPESA</option>
-                <option value={PaymentMethod.QR}>QR CODE</option>
-              </select>
+          <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/40 p-5 rounded-xl border border-zinc-200 dark:border-zinc-700/60">
+            <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
+              <span>Customer Account:</span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {selectedCustomer ? selectedCustomer.name : "Anonymous Counter Customer"}
+              </span>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label
-                  htmlFor="paidAmount"
-                  className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300"
-                >
-                  Amount Paid At Counter (Rs.) *
-                </label>
-                <button
-                  type="button"
-                  onClick={handlePayInFull}
-                  className="px-2.5 py-1 text-xs font-bold rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 cursor-pointer transition-colors"
-                >
-                  Set Paid in Full ({formatCurrency(totalAmount)})
-                </button>
-              </div>
-              <input
-                id="paidAmount"
-                type="number"
-                name="paidAmount"
-                step="0.01"
-                min={0}
-                max={totalAmount}
-                value={paidAmount}
-                onChange={(e) => setPaidAmount(e.target.value)}
-                className="w-full px-3 py-2.5 text-lg font-black rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
+              <span>Pricing Tier:</span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{saleType}</span>
             </div>
-
-            <div>
-              <label
-                htmlFor="discount"
-                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Special Discount (Rs.)
-              </label>
-              <input
-                id="discount"
-                type="number"
-                name="discount"
-                step="0.01"
-                min={0}
-                max={subtotal}
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
+              <span>Total Crates Sold:</span>
+              <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
+                {totalCratesSold} crates
+              </span>
             </div>
-
-            {/* Container Ledger — only shown when a customer is selected */}
             {customerId && (
-              <div className="border-t border-zinc-200 dark:border-zinc-750 pt-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                  Containers Dispatched With Customer
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                      Plastic Crates
-                    </label>
-                    <CrateStepper
-                      value={plasticCrates}
-                      min={0}
-                      onChange={setPlasticCrates}
-                      ariaLabel="Plastic Crates dispatched"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                      Glass Bottles
-                    </label>
-                    <CrateStepper
-                      value={glassBottles}
-                      min={0}
-                      onChange={setGlassBottles}
-                      ariaLabel="Glass Bottles dispatched"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-400">
-                  Debited to customer returnable container ledger. Leave 0 if customer supplied their own containers.
-                </p>
+              <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-700/60 pt-2">
+                <span>Containers Dispatched:</span>
+                <span className="font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+                  {plasticCrates} crates / {glassBottles} bottles
+                </span>
               </div>
             )}
           </div>
 
-          {/* Invoice Summary Box */}
-          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-6 border border-zinc-200 dark:border-zinc-750 flex flex-col justify-between space-y-4">
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-5 border border-zinc-200 dark:border-zinc-750 flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
                 <span>Subtotal:</span>
@@ -674,7 +775,7 @@ export function CreateSaleForm({
               </div>
 
               <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
-                <span>Paid at Counter:</span>
+                <span>Paid at Counter ({paymentMethod}):</span>
                 <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(paidAmountNum)}
                 </span>
@@ -729,7 +830,7 @@ export function CreateSaleForm({
                 {isPending && (
                   <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 )}
-                {isPending ? "Creating Sale..." : "Create Sale"}
+                <span>Complete Sale &amp; Issue Invoice</span>
               </button>
             </div>
           </div>

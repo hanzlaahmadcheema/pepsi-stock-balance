@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
+import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { getCustomerDetails } from "@/lib/customers/service";
+import { CustomerDetailActions } from "./customer-detail-actions";
 import { formatCurrency, formatCrates } from "@/lib/formatters";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 import { IconPhone, IconMapPin } from "@/components/ui/icons";
@@ -96,22 +98,10 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/sales/new?customerId=${customer.id}`}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
-            >
-              + Create Sale
-            </Link>
-            {customer.outstandingBalance > 0 && (
-              <Link
-                href={`/customers/${customer.id}/payments`}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
-              >
-                Record Payment
-              </Link>
-            )}
-          </div>
+          <CustomerDetailActions
+            customer={customer}
+            isOwner={user.role === Role.OWNER}
+          />
         </div>
 
         {/* Financial KPI Cards */}

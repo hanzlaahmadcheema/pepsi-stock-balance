@@ -100,6 +100,7 @@ export async function resolveAdjustmentAction(
       ownerUser.id
     );
 
+    revalidatePath("/approvals");
     revalidatePath("/stock-counts");
     revalidatePath("/products");
 

@@ -579,7 +579,7 @@ export async function resolveAdjustmentTransaction(
 
       // If all discrepancies for this count are now approved or rejected, mark stock as verified
       if (pendingCount === 0) {
-        await tx.dailyClosing.update({
+        await tx.dailyClosing.updateMany({
           where: { id: closingId },
           data: {
             stockVerified: true,

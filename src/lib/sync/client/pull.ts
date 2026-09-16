@@ -68,6 +68,14 @@ export type TransactionClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
 
+// ─── Advisory Lock Constants ──────────────────────────────────────────────────
+
+/**
+ * 64-bit PostgreSQL Advisory Lock ID for single-flight pull synchronization.
+ * Ensures only ONE pull cycle operates on this local depot database at any time.
+ */
+export const SYNC_PULL_ADVISORY_LOCK_ID = BigInt("88492002");
+
 // Set of Cloud-Authoritative operations allowed to be applied from Cloud to Local
 export const CLOUD_AUTHORITATIVE_OPS = new Set<string>([
   "UPSERT_PRODUCT",
@@ -75,6 +83,7 @@ export const CLOUD_AUTHORITATIVE_OPS = new Set<string>([
   "UPSERT_SUPPLIER",
   "UPDATE_USER",
   "DELETE_DRAFT_RECEIVING",
+  "UPSERT_CUSTOMER",
 ]);
 
 // Set of Depot-Authoritative operations where Cloud CANNOT mutate depot state
@@ -118,6 +127,8 @@ export interface LocalPullApplyResult {
   quarantineId?: string;
   quarantineReason?: string;
   quarantineErrorCode?: string;
+  /** True if another pull cycle was already running (advisory lock not acquired). */
+  alreadyRunning?: boolean;
 }
 
 /**
@@ -169,6 +180,21 @@ export async function applyLocalPullBatch(
   // Execute batch processing inside an interactive transaction
   return await dbClient.$transaction(
     async (tx) => {
+      // 0. Single-flight advisory lock for local pull processing
+      const lockResult = await tx.$queryRaw<{ acquired: boolean }[]>`
+        SELECT pg_try_advisory_xact_lock(${SYNC_PULL_ADVISORY_LOCK_ID}) as acquired
+      `;
+      if (!lockResult[0]?.acquired) {
+        const currentCursor = await getLocalSyncCursor(tx);
+        return {
+          appliedCount: 0,
+          newCursor: currentCursor.toString(),
+          hasMore: false,
+          blocked: false,
+          alreadyRunning: true,
+        };
+      }
+
       // 1. Fetch current local cursor inside the transaction
       const currentCursor = await getLocalSyncCursor(tx);
 
@@ -299,14 +325,6 @@ export async function applyLocalPullBatch(
             throw new PullApplyError(
               `Authority violation: Cloud cannot overwrite depot-authoritative data for operation '${change.operationType}' on entity '${change.entityId}'.`,
               "AUTHORITY_VIOLATION",
-              { sequence: change.changeSequence, operationId: change.operationId }
-            );
-          }
-
-          if (change.operationType === "UPSERT_CUSTOMER") {
-            throw new PullApplyError(
-              `CUSTOMER AUTHORITY DECISION REQUIRED: Customer authority is ambiguous between Cloud and Depot in frozen architecture. Cloud change '${change.operationId}' held.`,
-              "CUSTOMER_AUTHORITY_DECISION_REQUIRED",
               { sequence: change.changeSequence, operationId: change.operationId }
             );
           }
@@ -705,7 +723,7 @@ export async function applyCloudAuthoritativeMutation(
     }
 
     case "UPSERT_CUSTOMER": {
-      // Applied only during explicit resolution of quarantined customer changes
+      // Hybrid customer authority: profile fields synchronize bidirectionally
       const name = typeof payload.name === "string" ? payload.name.trim() : "";
       if (!name) {
         throw new PullApplyError(
@@ -714,22 +732,45 @@ export async function applyCloudAuthoritativeMutation(
           { sequence: change.changeSequence, operationId: change.operationId }
         );
       }
+
+      if (change.action === "DELETE") {
+        // Soft delete: customer marked inactive rather than destructive delete
+        await tx.customer.updateMany({
+          where: { id: change.entityId },
+          data: { isActive: false },
+        });
+        return;
+      }
+
+      if (
+        payload.priceTier !== undefined &&
+        payload.priceTier !== null &&
+        !Object.values(PriceTier).includes(payload.priceTier as PriceTier)
+      ) {
+        throw new PullApplyError(
+          `UPSERT_CUSTOMER contains invalid priceTier '${payload.priceTier}'.`,
+          "INVALID_PAYLOAD",
+          { sequence: change.changeSequence, operationId: change.operationId }
+        );
+      }
+      const priceTier = (payload.priceTier as PriceTier) || PriceTier.RETAIL;
+
       await tx.customer.upsert({
         where: { id: change.entityId },
         update: {
           name,
-          phone: (payload.phone as string) || null,
-          address: (payload.address as string) || null,
-          priceTier: (payload.priceTier as any) || PriceTier.RETAIL,
+          phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
+          address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
+          priceTier,
           creditAllowed: Boolean(payload.creditAllowed),
-          isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
+          ...(payload.isActive !== undefined ? { isActive: Boolean(payload.isActive) } : {}),
         },
         create: {
           id: change.entityId,
           name,
-          phone: (payload.phone as string) || null,
-          address: (payload.address as string) || null,
-          priceTier: (payload.priceTier as any) || PriceTier.RETAIL,
+          phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
+          address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
+          priceTier,
           creditAllowed: Boolean(payload.creditAllowed),
           isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
         },
@@ -783,6 +824,18 @@ export async function resolveQuarantineChange(
 
   return await dbClient.$transaction(
     async (tx) => {
+      // 0. Concurrency protection: ensure pull synchronization is not actively running
+      const lockResult = await tx.$queryRaw<Array<{ acquired: boolean }>>`
+        SELECT pg_try_advisory_xact_lock(${SYNC_PULL_ADVISORY_LOCK_ID}) as acquired
+      `;
+      const acquired = lockResult?.[0]?.acquired ?? false;
+      if (!acquired) {
+        throw new PullApplyError(
+          "Cannot resolve quarantine while pull synchronization is actively running.",
+          "CONCURRENT_PULL_ACTIVE"
+        );
+      }
+
       // 1. Fetch the quarantine record
       const item = await tx.localSyncQuarantine.findUnique({
         where: { id: params.quarantineId },

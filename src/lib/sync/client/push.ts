@@ -29,8 +29,21 @@
 
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { SyncOperation, SyncBatchPushPayload, SyncBatchPushResponse } from "@/lib/sync/types";
+
+export type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
+
+// ─── Advisory Lock Constants ──────────────────────────────────────────────────
+
+/**
+ * 64-bit PostgreSQL Advisory Lock ID for single-flight push synchronization.
+ * Ensures only ONE push cycle operates on this local depot database at any time.
+ */
+export const SYNC_PUSH_ADVISORY_LOCK_ID = BigInt("88492001");
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -64,6 +77,8 @@ export interface PushResult {
   retryCount: number;
   /** True if the local outbox had no PENDING operations to push. */
   nothingToPush: boolean;
+  /** True if another push cycle was already running (advisory lock not acquired). */
+  alreadyRunning?: boolean;
   /** Operation ID of a failed operation blocking the queue, if applicable. */
   blockedByFailedOperationId?: string;
   /** Raw server response, if a network call was made. */
@@ -79,9 +94,11 @@ export interface PushResult {
  * This handles the case where the local process crashed after marking ops
  * IN_FLIGHT but before receiving a response.
  */
-async function recoverOrphanedInFlightOps(): Promise<void> {
+async function recoverOrphanedInFlightOps(
+  client: TransactionClient | PrismaClient = prisma
+): Promise<void> {
   const cutoff = new Date(Date.now() - IN_FLIGHT_TIMEOUT_MS);
-  await prisma.syncOutbox.updateMany({
+  await client.syncOutbox.updateMany({
     where: {
       status: "IN_FLIGHT",
       createdAt: { lt: cutoff },
@@ -112,221 +129,250 @@ function buildAuthHeaders(deviceId: string, rawToken: string): Record<string, st
 /**
  * Pushes pending local SyncOutbox operations to the cloud sync endpoint.
  *
+ * Concurrency Protection:
+ *   Uses PostgreSQL non-blocking transaction-level advisory locking (pg_try_advisory_xact_lock)
+ *   to guarantee that only ONE push cycle can operate on this local database at any time.
+ *   If another worker already holds the lock, returns `{ alreadyRunning: true }` without blocking,
+ *   without incrementing retry counters, and without modifying outbox state.
+ *
  * @param cloudBaseUrl  Base URL of the cloud deployment (e.g. "https://app.example.com").
  * @param deviceId      The `SyncDevice.deviceId` for this local depot server.
  * @param rawToken      The raw (unhashed) device token. Never persisted here.
  * @param fetchFn       Optional custom fetch implementation (defaults to global fetch).
+ * @param dbClient      Optional PrismaClient instance (defaults to prisma singleton).
  * @returns             Structured `PushResult`.
  */
 export async function pushPendingOperations(
   cloudBaseUrl: string,
   deviceId: string,
   rawToken: string,
-  fetchFn: typeof fetch = fetch
+  fetchFn: typeof fetch = fetch,
+  dbClient: PrismaClient = prisma
 ): Promise<PushResult> {
-  // 1. Recover orphaned IN_FLIGHT operations from a prior crash.
-  await recoverOrphanedInFlightOps();
+  return await dbClient.$transaction(
+    async (tx: TransactionClient) => {
+      // 1. Acquire single-flight transaction advisory lock for push
+      const lockRows = await tx.$queryRaw<{ acquired: boolean }[]>`
+        SELECT pg_try_advisory_xact_lock(${SYNC_PUSH_ADVISORY_LOCK_ID}) as acquired
+      `;
 
-  // 2. Check if any FAILED operations exist in the outbox.
-  // Under strict sequence ordering, no operation at or after a FAILED operation
-  // can be pushed until that failed operation is resolved.
-  const firstFailed = await prisma.syncOutbox.findFirst({
-    where: { status: "FAILED" },
-    orderBy: { clientSequence: "asc" },
-  });
+      if (!lockRows[0]?.acquired) {
+        return {
+          success: true,
+          alreadyRunning: true,
+          syncedCount: 0,
+          failedCount: 0,
+          retryCount: 0,
+          nothingToPush: false,
+        };
+      }
 
-  // 3. Load the next batch of PENDING operations strictly preceding the first failed op.
-  const whereClause: { status: "PENDING"; clientSequence?: { lt: bigint } } = {
-    status: "PENDING",
-  };
-  if (firstFailed) {
-    whereClause.clientSequence = { lt: firstFailed.clientSequence };
-  }
+      // 2. Recover orphaned IN_FLIGHT operations from a prior crash.
+      await recoverOrphanedInFlightOps(tx);
 
-  const pendingRows = await prisma.syncOutbox.findMany({
-    where: whereClause,
-    orderBy: { clientSequence: "asc" },
-    take: BATCH_LIMIT,
-  });
-
-  if (pendingRows.length === 0) {
-    if (firstFailed) {
-      return {
-        success: false,
-        syncedCount: 0,
-        failedCount: 0,
-        retryCount: 0,
-        nothingToPush: false,
-        blockedByFailedOperationId: firstFailed.operationId,
-        networkError: `Sync queue is blocked by failed operation ${firstFailed.operationId} (sequence ${firstFailed.clientSequence}). Resolve or retry this operation before subsequent operations can push.`,
-      };
-    }
-    return {
-      success: true,
-      syncedCount: 0,
-      failedCount: 0,
-      retryCount: 0,
-      nothingToPush: true,
-    };
-  }
-
-  // 4. Mark entire candidate batch as IN_FLIGHT before sending.
-  await prisma.syncOutbox.updateMany({
-    where: {
-      id: { in: pendingRows.map((r) => r.id) },
-      status: "PENDING", // Guard against races
-    },
-    data: { status: "IN_FLIGHT" },
-  });
-
-  // 5. Build the push payload.
-  const batchId = crypto.randomUUID();
-  const operations: SyncOperation[] = pendingRows.map((row) => ({
-    operationId: row.operationId,
-    clientSequence: row.clientSequence.toString(),
-    operationType: row.operationType as SyncOperation["operationType"],
-    entityId: row.entityId,
-    payload: row.payload as Record<string, unknown>,
-    clientCreatedAt: row.createdAt.toISOString(),
-  }));
-
-  const pushPayload: SyncBatchPushPayload = {
-    deviceId,
-    batchId,
-    schemaVersion: SCHEMA_VERSION,
-    operations,
-  };
-
-  // 6. Send to cloud.
-  let serverResponse: SyncBatchPushResponse;
-  try {
-    const response = await fetchFn(`${cloudBaseUrl}/api/sync/push`, {
-      method: "POST",
-      headers: buildAuthHeaders(deviceId, rawToken),
-      body: JSON.stringify(pushPayload),
-    });
-
-    if (!response.ok && response.status !== 207) {
-      // Non-2xx that isn't 207 Multi-Status: treat as transient network error.
-      const errorText = await response.text().catch(() => "Unknown body");
-      // Reset all IN_FLIGHT back to PENDING for retry.
-      await prisma.syncOutbox.updateMany({
-        where: { id: { in: pendingRows.map((r) => r.id) }, status: "IN_FLIGHT" },
-        data: {
-          status: "PENDING",
-          lastError: `HTTP ${response.status}: ${errorText.slice(0, 500)}`,
-          retryCount: { increment: 1 },
-        },
+      // 3. Check if any FAILED operations exist in the outbox.
+      // Under strict sequence ordering, no operation at or after a FAILED operation
+      // can be pushed until that failed operation is resolved.
+      const firstFailed = await tx.syncOutbox.findFirst({
+        where: { status: "FAILED" },
+        orderBy: { clientSequence: "asc" },
       });
-      return {
-        success: false,
-        syncedCount: 0,
-        failedCount: 0,
-        retryCount: pendingRows.length,
-        nothingToPush: false,
-        networkError: `HTTP ${response.status}: ${errorText.slice(0, 200)}`,
-      };
-    }
 
-    serverResponse = (await response.json()) as SyncBatchPushResponse;
-  } catch (err) {
-    // Network-level failure (DNS, connection refused, timeout, etc.) — transient.
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    await prisma.syncOutbox.updateMany({
-      where: { id: { in: pendingRows.map((r) => r.id) }, status: "IN_FLIGHT" },
-      data: {
+      // 4. Load the next batch of PENDING operations strictly preceding the first failed op.
+      const whereClause: { status: "PENDING"; clientSequence?: { lt: bigint } } = {
         status: "PENDING",
-        lastError: `Network error: ${errorMessage.slice(0, 500)}`,
-        retryCount: { increment: 1 },
-      },
-    });
-    return {
-      success: false,
-      syncedCount: 0,
-      failedCount: 0,
-      retryCount: pendingRows.length,
-      nothingToPush: false,
-      networkError: errorMessage,
-    };
-  }
+      };
+      if (firstFailed) {
+        whereClause.clientSequence = { lt: firstFailed.clientSequence };
+      }
 
-  // 7. Apply server response to local outbox records.
-  const ackedSet = new Set(serverResponse.acknowledgedOperationIds ?? []);
-  const rejectedMap = new Map(
-    (serverResponse.rejectedOperations ?? []).map((r) => [r.operationId, r])
-  );
-
-  let syncedCount = 0;
-  let failedCount = 0;
-  let retryCount = 0;
-
-  for (const row of pendingRows) {
-    if (ackedSet.has(row.operationId)) {
-      // Cloud confirmed success.
-      await prisma.syncOutbox.update({
-        where: { id: row.id },
-        data: { status: "SYNCED", syncedAt: new Date(), lastError: null },
+      const pendingRows = await tx.syncOutbox.findMany({
+        where: whereClause,
+        orderBy: { clientSequence: "asc" },
+        take: BATCH_LIMIT,
       });
-      syncedCount++;
-    } else if (rejectedMap.has(row.operationId)) {
-      const rejection = rejectedMap.get(row.operationId)!;
-      const isDeterministic =
-        rejection.errorCode !== "TRANSIENT_ERROR" &&
-        rejection.errorCode !== undefined;
 
-      if (isDeterministic) {
-        // Permanent failure — quarantine.
-        await prisma.syncOutbox.update({
-          where: { id: row.id },
-          data: {
-            status: "FAILED",
-            lastError: `[${rejection.errorCode}] ${rejection.error}`,
-          },
+      if (pendingRows.length === 0) {
+        if (firstFailed) {
+          return {
+            success: false,
+            syncedCount: 0,
+            failedCount: 0,
+            retryCount: 0,
+            nothingToPush: false,
+            blockedByFailedOperationId: firstFailed.operationId,
+            networkError: `Sync queue is blocked by failed operation ${firstFailed.operationId} (sequence ${firstFailed.clientSequence}). Resolve or retry this operation before subsequent operations can push.`,
+          };
+        }
+        return {
+          success: true,
+          syncedCount: 0,
+          failedCount: 0,
+          retryCount: 0,
+          nothingToPush: true,
+        };
+      }
+
+      // 5. Mark entire candidate batch as IN_FLIGHT before sending.
+      await tx.syncOutbox.updateMany({
+        where: {
+          id: { in: pendingRows.map((r) => r.id) },
+          status: "PENDING", // Guard against races
+        },
+        data: { status: "IN_FLIGHT" },
+      });
+
+      // 6. Build the push payload.
+      const batchId = crypto.randomUUID();
+      const operations: SyncOperation[] = pendingRows.map((row) => ({
+        operationId: row.operationId,
+        clientSequence: row.clientSequence.toString(),
+        operationType: row.operationType as SyncOperation["operationType"],
+        entityId: row.entityId,
+        payload: row.payload as Record<string, unknown>,
+        clientCreatedAt: row.createdAt.toISOString(),
+      }));
+
+      const pushPayload: SyncBatchPushPayload = {
+        deviceId,
+        batchId,
+        schemaVersion: SCHEMA_VERSION,
+        operations,
+      };
+
+      // 7. Send to cloud.
+      let serverResponse: SyncBatchPushResponse;
+      try {
+        const response = await fetchFn(`${cloudBaseUrl}/api/sync/push`, {
+          method: "POST",
+          headers: buildAuthHeaders(deviceId, rawToken),
+          body: JSON.stringify(pushPayload),
         });
-        failedCount++;
-      } else {
-        // Transient — reset for retry, with exhaustion check.
-        const newRetryCount = (row.retryCount ?? 0) + 1;
-        if (newRetryCount >= MAX_RETRY_COUNT) {
-          await prisma.syncOutbox.update({
-            where: { id: row.id },
-            data: {
-              status: "FAILED",
-              lastError: `Max retries (${MAX_RETRY_COUNT}) exceeded. Last: ${rejection.error}`,
-              retryCount: newRetryCount,
-            },
-          });
-          failedCount++;
-        } else {
-          await prisma.syncOutbox.update({
-            where: { id: row.id },
+
+        if (!response.ok && response.status !== 207) {
+          // Non-2xx that isn't 207 Multi-Status: treat as transient network error.
+          const errorText = await response.text().catch(() => "Unknown body");
+          // Reset all IN_FLIGHT back to PENDING for retry.
+          await tx.syncOutbox.updateMany({
+            where: { id: { in: pendingRows.map((r) => r.id) }, status: "IN_FLIGHT" },
             data: {
               status: "PENDING",
-              lastError: rejection.error,
-              retryCount: newRetryCount,
+              lastError: `HTTP ${response.status}: ${errorText.slice(0, 500)}`,
+              retryCount: { increment: 1 },
             },
           });
-          retryCount++;
+          return {
+            success: false,
+            syncedCount: 0,
+            failedCount: 0,
+            retryCount: pendingRows.length,
+            nothingToPush: false,
+            networkError: `HTTP ${response.status}: ${errorText.slice(0, 200)}`,
+          };
+        }
+
+        serverResponse = (await response.json()) as SyncBatchPushResponse;
+      } catch (err) {
+        // Network-level failure (DNS, connection refused, timeout, etc.) — transient.
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        await tx.syncOutbox.updateMany({
+          where: { id: { in: pendingRows.map((r) => r.id) }, status: "IN_FLIGHT" },
+          data: {
+            status: "PENDING",
+            lastError: `Network error: ${errorMessage.slice(0, 500)}`,
+            retryCount: { increment: 1 },
+          },
+        });
+        return {
+          success: false,
+          syncedCount: 0,
+          failedCount: 0,
+          retryCount: pendingRows.length,
+          nothingToPush: false,
+          networkError: errorMessage,
+        };
+      }
+
+      // 8. Apply server response to local outbox records.
+      const ackedSet = new Set(serverResponse.acknowledgedOperationIds ?? []);
+      const rejectedMap = new Map(
+        (serverResponse.rejectedOperations ?? []).map((r) => [r.operationId, r])
+      );
+
+      let syncedCount = 0;
+      let failedCount = 0;
+      let retryCount = 0;
+
+      for (const row of pendingRows) {
+        if (ackedSet.has(row.operationId)) {
+          // Cloud confirmed success.
+          await tx.syncOutbox.update({
+            where: { id: row.id },
+            data: { status: "SYNCED", syncedAt: new Date(), lastError: null },
+          });
+          syncedCount++;
+        } else if (rejectedMap.has(row.operationId)) {
+          const rejection = rejectedMap.get(row.operationId)!;
+          const isDeterministic =
+            rejection.errorCode !== "TRANSIENT_ERROR" &&
+            rejection.errorCode !== undefined;
+
+          if (isDeterministic) {
+            // Permanent failure — quarantine.
+            await tx.syncOutbox.update({
+              where: { id: row.id },
+              data: {
+                status: "FAILED",
+                lastError: `[${rejection.errorCode}] ${rejection.error}`,
+              },
+            });
+            failedCount++;
+          } else {
+            // Transient — reset for retry, with exhaustion check.
+            const newRetryCount = (row.retryCount ?? 0) + 1;
+            if (newRetryCount >= MAX_RETRY_COUNT) {
+              await tx.syncOutbox.update({
+                where: { id: row.id },
+                data: {
+                  status: "FAILED",
+                  lastError: `Max retries (${MAX_RETRY_COUNT}) exceeded. Last: ${rejection.error}`,
+                  retryCount: newRetryCount,
+                },
+              });
+              failedCount++;
+            } else {
+              await tx.syncOutbox.update({
+                where: { id: row.id },
+                data: {
+                  status: "PENDING",
+                  lastError: rejection.error,
+                  retryCount: newRetryCount,
+                },
+              });
+              retryCount++;
+            }
+          }
+        } else {
+          // Not in ACK list and not in rejected list: operation was not processed
+          // (batch stopped before reaching it). Reset to PENDING without incrementing retries.
+          await tx.syncOutbox.update({
+            where: { id: row.id },
+            data: { status: "PENDING", lastError: "Batch stopped before this operation was reached." },
+          });
         }
       }
-    } else {
-      // Not in ACK list and not in rejected list: operation was not processed
-      // (batch stopped before reaching it). Reset to PENDING without incrementing retries.
-      await prisma.syncOutbox.update({
-        where: { id: row.id },
-        data: { status: "PENDING", lastError: "Batch stopped before this operation was reached." },
-      });
-    }
-  }
 
-  return {
-    success: serverResponse.success,
-    syncedCount,
-    failedCount,
-    retryCount,
-    nothingToPush: false,
-    serverResponse,
-  };
+      return {
+        success: serverResponse.success,
+        syncedCount,
+        failedCount,
+        retryCount,
+        nothingToPush: false,
+        serverResponse,
+      };
+    },
+    { timeout: 60000, maxWait: 20000 }
+  );
 }
 
 /**

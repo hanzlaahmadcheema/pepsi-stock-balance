@@ -409,15 +409,15 @@ describe("Phase 4 Review: Deterministic Block & Quarantine Semantics", { concurr
 
     const seq1 = (curBefore + BigInt(1)).toString();
     const seq2 = (curBefore + BigInt(2)).toString();
-    const opCustomer = crypto.randomUUID();
+    const opViolation = crypto.randomUUID();
     const opPrice = crypto.randomUUID();
     const customerId = crypto.randomUUID();
     const productId = crypto.randomUUID();
 
     createdCustomerIds.add(customerId);
     createdProductIds.add(productId);
-    createdQuarantineOpIds.add(opCustomer);
-    createdProcessedOpIds.add(opCustomer);
+    createdQuarantineOpIds.add(opViolation);
+    createdProcessedOpIds.add(opViolation);
     createdProcessedOpIds.add(opPrice);
 
     // Create product locally so price could apply once unblocked
@@ -435,11 +435,11 @@ describe("Phase 4 Review: Deterministic Block & Quarantine Semantics", { concurr
       changes: [
         {
           changeSequence: seq1,
-          operationId: opCustomer,
-          operationType: "UPSERT_CUSTOMER",
-          entityId: customerId,
+          operationId: opViolation,
+          operationType: "CREATE_SALE", // Depot-authoritative! Cloud cannot push this.
+          entityId: crypto.randomUUID(),
           action: "UPSERT",
-          payload: { name: `Cloud Customer ${testRunId}`, creditAllowed: true },
+          payload: { totalAmount: 1000 },
           sourceDeviceId: "cloud-external", // External!
           createdAt: new Date().toISOString(),
         },
@@ -461,31 +461,25 @@ describe("Phase 4 Review: Deterministic Block & Quarantine Semantics", { concurr
       ],
     };
 
-    // Pull batch: Customer is quarantined
+    // Pull batch: Authority violation is quarantined
     const pullRes = await applyLocalPullBatch(device.deviceId, batch);
     assert.equal(pullRes.blocked, true);
     assert.equal(pullRes.blockedSequence, seq1);
-    assert.equal(pullRes.quarantineErrorCode, "CUSTOMER_AUTHORITY_DECISION_REQUIRED");
-
-    // Invariant G: Customer was NOT created or mutated in local database
-    const customerInDb = await prisma.customer.findUnique({
-      where: { id: customerId },
-    });
-    assert.equal(customerInDb, null, "Customer must NOT be mutated without authority decision");
+    assert.equal(pullRes.quarantineErrorCode, "AUTHORITY_VIOLATION");
 
     // Invariant H: Quarantine record persists
     const qRecord = await prisma.localSyncQuarantine.findUnique({
-      where: { operationId: opCustomer },
+      where: { operationId: opViolation },
     });
     assert.ok(qRecord);
     assert.equal(qRecord.status, QuarantineStatus.QUARANTINED);
 
     // Invariant I: Future resolution unblocks the stream
-    // Operator resolves by discarding the ambiguous cloud customer change
+    // Operator resolves by discarding the unauthorized external sale change
     const resolveRes = await resolveQuarantineChange({
       quarantineId: qRecord.id,
       action: "DISCARD",
-      reason: "Customer authority deferred; cloud customer record discarded by Depot Manager",
+      reason: "Sale authority belongs to depot; cloud sale record discarded by Depot Manager",
       resolvedByUserId: defaultTestUserId,
     });
     assert.equal(resolveRes.success, true);

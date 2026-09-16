@@ -530,6 +530,7 @@ model AuditLog {
   oldValues  Json?
   newValues  Json?
   reason     String
+  deviceId   String?  @db.VarChar(64)
   createdAt  DateTime @default(now())
 
   // Relationships
@@ -538,4 +539,133 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([userId, createdAt])
   @@index([createdAt])
+  @@index([deviceId])
 }
+
+// ==========================================
+// 14. OFFLINE-FIRST SYNC FOUNDATION
+// ==========================================
+
+enum SyncStatus {
+  PENDING
+  IN_FLIGHT
+  SYNCED
+  FAILED
+}
+
+enum SyncChangeAction {
+  UPSERT
+  DELETE
+}
+
+model SyncOutbox {
+  id             String     @id @default(uuid()) @db.Uuid
+  operationId    String     @unique @db.Uuid
+  clientSequence BigInt     @unique @default(autoincrement())
+  operationType  String
+  entityId       String     @db.Uuid
+  payload        Json
+  status         SyncStatus @default(PENDING)
+  retryCount     Int        @default(0)
+  lastError      String?
+  createdAt      DateTime   @default(now())
+  syncedAt       DateTime?
+
+  @@index([status, clientSequence])
+  @@index([operationId])
+  @@index([createdAt])
+}
+
+model SyncCursor {
+  id           String   @id @default("cloud_cursor")
+  lastSequence BigInt   @default(0)
+  lastSyncedAt DateTime @default(now())
+}
+
+model ProcessedSyncOperation {
+  id             String   @id @default(uuid()) @db.Uuid
+  operationId    String     @unique @db.Uuid
+  deviceId       String     @db.VarChar(64)
+  clientSequence BigInt
+  operationType  String
+  entityId       String     @db.Uuid
+  processedAt    DateTime   @default(now())
+  status         String     // "SUCCESS", "REJECTED"
+  errorMessage   String?
+
+  @@unique([deviceId, clientSequence])
+  @@index([operationId])
+  @@index([processedAt])
+}
+
+model SyncChangeLog {
+  changeSequence BigInt           @id @default(autoincrement())
+  operationId    String           @unique @db.Uuid
+  operationType  String
+  entityId       String           @db.Uuid
+  action         SyncChangeAction
+  payload        Json
+  sourceDeviceId String?          @db.VarChar(64)
+  createdAt      DateTime         @default(now())
+
+  @@index([changeSequence])
+  @@index([operationId])
+  @@index([entityId])
+  @@index([createdAt])
+  @@index([sourceDeviceId])
+}
+
+model SyncDevice {
+  deviceId     String   @id @db.VarChar(64)
+  name         String
+  tokenHash    String
+  isRevoked    Boolean  @default(false)
+  lastSeenAt   DateTime @default(now())
+  lastSequence BigInt   @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([isRevoked])
+}
+
+model LocalProcessedChange {
+  id             String   @id @default(uuid()) @db.Uuid
+  operationId    String   @unique @db.Uuid
+  changeSequence BigInt   @unique
+  operationType  String
+  entityId       String   @db.Uuid
+  sourceDeviceId String?  @db.VarChar(64)
+  appliedAt      DateTime @default(now())
+
+  @@index([operationId])
+  @@index([changeSequence])
+}
+
+enum QuarantineStatus {
+  QUARANTINED
+  RESOLVED
+}
+
+model LocalSyncQuarantine {
+  id               String           @id @default(uuid()) @db.Uuid
+  changeSequence   BigInt           @unique
+  operationId      String           @unique @db.Uuid
+  operationType    String
+  entityId         String           @db.Uuid
+  action           SyncChangeAction
+  payload          Json
+  sourceDeviceId   String?          @db.VarChar(64)
+  errorCode        String
+  errorMessage     String
+  status           QuarantineStatus @default(QUARANTINED)
+  createdAt        DateTime         @default(now())
+  resolvedAt       DateTime?
+  resolutionAction String?
+  resolutionReason String?
+  resolvedByUserId String?          @db.Uuid
+
+  @@index([status])
+  @@index([changeSequence])
+  @@index([operationId])
+  @@index([createdAt])
+}
+

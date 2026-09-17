@@ -9,6 +9,8 @@
  * - Masks all secrets (database passwords, sync tokens, auth headers)
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import {
   SyncScheduler,
@@ -25,6 +27,43 @@ export interface DaemonConfig {
   deviceToken: string;
   normalIntervalMs?: number;
   debounceMs?: number;
+}
+
+/**
+ * Safely loads environment variables from .env.production and .env files in the target directory
+ * into process.env if not already set. This ensures Windows services launched via NSSM
+ * receive production configuration without requiring interactive shell environment variables.
+ */
+export function loadEnvironmentFiles(dir: string = process.cwd()): string[] {
+  const loadedFiles: string[] = [];
+  const candidateFiles = [".env.production", ".env.local", ".env"];
+  for (const filename of candidateFiles) {
+    const fullPath = path.resolve(dir, filename);
+    if (fs.existsSync(fullPath)) {
+      try {
+        const content = fs.readFileSync(fullPath, "utf-8");
+        for (const rawLine of content.split(/\r?\n/)) {
+          const line = rawLine.trim();
+          if (!line || line.startsWith("#")) continue;
+          const eqIdx = line.indexOf("=");
+          if (eqIdx > 0) {
+            const key = line.slice(0, eqIdx).trim();
+            let val = line.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (process.env[key] === undefined) {
+              process.env[key] = val;
+            }
+          }
+        }
+        loadedFiles.push(filename);
+      } catch (err) {
+        console.warn(`[WARN] Could not read env file ${fullPath}:`, err);
+      }
+    }
+  }
+  return loadedFiles;
 }
 
 /**
@@ -157,6 +196,14 @@ export async function startDaemonService(
 ): Promise<SyncScheduler> {
   logInfo("STARTUP", "Starting Pepsi Depot Sync Daemon service...");
 
+  // Load environment variables from .env.production / .env if running in process.env context
+  if (env === process.env) {
+    const loaded = loadEnvironmentFiles();
+    if (loaded.length > 0) {
+      logInfo("CONFIG", `Loaded environment configuration from: ${loaded.join(", ")}`);
+    }
+  }
+
   // 1. Validate environment configuration
   const config = validateDaemonConfig(env);
   logInfo("CONFIG", "Configuration validated successfully", {
@@ -255,8 +302,8 @@ export function registerProcessLifecycleHandlers(scheduler: SyncScheduler): void
   });
 }
 
-// Auto-run if executed directly as script
-if (process.argv[1] && (process.argv[1].endsWith("service-entrypoint.ts") || process.argv[1].endsWith("service-entrypoint.js"))) {
+// Auto-run if executed directly as script (node dist/daemon/service-entrypoint.js or tsx .../service-entrypoint.ts)
+if (process.argv[1] && /service-entrypoint\.(ts|js)$/.test(process.argv[1].replace(/\\/g, "/"))) {
   startDaemonService()
     .then((scheduler) => {
       registerProcessLifecycleHandlers(scheduler);

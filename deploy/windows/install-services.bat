@@ -70,8 +70,35 @@ if not exist "%APP_DIR%\.env.production" (
     )
 )
 
+:: 6. Verify Compiled Production Sync Daemon Artifact
+if not exist "%APP_DIR%\dist\daemon\service-entrypoint.js" (
+    echo [ERROR] Compiled production sync daemon artifact not found:
+    echo   %APP_DIR%\dist\daemon\service-entrypoint.js
+    echo Please run 'npm run build' or 'npm run build:daemon' before installing services.
+    pause
+    exit /b 1
+)
+
+:: 7. Resolve PostgreSQL Windows Service Dependency
+:: Default Windows PostgreSQL service name is typically postgresql-x64-16 or postgresql-x64-15
+:: Can be specified as command argument (e.g. install-services.bat postgresql-x64-15)
+set "PG_SERVICE_NAME=postgresql-x64-16"
+if "%~1" neq "" set "PG_SERVICE_NAME=%~1"
+
+set "PG_SERVICE_FOUND=0"
+sc query "%PG_SERVICE_NAME%" >nul 2>&1
+if %errorLevel% equ 0 (
+    set "PG_SERVICE_FOUND=1"
+    echo [OK] Detected PostgreSQL service: %PG_SERVICE_NAME%
+) else (
+    echo [NOTICE] PostgreSQL service "%PG_SERVICE_NAME%" not detected in Windows Service Manager.
+    echo If your PostgreSQL service uses a different name (e.g., postgresql-x64-15 or postgresql),
+    echo specify it as an argument: deploy\windows\install-services.bat ^<service-name^>
+    echo Proceeding without Service Control Manager dependency (application-level database retry active).
+)
+
 :: ==============================================================================
-:: 6. Install "Pepsi Depot Web" Service (Next.js Application)
+:: 8. Install "Pepsi Depot Web" Service (Next.js Application)
 :: ==============================================================================
 set "WEB_SERVICE=Pepsi Depot Web"
 echo.
@@ -81,7 +108,7 @@ echo Installing service: "%WEB_SERVICE%"...
 "%NSSM_EXE%" stop "%WEB_SERVICE%" >nul 2>&1
 "%NSSM_EXE%" remove "%WEB_SERVICE%" confirm >nul 2>&1
 
-"%NSSM_EXE%" install "%WEB_SERVICE%" "%NPM_CMD%" "run serve:depot"
+"%NSSM_EXE%" install "%WEB_SERVICE%" "%NODE_EXE%" "node_modules\next\dist\bin\next start -p 3000 -H 0.0.0.0"
 "%NSSM_EXE%" set "%WEB_SERVICE%" AppDirectory "%APP_DIR%"
 "%NSSM_EXE%" set "%WEB_SERVICE%" DisplayName "Pepsi Depot Web"
 "%NSSM_EXE%" set "%WEB_SERVICE%" Description "Pepsi Stock Balance - Local Depot Web Server (Next.js)"
@@ -94,10 +121,15 @@ echo Installing service: "%WEB_SERVICE%"...
 "%NSSM_EXE%" set "%WEB_SERVICE%" AppRotateBytes 10485760
 "%NSSM_EXE%" set "%WEB_SERVICE%" AppRestartDelay 5000
 
+if %PG_SERVICE_FOUND% equ 1 (
+    "%NSSM_EXE%" set "%WEB_SERVICE%" DependOnService "%PG_SERVICE_NAME%"
+    echo [OK] Configured "%WEB_SERVICE%" dependency on "%PG_SERVICE_NAME%".
+)
+
 echo [SUCCESS] "%WEB_SERVICE%" successfully installed.
 
 :: ==============================================================================
-:: 7. Install "Pepsi Depot Sync" Service (Synchronization Daemon)
+:: 9. Install "Pepsi Depot Sync" Service (Synchronization Daemon)
 :: ==============================================================================
 set "SYNC_SERVICE=Pepsi Depot Sync"
 echo.
@@ -106,7 +138,8 @@ echo Installing service: "%SYNC_SERVICE%"...
 "%NSSM_EXE%" stop "%SYNC_SERVICE%" >nul 2>&1
 "%NSSM_EXE%" remove "%SYNC_SERVICE%" confirm >nul 2>&1
 
-"%NSSM_EXE%" install "%SYNC_SERVICE%" "%NPM_CMD%" "run sync:daemon"
+:: Runs Node directly against the compiled JavaScript bundle (zero tsx/TypeScript dependency)
+"%NSSM_EXE%" install "%SYNC_SERVICE%" "%NODE_EXE%" "dist\daemon\service-entrypoint.js"
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppDirectory "%APP_DIR%"
 "%NSSM_EXE%" set "%SYNC_SERVICE%" DisplayName "Pepsi Depot Sync"
 "%NSSM_EXE%" set "%SYNC_SERVICE%" Description "Pepsi Stock Balance - Local Depot Sync Daemon (Cloud Synchronization)"
@@ -114,10 +147,16 @@ echo Installing service: "%SYNC_SERVICE%"...
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppStdout "%LOGS_DIR%\sync.log"
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppStderr "%LOGS_DIR%\sync-error.log"
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppRotateFiles 1
-"%NSSM_EXE%" set "%WEB_SERVICE%" AppRotateOnline 1
+"%NSSM_EXE%" set "%SYNC_SERVICE%" AppRotateOnline 1
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppRotateSeconds 86400
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppRotateBytes 10485760
 "%NSSM_EXE%" set "%SYNC_SERVICE%" AppRestartDelay 5000
+
+:: Service Dependency: Depends ONLY on PostgreSQL. Web and Sync remain independently restartable!
+if %PG_SERVICE_FOUND% equ 1 (
+    "%NSSM_EXE%" set "%SYNC_SERVICE%" DependOnService "%PG_SERVICE_NAME%"
+    echo [OK] Configured "%SYNC_SERVICE%" dependency on "%PG_SERVICE_NAME%".
+)
 
 echo [SUCCESS] "%SYNC_SERVICE%" successfully installed.
 
@@ -125,12 +164,20 @@ echo.
 echo ==============================================================================
 echo  INSTALLATION COMPLETE!
 echo ==============================================================================
+echo  Services Installed:
+echo    1. "%WEB_SERVICE%"  (Node -> Next.js)
+echo    2. "%SYNC_SERVICE%" (Node -> dist\daemon\service-entrypoint.js)
+echo.
+echo  Service Dependency Relationship:
+echo    PostgreSQL (%PG_SERVICE_NAME%)
+echo      ├──^> %WEB_SERVICE%
+echo      └──^> %SYNC_SERVICE%
+echo    (Web and Sync are completely independent and independently restartable)
+echo.
 echo  To start the services now, run:
 echo    deploy\windows\start-services.bat
 echo.
-echo  Or use Windows Services management (services.msc) to verify:
-echo    - "Pepsi Depot Web"
-echo    - "Pepsi Depot Sync"
+echo  Or use Windows Services management (services.msc) to verify.
 echo ==============================================================================
 
 pause

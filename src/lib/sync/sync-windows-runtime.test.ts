@@ -22,12 +22,17 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { spawnSync } from "node:child_process";
 import { prisma } from "../prisma";
 import {
   validateDaemonConfig,
   sanitizeDatabaseUrl,
   maskSecret,
   startDaemonService,
+  loadEnvironmentFiles,
 } from "./daemon/service-entrypoint";
 import {
   SyncScheduler,
@@ -392,5 +397,54 @@ describe("Phase 5 Step 4: Windows Depot Runtime & Deployment Verification", () =
     const sigtermListeners = process.listeners("SIGTERM");
     assert.ok(sigintListeners.length >= 0);
     assert.ok(sigtermListeners.length >= 0);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Test N: Environment File Loader
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test N: Environment file loader correctly parses .env files into process.env", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pepsi-env-test-"));
+    try {
+      fs.writeFileSync(
+        path.join(tmpDir, ".env.production"),
+        "TEST_DEPOT_CONFIG_KEY=depot_production_val\nTEST_QUOTED_KEY=\"quoted_value\"\n# Comment line\n"
+      );
+
+      const loaded = loadEnvironmentFiles(tmpDir);
+      assert.ok(loaded.includes(".env.production"));
+      assert.equal(process.env.TEST_DEPOT_CONFIG_KEY, "depot_production_val");
+      assert.equal(process.env.TEST_QUOTED_KEY, "quoted_value");
+    } finally {
+      delete process.env.TEST_DEPOT_CONFIG_KEY;
+      delete process.env.TEST_QUOTED_KEY;
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Test O: Compiled Production Daemon Artifact
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test O: Compiled production daemon bundle executes cleanly under plain Node (no tsx)", async () => {
+    const artifactPath = path.resolve(process.cwd(), "dist/daemon/service-entrypoint.js");
+    assert.ok(
+      fs.existsSync(artifactPath),
+      `Production daemon artifact must exist at ${artifactPath} (run npm run build:daemon)`
+    );
+
+    // Execute with plain node.exe/node without tsx to verify absence of TypeScript runtime dependency
+    const child = spawnSync(process.execPath, [artifactPath], {
+      env: {
+        ...process.env,
+        DATABASE_URL: "",
+        CLOUD_SYNC_BASE_URL: "",
+      },
+      encoding: "utf-8",
+    });
+
+    // The script should validate config, output error, and exit with code 1 (not throw module syntax or TS errors)
+    assert.equal(child.status, 1);
+    assert.match(child.stderr, /Sync Daemon Configuration Error/);
+    assert.ok(!child.stderr.includes("SyntaxError"), "Compiled bundle must not have JavaScript syntax errors");
+    assert.ok(!child.stderr.includes("Cannot find module"), "Compiled bundle must have all dependencies resolvable");
   });
 });

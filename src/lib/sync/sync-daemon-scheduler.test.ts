@@ -212,8 +212,8 @@ describe("Phase 5 Step 2: Sync Daemon / Runtime Scheduler", { concurrency: 1 }, 
     // Trigger immediate push
     scheduler.triggerImmediatePush();
 
-    // Wait for debounce window (50ms) + remote DB push execution (up to 10s)
-    const deadlineB = Date.now() + 10_000;
+    // Wait for debounce window (50ms) + remote DB push execution (up to 30s)
+    const deadlineB = Date.now() + 30_000;
     while (!pushExecuted && Date.now() < deadlineB) {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }

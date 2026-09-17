@@ -21,6 +21,7 @@ import {
   IconScale,
   IconFileSpreadsheet,
   IconShield,
+  IconAlertOctagon,
   IconBox,
   IconPlus,
   IconArrowLeft,
@@ -72,6 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
       { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
+      { name: "Sync Quarantine", href: "/sync/quarantine", icon: IconAlertOctagon, ownerOnly: true },
     ],
   },
 ];
@@ -210,6 +212,13 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return [
       { label: "Admin" },
       { label: "Suppliers Directory", href: "/suppliers" },
+    ];
+  }
+
+  if (first === "sync") {
+    return [
+      { label: "Admin" },
+      { label: "Sync Quarantine", href: "/sync/quarantine" },
     ];
   }
 

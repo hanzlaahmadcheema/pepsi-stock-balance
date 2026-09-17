@@ -872,15 +872,19 @@ export interface ResolveQuarantineParams {
  *    Records the discarded operation in LocalProcessedChange to prevent duplicate replay,
  *    marks quarantine RESOLVED (DISCARDED), and advances SyncCursor to the change's sequence.
  */
+export interface ResolveQuarantineResult {
+  success: boolean;
+  action: "RETRY_APPLIED" | "DISCARDED" | "RETRY_FAILED";
+  newCursor: string;
+  quarantineId: string;
+  error?: string;
+  errorCode?: string;
+}
+
 export async function resolveQuarantineChange(
   params: ResolveQuarantineParams,
   dbClient: PrismaClient = prisma
-): Promise<{
-  success: boolean;
-  action: "RETRY_APPLIED" | "DISCARDED";
-  newCursor: string;
-  quarantineId: string;
-}> {
+): Promise<ResolveQuarantineResult> {
   if (!params.reason || !params.reason.trim()) {
     throw new PullApplyError(
       "A valid auditable resolution reason is required.",
@@ -949,7 +953,30 @@ export async function resolveQuarantineChange(
         };
 
         // Re-attempt mutation
-        await applyCloudAuthoritativeMutation(tx, changeRecord);
+        try {
+          await applyCloudAuthoritativeMutation(tx, changeRecord);
+        } catch (err: unknown) {
+          if (isDeterministicPullError(err)) {
+            // Keep it quarantined with the updated failure information
+            await tx.localSyncQuarantine.update({
+              where: { id: item.id },
+              data: {
+                errorCode: err.code,
+                errorMessage: err.message,
+              },
+            });
+            return {
+              success: false,
+              action: "RETRY_FAILED",
+              newCursor: currentCursor.toString(),
+              quarantineId: item.id,
+              error: err.message,
+              errorCode: err.code,
+            };
+          }
+          // Transient failure: rethrow so transaction rolls back cleanly
+          throw err;
+        }
 
         // Record in LocalProcessedChange
         await tx.localProcessedChange.create({

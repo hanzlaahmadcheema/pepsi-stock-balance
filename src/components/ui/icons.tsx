@@ -319,6 +319,10 @@ export function IconMoon({ className = "w-4 h-4", ...props }: IconProps) {
   );
 }
 
-
-
-
+export function IconAlertOctagon({ className = "w-4 h-4", ...props }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
+    </svg>
+  );
+}

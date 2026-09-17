@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "serve:depot": "next start -p 3000 -H 0.0.0.0",
+    "sync:daemon": "tsx src/lib/sync/daemon/service-entrypoint.ts",
     "serve:loop": "./run-server.sh",
     "lint": "eslint",
     "postinstall": "prisma generate",

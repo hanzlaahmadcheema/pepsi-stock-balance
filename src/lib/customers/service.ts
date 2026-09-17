@@ -320,6 +320,9 @@ export async function createCustomer(data: {
     throw new Error("Customer name is required.");
   }
 
+  const opId = crypto.randomUUID();
+  const now = new Date();
+
   return prisma.customer.create({
     data: {
       name: trimmedName,
@@ -327,6 +330,9 @@ export async function createCustomer(data: {
       address: data.address?.trim() || null,
       priceTier: data.priceTier,
       creditAllowed: data.creditAllowed,
+      version: 1,
+      lastOperationId: opId,
+      lastUpdatedAt: now,
     },
   });
 }
@@ -349,6 +355,9 @@ export async function updateCustomer(
     throw new Error("Customer name is required.");
   }
 
+  const opId = crypto.randomUUID();
+  const now = new Date();
+
   return prisma.customer.update({
     where: { id },
     data: {
@@ -357,6 +366,9 @@ export async function updateCustomer(
       address: data.address?.trim() || null,
       priceTier: data.priceTier,
       creditAllowed: data.creditAllowed,
+      version: { increment: 1 },
+      lastOperationId: opId,
+      lastUpdatedAt: now,
     },
   });
 }
@@ -365,9 +377,17 @@ export async function updateCustomer(
  * Sets customer active status (Owner only).
  */
 export async function setCustomerActive(id: string, isActive: boolean) {
+  const opId = crypto.randomUUID();
+  const now = new Date();
+
   return prisma.customer.update({
     where: { id },
-    data: { isActive },
+    data: {
+      isActive,
+      version: { increment: 1 },
+      lastOperationId: opId,
+      lastUpdatedAt: now,
+    },
   });
 }
 

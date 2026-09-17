@@ -39,6 +39,7 @@ import {
   type LocalSyncQuarantine,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { compareCustomerLww } from "@/lib/sync/conflict/customer-lww";
 import type {
   SyncBatchPullPayload,
   SyncBatchPullResponse,
@@ -723,7 +724,10 @@ export async function applyCloudAuthoritativeMutation(
     }
 
     case "UPSERT_CUSTOMER": {
-      // Hybrid customer authority: profile fields synchronize bidirectionally
+      // Hybrid customer authority with LWW conflict resolution.
+      // Profile fields synchronize bidirectionally; the operation with the higher
+      // LWW stamp (version > timestamp > operationId) wins regardless of whether
+      // push ran before or after pull.
       const name = typeof payload.name === "string" ? payload.name.trim() : "";
       if (!name) {
         throw new PullApplyError(
@@ -734,7 +738,7 @@ export async function applyCloudAuthoritativeMutation(
       }
 
       if (change.action === "DELETE") {
-        // Soft delete: customer marked inactive rather than destructive delete
+        // Soft delete: always apply regardless of LWW (delete is authoritative).
         await tx.customer.updateMany({
           where: { id: change.entityId },
           data: { isActive: false },
@@ -755,28 +759,90 @@ export async function applyCloudAuthoritativeMutation(
       }
       const priceTier = (payload.priceTier as PriceTier) || PriceTier.RETAIL;
 
-      await tx.customer.upsert({
+      // Read the current local row to compare LWW stamps.
+      const existingLocal = await tx.customer.findUnique({
         where: { id: change.entityId },
-        update: {
-          name,
-          phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
-          address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
-          priceTier,
-          creditAllowed: Boolean(payload.creditAllowed),
-          ...(payload.isActive !== undefined ? { isActive: Boolean(payload.isActive) } : {}),
-        },
-        create: {
-          id: change.entityId,
-          name,
-          phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
-          address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
-          priceTier,
-          creditAllowed: Boolean(payload.creditAllowed),
-          isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
+        select: {
+          version: true,
+          lastUpdatedAt: true,
+          lastOperationId: true,
         },
       });
+
+      // Build the incoming LWW stamp from the SyncChangeLog payload.
+      // The Cloud push handler always embeds version + lwwTimestamp.
+      const incomingVersion =
+        typeof payload.version === "number" && payload.version > 0
+          ? payload.version
+          : existingLocal
+          ? existingLocal.version + 1
+          : 1;
+
+      const incomingTimestamp =
+        typeof payload.lwwTimestamp === "string" && payload.lwwTimestamp
+          ? payload.lwwTimestamp
+          : typeof change.createdAt === "string" && change.createdAt
+          ? change.createdAt
+          : new Date().toISOString();
+
+      const incomingStamp = {
+        version: incomingVersion,
+        clientCreatedAt: incomingTimestamp,
+        operationId: change.operationId,
+      };
+
+      let incomingWins = true;
+      if (existingLocal !== null) {
+        const currentStamp = {
+          version: existingLocal.version,
+          clientCreatedAt: existingLocal.lastUpdatedAt.toISOString(),
+          operationId: existingLocal.lastOperationId ?? "",
+        };
+        incomingWins = compareCustomerLww(incomingStamp, currentStamp) > 0;
+      }
+
+      // Idempotent check: if this is the exact same operation that set the current
+      // winning stamp, treat it as already-applied (safe re-delivery).
+      if (existingLocal?.lastOperationId === change.operationId) {
+        // Already applied this exact operation — no-op.
+        break;
+      }
+
+      if (incomingWins) {
+        const lwwDate = new Date(incomingStamp.clientCreatedAt);
+        await tx.customer.upsert({
+          where: { id: change.entityId },
+          update: {
+            name,
+            phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
+            address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
+            priceTier,
+            creditAllowed: Boolean(payload.creditAllowed),
+            ...(payload.isActive !== undefined ? { isActive: Boolean(payload.isActive) } : {}),
+            version: incomingStamp.version,
+            lastOperationId: change.operationId,
+            lastUpdatedAt: lwwDate,
+          },
+          create: {
+            id: change.entityId,
+            name,
+            phone: typeof payload.phone === "string" && payload.phone.trim() ? payload.phone.trim() : null,
+            address: typeof payload.address === "string" && payload.address.trim() ? payload.address.trim() : null,
+            priceTier,
+            creditAllowed: Boolean(payload.creditAllowed),
+            isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
+            version: incomingStamp.version,
+            lastOperationId: change.operationId,
+            lastUpdatedAt: lwwDate,
+          },
+        });
+      }
+      // If !incomingWins: local row already has a higher-stamp value — keep it.
+      // Either way, the LocalProcessedChange record is written below (after this switch)
+      // to advance the SyncCursor past this change sequence, so we do not re-process it.
       break;
     }
+
 
     default:
       throw new PullApplyError(

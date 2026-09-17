@@ -23,6 +23,8 @@ import {
   resolveRequiredActorUser,
 } from "./common";
 
+import { compareCustomerLww } from "@/lib/sync/conflict/customer-lww";
+
 interface UpsertCustomerPayload {
   name: string;
   phone?: string | null;
@@ -30,6 +32,9 @@ interface UpsertCustomerPayload {
   priceTier?: PriceTier;
   creditAllowed?: boolean;
   isActive?: boolean;
+  // LWW conflict resolution stamp — carried in every UPSERT_CUSTOMER payload
+  version?: number;       // The resulting version number after this mutation
+  lwwTimestamp?: string;  // ISO 8601 client timestamp when mutation was written
 }
 
 interface UpsertProductPayload {
@@ -67,11 +72,20 @@ interface UpdateUserPayload {
 }
 
 /**
- * Upserts a customer catalog record.
+ * Upserts a customer catalog record with LWW conflict resolution.
  *
  * Attribution: Device-level operation (`sourceDeviceId: device.deviceId`).
- * Customer records do not have a User relation and are master catalog data
- * synchronized across depots under authenticated SyncDevice identity.
+ *
+ * LWW Mechanism:
+ *   Incoming stamp = { version: payload.version, lwwTimestamp: payload.lwwTimestamp, operationId }
+ *   Current stamp  = { version: current.version, lwwTimestamp: current.lastUpdatedAt, operationId: current.lastOperationId }
+ *
+ *   If incoming stamp > current stamp → apply mutation, update LWW fields.
+ *   If incoming stamp ≤ current stamp → skip mutation; record SyncChangeLog with lwwLost=true.
+ *   If customer does not exist yet  → create (first write always wins on a new record).
+ *
+ * The SyncChangeLog payload always contains the complete LWW stamp so that Local Depot
+ * can perform the same comparison deterministically during pull without extra DB reads.
  */
 export async function handleUpsertCustomer(
   tx: TransactionClient,
@@ -85,27 +99,106 @@ export async function handleUpsertCustomer(
     throw new Error("Customer name is required.");
   }
 
-  const customer = await tx.customer.upsert({
+  // Read existing row inside the same transaction to compare stamps.
+  const existing = await tx.customer.findUnique({
     where: { id: operation.entityId },
-    update: {
-      name: trimmedName,
-      phone: payload.phone?.trim() || null,
-      address: payload.address?.trim() || null,
-      priceTier: payload.priceTier || PriceTier.RETAIL,
-      creditAllowed: payload.creditAllowed ?? false,
-      ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
-    },
-    create: {
-      id: operation.entityId,
-      name: trimmedName,
-      phone: payload.phone?.trim() || null,
-      address: payload.address?.trim() || null,
-      priceTier: payload.priceTier || PriceTier.RETAIL,
-      creditAllowed: payload.creditAllowed ?? false,
-      isActive: payload.isActive ?? true,
+    select: {
+      id: true,
+      version: true,
+      lastUpdatedAt: true,
+      lastOperationId: true,
     },
   });
 
+  // Build incoming LWW stamp from operation metadata + payload fields.
+  // `clientCreatedAt` is the top-level SyncOperation field (ISO 8601).
+  const incomingVersion =
+    typeof payload.version === "number" && payload.version > 0
+      ? payload.version
+      : existing
+      ? existing.version + 1
+      : 1;
+
+  const incomingStamp = {
+    version: incomingVersion,
+    clientCreatedAt: payload.lwwTimestamp ?? operation.clientCreatedAt,
+    operationId: operation.operationId,
+  };
+
+  // Determine whether the incoming mutation wins.
+  let incomingWins = true;
+  if (existing !== null) {
+    const currentStamp = {
+      version: existing.version,
+      clientCreatedAt: existing.lastUpdatedAt.toISOString(),
+      operationId: existing.lastOperationId ?? "",
+    };
+    incomingWins = compareCustomerLww(incomingStamp, currentStamp) > 0;
+  }
+
+  let customer: { id: string; name: string; phone: string | null; address: string | null; priceTier: string; creditAllowed: boolean; isActive: boolean };
+
+  if (incomingWins) {
+    // Apply mutation and record new LWW metadata on the row.
+    const priceTier = payload.priceTier || PriceTier.RETAIL;
+    const lwwDate = new Date(incomingStamp.clientCreatedAt);
+
+    customer = await tx.customer.upsert({
+      where: { id: operation.entityId },
+      update: {
+        name: trimmedName,
+        phone: payload.phone?.trim() || null,
+        address: payload.address?.trim() || null,
+        priceTier,
+        creditAllowed: payload.creditAllowed ?? false,
+        ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
+        version: incomingStamp.version,
+        lastOperationId: operation.operationId,
+        lastUpdatedAt: lwwDate,
+      },
+      create: {
+        id: operation.entityId,
+        name: trimmedName,
+        phone: payload.phone?.trim() || null,
+        address: payload.address?.trim() || null,
+        priceTier,
+        creditAllowed: payload.creditAllowed ?? false,
+        isActive: payload.isActive ?? true,
+        version: incomingStamp.version,
+        lastOperationId: operation.operationId,
+        lastUpdatedAt: lwwDate,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        priceTier: true,
+        creditAllowed: true,
+        isActive: true,
+      },
+    });
+  } else {
+    // Current row wins LWW. Do NOT mutate the customer table.
+    // Still record SyncChangeLog so the losing operation is auditable
+    // and propagated to local depots (which will also apply the same LWW
+    // comparison and likewise keep their winning local value).
+    const existingFull = await tx.customer.findUniqueOrThrow({
+      where: { id: operation.entityId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        priceTier: true,
+        creditAllowed: true,
+        isActive: true,
+      },
+    });
+    customer = { ...existingFull, priceTier: existingFull.priceTier as string };
+  }
+
+  // Always record to SyncChangeLog with full LWW stamp so pull side can compare.
   await recordSyncChangeLog(tx, {
     operationId: operation.operationId,
     operationType: "UPSERT_CUSTOMER",
@@ -113,16 +206,21 @@ export async function handleUpsertCustomer(
     action: "UPSERT",
     payload: {
       id: customer.id,
-      name: customer.name,
-      phone: customer.phone,
-      address: customer.address,
-      priceTier: customer.priceTier,
-      creditAllowed: customer.creditAllowed,
-      isActive: customer.isActive,
+      name: incomingWins ? customer.name : (payload.name?.trim() ?? ""),
+      phone: incomingWins ? customer.phone : (payload.phone?.trim() || null),
+      address: incomingWins ? customer.address : (payload.address?.trim() || null),
+      priceTier: incomingWins ? customer.priceTier : (payload.priceTier || PriceTier.RETAIL),
+      creditAllowed: incomingWins ? customer.creditAllowed : (payload.creditAllowed ?? false),
+      isActive: incomingWins ? customer.isActive : (payload.isActive ?? true),
+      // LWW stamp — propagated so Local Depot pull can apply identical comparison
+      version: incomingStamp.version,
+      lwwTimestamp: incomingStamp.clientCreatedAt,
+      lwwLost: !incomingWins,
     },
     sourceDeviceId: device.deviceId,
   });
 }
+
 
 /**
  * Upserts a product catalog record.

@@ -1040,8 +1040,10 @@ export async function executePullCycle(params: {
   serverUrl: string;
   deviceToken: string;
   batchSize?: number;
+  fetchFn?: typeof fetch;
+  dbClient?: PrismaClient;
 }): Promise<LocalPullApplyResult> {
-  const currentCursor = await getLocalSyncCursor();
+  const currentCursor = await getLocalSyncCursor(params.dbClient);
 
   const payload: SyncBatchPullPayload = {
     deviceId: params.localDeviceId,
@@ -1050,7 +1052,8 @@ export async function executePullCycle(params: {
     batchSize: params.batchSize ?? 50,
   };
 
-  const res = await fetch(`${params.serverUrl}/api/sync/pull`, {
+  const fetchImpl = params.fetchFn ?? fetch;
+  const res = await fetchImpl(`${params.serverUrl}/api/sync/pull`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1077,5 +1080,5 @@ export async function executePullCycle(params: {
   }
 
   const batchResponse: SyncBatchPullResponse = await res.json();
-  return await applyLocalPullBatch(params.localDeviceId, batchResponse);
+  return await applyLocalPullBatch(params.localDeviceId, batchResponse, params.dbClient);
 }

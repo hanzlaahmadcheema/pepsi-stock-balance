@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = [
   "/auth/confirm",
   "/unauthorized",
   "/executive-preview",
+  "/api/sync",
 ];
 
 export async function middleware(request: NextRequest) {

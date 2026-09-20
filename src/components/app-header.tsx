@@ -28,6 +28,7 @@ import {
   IconArrowRight,
   IconSun,
   IconMoon,
+  IconLifebuoy,
 } from "@/components/ui/icons";
 
 interface NavItem {
@@ -74,6 +75,13 @@ const NAV_GROUPS: NavGroup[] = [
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
       { name: "Sync Quarantine", href: "/sync/quarantine", icon: IconAlertOctagon, ownerOnly: true },
+    ],
+  },
+  {
+    id: "support",
+    title: "Support & Services",
+    items: [
+      { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy },
     ],
   },
 ];
@@ -226,6 +234,13 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return [
       { label: "Admin" },
       { label: "Staff User Provisioning", href: "/settings/users" },
+    ];
+  }
+
+  if (first === "technical-services") {
+    return [
+      { label: "Support & Services" },
+      { label: "Technical Services", href: "/technical-services" },
     ];
   }
 

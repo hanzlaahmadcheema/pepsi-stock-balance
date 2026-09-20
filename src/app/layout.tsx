@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Stock & balance tracking system for Pepsi distribution",
 };
 
+import { TechnicalServicesWidget } from "@/components/technical-services-widget";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,6 +60,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <div id="main-content">{children}</div>
+        <TechnicalServicesWidget />
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
@@ -37,6 +38,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-zinc-900 py-8 px-6 shadow-sm sm:rounded-xl sm:px-10 border border-zinc-200 dark:border-zinc-800">
           <LoginForm redirectTo={redirectTo} initialError={initialError} />
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            href="/technical-services"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 transition"
+          >
+            <span>Need technical services or setup help?</span>
+            <span className="underline font-semibold">Contact Support or WhatsApp</span>
+          </Link>
         </div>
       </div>
     </main>

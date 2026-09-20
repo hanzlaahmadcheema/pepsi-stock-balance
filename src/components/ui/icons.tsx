@@ -326,3 +326,32 @@ export function IconAlertOctagon({ className = "w-4 h-4", ...props }: IconProps)
     </svg>
   );
 }
+
+export function IconWhatsApp({ className = "w-5 h-5", ...props }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 1.77.813 2.796.813 3.179 0 5.766-2.587 5.767-5.766.001-3.187-2.575-5.77-5.767-5.771zm3.391 8.232c-.146.415-.754.767-1.042.809-.272.039-.623.056-1.928-.485-1.579-.654-2.576-2.264-2.655-2.368-.078-.105-.632-.841-.632-1.602 0-.761.396-1.135.536-1.291.141-.157.307-.196.41-.196.104 0 .208.001.299.006.096.005.225-.036.352.269.13.312.443 1.077.482 1.156.039.078.065.17.013.274-.052.104-.078.17-.156.261-.078.092-.164.205-.235.275-.078.078-.16.163-.069.319.091.156.404.667.868 1.079.597.531 1.099.696 1.255.774.156.078.247.065.338-.039.091-.105.391-.456.495-.612.104-.157.208-.13.351-.078.144.052.912.43 1.068.508.156.079.261.118.299.183.039.066.039.38-.107.795z" />
+      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 21.95a.8.8 0 00.98.98l4.821-1.39A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm-8.4 10a8.4 8.4 0 1114.394 5.889l.135.215 1.137 3.321-3.411-.894-.225.133A8.37 8.37 0 0112 20.4a8.4 8.4 0 01-8.4-8.4z" />
+    </svg>
+  );
+}
+
+export function IconLifebuoy({ className = "w-4 h-4", ...props }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+    </svg>
+  );
+}
+
+export function IconServer({ className = "w-4 h-4", ...props }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.73 4.29A1.5 1.5 0 016.9 3.75h10.2a1.5 1.5 0 011.17.54l1.98 2.61c.6.78.9 1.74.9 2.7" />
+    </svg>
+  );
+}
+
+

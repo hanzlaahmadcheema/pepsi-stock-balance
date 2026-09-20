@@ -2,11 +2,14 @@
 .env
 .env*
 !.env.example
+!.env.*.example
 !deploy/windows/.env.depot.example
 .env.local
 .env.*.local
 .env.development
 .env.production
+environments/
+!environments/*.example
 
 # Dependencies
 node_modules/

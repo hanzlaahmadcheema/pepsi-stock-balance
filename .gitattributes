@@ -1,0 +1,15 @@
+# Normalize all text files to LF in git index.
+# On checkout, Windows will get CRLF only for .ps1 and .cmd files.
+* text=auto eol=lf
+
+# Windows-specific scripts — use CRLF on checkout so PowerShell is happy
+*.ps1  text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# Binary files — never convert
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.woff2 binary
+*.node binary

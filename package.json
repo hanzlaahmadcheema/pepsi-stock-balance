@@ -21,7 +21,9 @@
     "prisma:migrate": "tsx scripts/prisma-guard.ts migrate dev",
     "prisma:deploy": "tsx scripts/prisma-guard.ts migrate deploy",
     "prisma:status": "tsx scripts/prisma-guard.ts migrate status",
-    "prisma:studio": "tsx scripts/prisma-guard.ts studio"
+    "prisma:studio": "tsx scripts/prisma-guard.ts studio",
+    "create:owner": "tsx scripts/create-owner.ts",
+    "test": "tsx --test --test-concurrency=1 src/lib/sync/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

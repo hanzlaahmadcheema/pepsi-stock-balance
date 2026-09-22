@@ -30,6 +30,7 @@ import {
   IconMoon,
   IconLifebuoy,
 } from "@/components/ui/icons";
+import { DbStatusIndicator } from "@/components/db-status-indicator";
 
 interface NavItem {
   name: string;
@@ -543,6 +544,9 @@ export function AppHeader({ user }: { user: DbUser }) {
 
           {/* Right: Operational Controls & Utilities */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* DB Connection Status Pills */}
+            <DbStatusIndicator />
+
             {/* Theme Toggle Button in Topbar */}
             <button
               type="button"

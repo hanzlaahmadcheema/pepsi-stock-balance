@@ -72,7 +72,7 @@ function Refresh-SessionPath {
     }
 }
 
-Write-LogHeader "PEPSI DEPOT INSTALLER — PHASE 2: RUNTIME DEPENDENCIES (GIT & NODE.JS)"
+Write-LogHeader "PEPSI DEPOT INSTALLER - PHASE 2: RUNTIME DEPENDENCIES (GIT & NODE.JS)"
 
 # 1. Administrator Privileges Check
 if (-not (Test-IsAdmin)) {

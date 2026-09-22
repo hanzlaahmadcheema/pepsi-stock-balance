@@ -74,7 +74,7 @@ function Test-IsAdmin {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-Write-LogHeader "PEPSI DEPOT INSTALLER — PHASE 5: APPLICATION SETUP & BUILD"
+Write-LogHeader "PEPSI DEPOT INSTALLER - PHASE 5: APPLICATION SETUP & BUILD"
 
 # 1. Administrator Privileges Check
 if (-not (Test-IsAdmin)) {

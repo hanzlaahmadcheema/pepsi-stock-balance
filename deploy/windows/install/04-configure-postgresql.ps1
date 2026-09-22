@@ -109,7 +109,7 @@ function Find-Psql {
     return $null
 }
 
-Write-LogHeader "PEPSI DEPOT INSTALLER — PHASE 4: LOCAL DATABASE CONFIGURATION"
+Write-LogHeader "PEPSI DEPOT INSTALLER - PHASE 4: LOCAL DATABASE CONFIGURATION"
 
 # 1. Administrator Privileges Check
 if (-not (Test-IsAdmin)) {
@@ -233,18 +233,12 @@ if ($dbExists.Trim() -eq "1") {
 
 # 6. Configure Permissions & Ownership
 Write-LogInfo "Ensuring permissions for '$AppUser' on '$DatabaseName'..."
-$grantSql = @"
-GRANT ALL PRIVILEGES ON DATABASE $DatabaseName TO $AppUser;
-ALTER DATABASE $DatabaseName OWNER TO $AppUser;
-\c $DatabaseName
-GRANT ALL ON SCHEMA public TO $AppUser;
-"@
-
-$res = & psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -c $grantSql 2>&1
+$res1 = & psql -h $DbHost -p $DbPort -U $SuperUser -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DatabaseName TO $AppUser; ALTER DATABASE $DatabaseName OWNER TO $AppUser;" 2>&1
+$res2 = & psql -h $DbHost -p $DbPort -U $SuperUser -d $DatabaseName -c "GRANT ALL ON SCHEMA public TO $AppUser; ALTER SCHEMA public OWNER TO $AppUser;" 2>&1
 if ($LASTEXITCODE -eq 0) {
     Write-LogSuccess "Database permissions and ownership configured successfully."
 } else {
-    Write-LogWarning "Permissions notice: $($res -join ' ')"
+    Write-LogWarning "Permissions notice: $($res1 -join ' ') $($res2 -join ' ')"
 }
 
 # 7. Verify Application User Connection

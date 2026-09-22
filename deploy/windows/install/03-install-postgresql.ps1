@@ -95,7 +95,7 @@ function Find-PsqlExecutable {
     return $null
 }
 
-Write-LogHeader "PEPSI DEPOT INSTALLER — PHASE 3: POSTGRESQL 18 ENGINE & SERVICE"
+Write-LogHeader "PEPSI DEPOT INSTALLER - PHASE 3: POSTGRESQL 18 ENGINE & SERVICE"
 
 # 1. Administrator Privileges Check
 if (-not (Test-IsAdmin)) {
@@ -128,6 +128,11 @@ if ($existingService -and $psqlPath) {
     # 3. Install PostgreSQL 18 via Chocolatey
     Write-LogInfo "PostgreSQL 18 not detected. Preparing Chocolatey installation..."
 
+    $chocoBin = "$env:ProgramData\chocolatey\bin"
+    if ((Test-Path $chocoBin) -and ($env:Path -notlike "*$chocoBin*")) {
+        $env:Path = "$chocoBin;" + $env:Path
+    }
+
     if (-not (Get-Command "choco.exe" -ErrorAction SilentlyContinue)) {
         Write-LogError "Chocolatey is required to install PostgreSQL 18. Please run 01-install-chocolatey.ps1 first."
         exit 1
@@ -141,6 +146,9 @@ if ($existingService -and $psqlPath) {
         $SuperUserPassword = [Convert]::ToBase64String($bytes).Replace("+", "").Replace("/", "").Replace("=", "") + "P1!"
         Write-LogWarning "Initial postgres superuser password generated. Save this securely if needed for DBA management."
     }
+
+    # Ensure USERDOMAIN matches COMPUTERNAME (fixes OpenSSH session bug where USERDOMAIN defaults to WORKGROUP)
+    $env:USERDOMAIN = $env:COMPUTERNAME
 
     Write-LogInfo "Installing PostgreSQL 18 via Chocolatey (package: postgresql18)..."
     try {

@@ -80,7 +80,7 @@ function Test-IsAdmin {
 
 $startTime = Get-Date
 
-Write-Banner "PEPSI DEPOT SERVER — AUTOMATED INSTALLATION SUITE (WINDOWS 64-BIT)"
+Write-Banner "PEPSI DEPOT SERVER - AUTOMATED INSTALLATION SUITE (WINDOWS 64-BIT)"
 
 # 0. Administrator Privileges Check
 if (-not (Test-IsAdmin)) {

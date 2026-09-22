@@ -97,7 +97,7 @@ function Refresh-Path {
     }
 }
 
-Write-LogHeader "PEPSI DEPOT INSTALLER — PHASE 6: READ-ONLY VALIDATION AUDIT"
+Write-LogHeader "PEPSI DEPOT INSTALLER - PHASE 6: READ-ONLY VALIDATION AUDIT"
 Refresh-Path
 
 # 1. Administrator Privileges

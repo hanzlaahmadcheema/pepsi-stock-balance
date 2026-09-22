@@ -8,6 +8,7 @@ import { EditUserModal } from "./edit-user-modal";
 export function UserRowActions({
   user,
   isCurrentOwner,
+  currentUserId,
 }: {
   user: {
     id: string;
@@ -17,14 +18,15 @@ export function UserRowActions({
     isActive: boolean;
   };
   isCurrentOwner: boolean;
+  currentUserId: string;
 }) {
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const isOwnerRow = user.role === Role.OWNER;
+  const isSelf = user.id === currentUserId;
 
   return (
     <>
       <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
-        {/* Allow Owners to edit staff accounts (and themselves) */}
+        {/* Allow Owners to edit any account */}
         {isCurrentOwner && (
           <button
             type="button"
@@ -38,7 +40,7 @@ export function UserRowActions({
         <UserStatusButton
           userId={user.id}
           isActive={user.isActive}
-          isOwner={isOwnerRow}
+          isSelf={isSelf}
           userName={user.name}
         />
       </div>
@@ -48,6 +50,7 @@ export function UserRowActions({
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
           user={user}
+          currentUserId={currentUserId}
         />
       )}
     </>

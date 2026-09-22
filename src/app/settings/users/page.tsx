@@ -72,7 +72,7 @@ export default async function UsersSettingsPage() {
                 <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
                     <th scope="col" className="px-6 py-3">Name</th>
-                    <th scope="col" className="px-6 py-3">Email</th>
+                    <th scope="col" className="px-6 py-3">Username / Email</th>
                     <th scope="col" className="px-6 py-3">Role</th>
                     <th scope="col" className="px-6 py-3">Status</th>
                     <th scope="col" className="px-6 py-3">Created</th>
@@ -90,7 +90,18 @@ export default async function UsersSettingsPage() {
                           {u.name}
                         </td>
                         <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                          {email}
+                          {email.endsWith("@pepsidepot.local") ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-zinc-900 dark:text-zinc-100 font-medium">
+                                {email.replace("@pepsidepot.local", "")}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                                username
+                              </span>
+                            </div>
+                          ) : (
+                            email
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -136,6 +147,7 @@ export default async function UsersSettingsPage() {
                               isActive: u.isActive,
                             }}
                             isCurrentOwner={currentUser.role === Role.OWNER}
+                            currentUserId={currentUser.id}
                           />
                         </td>
                       </tr>

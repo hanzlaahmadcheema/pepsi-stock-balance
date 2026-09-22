@@ -25,20 +25,27 @@ export async function createStaffUserAction(
     // 1. Enforce OWNER role server-side
     ownerUser = await requireRole(Role.OWNER);
   } catch {
-    return { error: "Unauthorized: Only an Owner can provision new staff accounts." };
+    return { error: "Unauthorized: Only an Owner can provision new user accounts." };
   }
 
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  let email = ((formData.get("email") || formData.get("identifier")) as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
+  const roleInput = (formData.get("role") as string)?.trim().toUpperCase();
+  const role: Role = roleInput === "OWNER" ? Role.OWNER : Role.STAFF;
 
   // 2. Validate input
   if (!name || name.length < 2) {
     return { error: "Full name must be at least 2 characters long." };
   }
 
-  if (!email || !email.includes("@")) {
-    return { error: "Please enter a valid email address." };
+  if (!email) {
+    return { error: "Username or email address is required." };
+  }
+
+  // If input doesn't contain an @, treat as local username
+  if (!email.includes("@")) {
+    email = `${email.replace(/\s+/g, "")}@pepsidepot.local`;
   }
 
   if (!password || password.length < 8) {
@@ -53,13 +60,13 @@ export async function createStaffUserAction(
     password,
     email_confirm: true,
     user_metadata: { name },
-    app_metadata: { role: Role.STAFF },
+    app_metadata: { role },
   });
 
   if (authError || !authData?.user) {
     const errorMsg = authError?.message || "Failed to create user in authentication provider.";
     if (errorMsg.toLowerCase().includes("already") || errorMsg.toLowerCase().includes("registered")) {
-      return { error: "A user with this email address already exists." };
+      return { error: "A user with this email or username already exists." };
     }
     return { error: errorMsg };
   }
@@ -72,7 +79,7 @@ export async function createStaffUserAction(
       data: {
         authUserId,
         name,
-        role: Role.STAFF,
+        role,
         isActive: true,
       },
     });
@@ -86,9 +93,9 @@ export async function createStaffUserAction(
         newValues: {
           name,
           email,
-          role: Role.STAFF,
+          role,
         },
-        reason: `Staff account created for "${name}" (${email})`,
+        reason: `${role === Role.OWNER ? "Owner (Administrator)" : "Staff"} account created for "${name}" (${email})`,
       },
     });
   } catch (dbError) {
@@ -101,13 +108,13 @@ export async function createStaffUserAction(
   revalidatePath("/settings/users");
   return {
     success: true,
-    message: `Staff user "${name}" (${email}) successfully created.`,
+    message: `${role === Role.OWNER ? "Owner" : "Staff"} user "${name}" (${email}) successfully created.`,
   };
 }
 
 /**
- * Server action for an OWNER to activate or deactivate a STAFF user.
- * Strictly verifies OWNER role server-side and forbids mutating OWNER accounts.
+ * Server action for an OWNER to activate or deactivate any user (Staff or Owner).
+ * Owners cannot deactivate themselves.
  */
 export async function toggleUserStatusAction(userId: string): Promise<{ error?: string; success?: boolean }> {
   let ownerUser;
@@ -115,7 +122,7 @@ export async function toggleUserStatusAction(userId: string): Promise<{ error?: 
     // 1. Enforce OWNER role server-side
     ownerUser = await requireRole(Role.OWNER);
   } catch {
-    return { error: "Unauthorized: Only an Owner can change staff status." };
+    return { error: "Unauthorized: Only an Owner can change user status." };
   }
 
   // 2. Retrieve target user
@@ -127,9 +134,9 @@ export async function toggleUserStatusAction(userId: string): Promise<{ error?: 
     return { error: "User not found." };
   }
 
-  // 3. Prevent modification of OWNER accounts through staff-management UI
-  if (targetUser.role === Role.OWNER) {
-    return { error: "Security restriction: Cannot modify or deactivate an Owner account." };
+  // 3. An Owner cannot deactivate themselves
+  if (targetUser.id === ownerUser.id) {
+    return { error: "Security restriction: You cannot deactivate your own account." };
   }
 
   const newStatus = !targetUser.isActive;
@@ -149,7 +156,7 @@ export async function toggleUserStatusAction(userId: string): Promise<{ error?: 
       entityId: targetUser.id,
       oldValues: { isActive: targetUser.isActive },
       newValues: { isActive: newStatus },
-      reason: `Staff user "${targetUser.name}" ${newStatus ? "activated" : "deactivated"} by Owner`,
+      reason: `${targetUser.role} "${targetUser.name}" ${newStatus ? "activated" : "deactivated"} by Owner "${ownerUser.name}"`,
     },
   });
 
@@ -174,7 +181,8 @@ export type EditStaffState = {
 };
 
 /**
- * Server action for an OWNER to update a STAFF user's details.
+ * Server action for an OWNER to update any user's details (name, email, password, role).
+ * An Owner cannot change their own role to avoid self-lockout.
  */
 export async function updateStaffUserAction(
   _prevState: EditStaffState | null,
@@ -184,13 +192,15 @@ export async function updateStaffUserAction(
   try {
     ownerUser = await requireRole(Role.OWNER);
   } catch {
-    return { error: "Unauthorized: Only an Owner can update staff accounts." };
+    return { error: "Unauthorized: Only an Owner can update user accounts." };
   }
 
   const userId = (formData.get("userId") as string)?.trim();
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  let email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = (formData.get("password") as string)?.trim();
+  const roleInput = (formData.get("role") as string)?.trim().toUpperCase();
+  const newRole: Role | null = roleInput === "OWNER" ? Role.OWNER : roleInput === "STAFF" ? Role.STAFF : null;
 
   if (!userId) {
     return { error: "User ID is required." };
@@ -205,20 +215,33 @@ export async function updateStaffUserAction(
   });
 
   if (!targetUser) {
-    return { error: "Staff member not found." };
+    return { error: "User not found." };
   }
 
-  if (targetUser.role === Role.OWNER && targetUser.id !== ownerUser.id) {
-    return { error: "Security restriction: Cannot modify another Owner account." };
+  // An Owner cannot change their own role (would lock themselves out)
+  if (newRole && newRole !== targetUser.role && targetUser.id === ownerUser.id) {
+    return { error: "Security restriction: You cannot change your own role." };
   }
 
   const supabaseAdmin = createAdminClient();
 
-  const authUpdates: { email?: string; password?: string; user_metadata?: { name: string } } = {
+  const authUpdates: {
+    email?: string;
+    password?: string;
+    user_metadata?: { name: string };
+    app_metadata?: { role: Role };
+  } = {
     user_metadata: { name },
   };
 
-  if (email && email.includes("@")) {
+  if (newRole && newRole !== targetUser.role) {
+    authUpdates.app_metadata = { role: newRole };
+  }
+
+  if (email) {
+    if (!email.includes("@")) {
+      email = `${email.replace(/\s+/g, "")}@pepsidepot.local`;
+    }
     authUpdates.email = email;
   }
 
@@ -243,11 +266,16 @@ export async function updateStaffUserAction(
     return { error: "Failed to update user credentials in authentication service." };
   }
 
-  // Update Prisma User
+  // Update Prisma User — include role if it changed
   await prisma.user.update({
     where: { id: userId },
-    data: { name },
+    data: {
+      name,
+      ...(newRole && newRole !== targetUser.role && { role: newRole }),
+    },
   });
+
+  const effectiveRole = newRole ?? targetUser.role;
 
   // Audit log
   await prisma.auditLog.create({
@@ -256,15 +284,20 @@ export async function updateStaffUserAction(
       action: "UPDATE_USER",
       entityType: "User",
       entityId: targetUser.id,
-      oldValues: { name: targetUser.name },
-      newValues: { name, email: email || undefined, passwordUpdated: Boolean(password) },
-      reason: `Staff account details updated for "${name}" by Owner`,
+      oldValues: { name: targetUser.name, role: targetUser.role },
+      newValues: {
+        name,
+        role: effectiveRole,
+        email: email || undefined,
+        passwordUpdated: Boolean(password),
+      },
+      reason: `User "${name}" updated by Owner "${ownerUser.name}"${newRole && newRole !== targetUser.role ? ` (role changed: ${targetUser.role} → ${newRole})` : ""}`,
     },
   });
 
   revalidatePath("/settings/users");
   return {
     success: true,
-    message: `Staff member "${name}" updated successfully.`,
+    message: `User "${name}" updated successfully.`,
   };
 }

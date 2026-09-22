@@ -14,19 +14,71 @@ export async function loginAction(
   _prevState: LoginState | null,
   formData: FormData
 ): Promise<LoginState> {
-  const email = (formData.get("email") as string)?.trim();
+  const identifier = ((formData.get("identifier") || formData.get("email")) as string)?.trim();
   const password = formData.get("password") as string;
   const redirectTo = (formData.get("redirectTo") as string) || "/";
 
-  if (!email || !password) {
-    return { error: "Email and password are required." };
+  if (!identifier || !password) {
+    return { error: "Username or email and password are required." };
+  }
+
+  // Resolve identifier to an email address for Supabase Auth
+  let resolvedEmail = identifier;
+
+  if (!identifier.includes("@")) {
+    const normalizedUsername = identifier.toLowerCase().replace(/\s+/g, "");
+
+    // 1. Try finding a registered User by matching name (case-insensitive)
+    try {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          name: { equals: identifier, mode: "insensitive" },
+        },
+      });
+
+      if (dbUser) {
+        // Query Supabase Admin to fetch their actual registered auth email
+        try {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const adminClient = createAdminClient();
+          const { data: authUserResult } = await adminClient.auth.admin.getUserById(dbUser.authUserId);
+          if (authUserResult?.user?.email) {
+            resolvedEmail = authUserResult.user.email;
+          }
+        } catch {
+          // If admin lookup fails, continue with fallback
+        }
+      }
+    } catch {
+      // If Prisma query fails, continue with fallback
+    }
+
+    // 2. Default to internal depot alias domain if not resolved
+    if (!resolvedEmail.includes("@")) {
+      resolvedEmail = `${normalizedUsername}@pepsidepot.local`;
+    }
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+  let { data, error } = await supabase.auth.signInWithPassword({
+    email: resolvedEmail,
     password,
   });
+
+  // Secondary fallback: if custom name lookup failed, try standard depot username alias
+  if (error && !identifier.includes("@")) {
+    const aliasEmail = `${identifier.toLowerCase().replace(/\s+/g, "")}@pepsidepot.local`;
+    if (aliasEmail !== resolvedEmail) {
+      const fallbackResult = await supabase.auth.signInWithPassword({
+        email: aliasEmail,
+        password,
+      });
+      if (!fallbackResult.error && fallbackResult.data.user) {
+        data = fallbackResult.data;
+        error = null;
+      }
+    }
+  }
 
   if (error) {
     return { error: error.message };
@@ -48,7 +100,7 @@ export async function loginAction(
       await prisma.user.create({
         data: {
           authUserId: data.user.id,
-          name: data.user.user_metadata?.name || email.split("@")[0] || "Owner",
+          name: data.user.user_metadata?.name || resolvedEmail.split("@")[0] || "Owner",
           role: Role.OWNER,
           isActive: true,
         },

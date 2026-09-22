@@ -55,14 +55,12 @@ function resolveEnvConfig(): {
 
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    envMain.NEXT_PUBLIC_SUPABASE_URL ||
-    envCloudProd.NEXT_PUBLIC_SUPABASE_URL ||
+    (envMain.APP_ENV === "CLOUD_PROD" ? envMain.NEXT_PUBLIC_SUPABASE_URL : (envCloudProd.NEXT_PUBLIC_SUPABASE_URL || envMain.NEXT_PUBLIC_SUPABASE_URL)) ||
     "https://arntflxuoalstwdryykh.supabase.co";
 
   const supabaseServiceKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    envMain.SUPABASE_SERVICE_ROLE_KEY ||
-    envCloudProd.SUPABASE_SERVICE_ROLE_KEY;
+    (envMain.APP_ENV === "CLOUD_PROD" ? envMain.SUPABASE_SERVICE_ROLE_KEY : (envCloudProd.SUPABASE_SERVICE_ROLE_KEY || envMain.SUPABASE_SERVICE_ROLE_KEY));
 
   if (!supabaseServiceKey) {
     console.error("❌ ERROR: SUPABASE_SERVICE_ROLE_KEY is not configured in .env or environment.");
@@ -185,40 +183,54 @@ async function main() {
   const config = resolveEnvConfig();
   const args = process.argv.slice(2);
 
+  let identifierArg: string | undefined;
   let nameArg: string | undefined;
-  let emailArg: string | undefined;
   let passwordArg: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--name" && args[i + 1]) {
+    if ((args[i] === "--name" || args[i] === "-n") && args[i + 1]) {
       nameArg = args[i + 1].trim();
       i++;
-    } else if (args[i] === "--email" && args[i + 1]) {
-      emailArg = args[i + 1].trim();
+    } else if (
+      (args[i] === "--email" || args[i] === "--username" || args[i] === "-u" || args[i] === "-e") &&
+      args[i + 1]
+    ) {
+      identifierArg = args[i + 1].trim();
       i++;
-    } else if (args[i] === "--password" && args[i + 1]) {
+    } else if ((args[i] === "--password" || args[i] === "-p") && args[i + 1]) {
       passwordArg = args[i + 1];
       i++;
     }
   }
 
-  // 1. Prompt for Username / Full Name
-  let name = nameArg || "";
-  while (!name || name.length < 2) {
-    name = await askQuestion("Enter Full Name or Username (min 2 chars): ");
-    if (name.length < 2) {
-      console.log("⚠️  Name must be at least 2 characters long. Please try again.");
+  // 1. Prompt for Username or Email
+  let identifier = identifierArg || "";
+  while (!identifier || identifier.length < 2) {
+    identifier = await askQuestion("Enter Username or Email (e.g. 'admin' or 'owner@depot.com'): ");
+    if (identifier.length < 2) {
+      console.log("⚠️  Identifier must be at least 2 characters long. Please try again.");
     }
   }
 
-  // 2. Prompt for Email Address
-  let email = emailArg || "";
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  while (!email || !emailRegex.test(email)) {
-    email = (await askQuestion("Enter Email Address: ")).toLowerCase();
-    if (!emailRegex.test(email)) {
-      console.log("⚠️  Invalid email address format. Please enter a valid email (e.g. owner@depot.com).");
-    }
+  let email: string;
+  let defaultName: string;
+
+  if (identifier.includes("@")) {
+    email = identifier.toLowerCase();
+    const localPart = email.split("@")[0];
+    defaultName = localPart.charAt(0).toUpperCase() + localPart.slice(1);
+  } else {
+    const cleanUsername = identifier.toLowerCase().replace(/\s+/g, "");
+    email = `${cleanUsername}@pepsidepot.local`;
+    defaultName = identifier.charAt(0).toUpperCase() + identifier.slice(1);
+    console.log(`ℹ️  Username "${identifier}" will map to internal email: ${email}`);
+  }
+
+  // 2. Prompt for Full Name / Display Name (optional, defaults to clean name)
+  let name = nameArg || "";
+  if (!name) {
+    const enteredName = await askQuestion(`Enter Display Name [press Enter for "${defaultName}"]: `);
+    name = enteredName.trim() || defaultName;
   }
 
   // 3. Prompt for Password securely (with masked display)
@@ -359,13 +371,24 @@ async function main() {
   console.log("\n==============================================================================");
   console.log("                   OWNER ACCOUNT SUCCESSFULLY PROVISIONED");
   console.log("==============================================================================");
-  console.log(`Full Name:      ${name}`);
-  console.log(`Email Address:  ${email}`);
+  console.log(`Display Name:   ${name}`);
+  if (!identifier.includes("@")) {
+    console.log(`Username:       ${identifier}`);
+    console.log(`Internal Email: ${email}`);
+  } else {
+    console.log(`Email Address:  ${email}`);
+  }
   console.log(`Role:           OWNER (Administrator)`);
   console.log(`Auth User ID:   ${authUserId}`);
   console.log(`Status:         ACTIVE`);
   console.log("------------------------------------------------------------------------------");
-  console.log("You can now sign in immediately at:");
+  console.log("Sign In Credentials:");
+  if (!identifier.includes("@")) {
+    console.log(`  Login with:   "${identifier}" (or "${email}")`);
+  } else {
+    console.log(`  Login with:   "${email}"`);
+  }
+  console.log("\nAvailable at:");
   console.log("  - Depot Local Server:  http://100.66.192.71:3000/login (or http://localhost:3000/login)");
   console.log("  - Cloud Production:    https://pepsi-stock-management.vercel.app/login");
   console.log("==============================================================================\n");

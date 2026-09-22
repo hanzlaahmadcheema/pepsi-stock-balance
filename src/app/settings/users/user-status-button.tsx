@@ -7,22 +7,23 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 export function UserStatusButton({
   userId,
   isActive,
-  isOwner,
+  isSelf,
   userName,
 }: {
   userId: string;
   isActive: boolean;
-  isOwner: boolean;
+  isSelf: boolean;
   userName?: string;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (isOwner) {
+  // Cannot deactivate yourself
+  if (isSelf) {
     return (
       <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">
-        Protected Owner
+        Your account
       </span>
     );
   }
@@ -63,11 +64,11 @@ export function UserStatusButton({
 
       <ConfirmModal
         isOpen={modalOpen}
-        title={isActive ? "Deactivate Staff Member" : "Activate Staff Member"}
+        title={isActive ? "Deactivate User" : "Activate User"}
         description={
           isActive
-            ? `Are you sure you want to deactivate ${userName ? `"${userName}"` : "this staff member"}? They will be signed out and unable to access the system.`
-            : `Are you sure you want to reactivate ${userName ? `"${userName}"` : "this staff member"}? They will regain access to perform daily operations.`
+            ? `Are you sure you want to deactivate ${userName ? `"${userName}"` : "this user"}? They will be signed out and unable to access the system.`
+            : `Are you sure you want to reactivate ${userName ? `"${userName}"` : "this user"}? They will regain access to perform daily operations.`
         }
         confirmLabel={isActive ? "Confirm Deactivate" : "Confirm Activate"}
         cancelLabel={isActive ? "Keep Active" : "Keep Inactive"}

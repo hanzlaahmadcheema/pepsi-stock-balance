@@ -14,11 +14,14 @@ export interface EditUserModalProps {
     email: string;
     role: Role;
   };
+  /** Pass the current logged-in owner's ID to prevent self-role-change */
+  currentUserId: string;
 }
 
-export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
+export function EditUserModal({ isOpen, onClose, user, currentUserId }: EditUserModalProps) {
   const [state, formAction, isPending] = useActionState(updateStaffUserAction, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const isSelf = user.id === currentUserId;
 
   useEffect(() => {
     if (state?.success) {
@@ -52,10 +55,10 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <div>
             <h3 id="edit-staff-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-50">
-              Edit Staff Member
+              Edit User
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Update name, email login, or reset password
+              Update name, login credentials, or role
             </p>
           </div>
           <button
@@ -79,7 +82,7 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
 
           {state?.success && (
             <div className="p-3 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300">
-              {state.message || "Staff member updated successfully!"}
+              {state.message || "User updated successfully!"}
             </div>
           )}
 
@@ -107,17 +110,47 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
               htmlFor="edit-staff-email"
               className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1"
             >
-              Email Address *
+              Username or Email *
             </label>
             <input
               id="edit-staff-email"
-              type="email"
+              type="text"
               name="email"
-              defaultValue={user.email === "—" ? "" : user.email}
+              defaultValue={
+                user.email === "—"
+                  ? ""
+                  : user.email.endsWith("@pepsidepot.local")
+                  ? user.email.replace("@pepsidepot.local", "")
+                  : user.email
+              }
               required
-              placeholder="e.g. tariq@distribution.com"
+              placeholder="e.g. tariq or tariq@distribution.com"
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="edit-staff-role"
+              className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1"
+            >
+              Role
+            </label>
+            <select
+              id="edit-staff-role"
+              name="role"
+              defaultValue={user.role}
+              disabled={isSelf}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="STAFF">Staff</option>
+              <option value="OWNER">Owner (Admin)</option>
+            </select>
+            {isSelf && (
+              <p className="text-[11px] text-zinc-500 mt-1">
+                You cannot change your own role.
+              </p>
+            )}
           </div>
 
           <div>
@@ -136,7 +169,7 @@ export function EditUserModal({ isOpen, onClose, user }: EditUserModalProps) {
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-[11px] text-zinc-500 mt-1">
-              Only fill this if you want to reset this staff member&apos;s login password.
+              Only fill this if you want to reset this user&apos;s login password.
             </p>
           </div>
 

@@ -26,18 +26,18 @@ export function LoginForm({
 
       <div>
         <label
-          htmlFor="email"
+          htmlFor="identifier"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
         >
-          Email address
+          Username or Email
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="identifier"
+          name="identifier"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="name@distribution.com"
+          autoComplete="username"
+          placeholder="admin or name@distribution.com"
           className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         />
       </div>

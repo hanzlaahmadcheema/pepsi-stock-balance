@@ -1,4 +1,4 @@
-import { pushPendingOperations } from "./src/lib/sync/client/push";
+import { pushPendingOperations } from "@/lib/sync/client/push";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

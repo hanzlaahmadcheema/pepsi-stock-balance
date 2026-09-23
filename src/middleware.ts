@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   "/unauthorized",
   "/executive-preview",
   "/api/sync",
+  "/api/db-status",
   "/technical-services",
 ];
 

@@ -113,6 +113,10 @@ export type SaleDetails = {
   payments: SalePaymentDetail[];
   auditLogs: SaleAuditLogEntry[];
   grossProfit?: number; // OWNER only
+  containers?: {
+    plasticCrates: number;
+    glassBottles: number;
+  };
 };
 
 /**
@@ -1008,6 +1012,28 @@ export async function getSaleDetails(saleId: string, isOwner = false): Promise<S
     grossProfit = Math.round((Number(sale.totalAmount) - totalCost) * 100) / 100;
   }
 
+  // Fetch optional container movements recorded with this sale
+  const containerMovements = await prisma.containerMovement.findMany({
+    where: { referenceId: sale.id },
+    select: {
+      containerType: true,
+      quantity: true,
+    },
+  });
+
+  let containers: { plasticCrates: number; glassBottles: number } | undefined = undefined;
+  if (containerMovements.length > 0) {
+    let plastic = 0;
+    let glass = 0;
+    for (const cm of containerMovements) {
+      if (cm.containerType === "PLASTIC_CRATE") plastic += cm.quantity;
+      if (cm.containerType === "GLASS_BOTTLE") glass += cm.quantity;
+    }
+    if (plastic > 0 || glass > 0) {
+      containers = { plasticCrates: plastic, glassBottles: glass };
+    }
+  }
+
   return {
     id: sale.id,
     invoiceNumber: sale.invoiceNumber,
@@ -1029,5 +1055,6 @@ export async function getSaleDetails(saleId: string, isOwner = false): Promise<S
     payments,
     auditLogs,
     grossProfit,
+    containers,
   };
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser } from "@/lib/auth";
-import { SaleType, PaymentMethod } from "@prisma/client";
+import { SaleType, PaymentMethod, Role } from "@prisma/client";
 import {
   createSaleTransaction,
   editSaleTransaction,
@@ -94,6 +94,10 @@ export async function editSaleAction(
   try {
     const user = await requireDbUser();
 
+    if (user.role !== Role.OWNER) {
+      return { error: "Unauthorized: Only an Owner can modify an existing invoice." };
+    }
+
     const saleId = formData.get("saleId") as string;
     const reason = formData.get("reason") as string;
     const customerId = (formData.get("customerId") as string) || null;
@@ -168,6 +172,10 @@ export async function cancelSaleAction(
 ): Promise<SaleActionState> {
   try {
     const user = await requireDbUser();
+
+    if (user.role !== Role.OWNER) {
+      return { error: "Unauthorized: Only an Owner can cancel an invoice." };
+    }
 
     const saleId = formData.get("saleId") as string;
     const reason = formData.get("reason") as string;

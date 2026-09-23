@@ -74,3 +74,62 @@ table {
   }
 }
 
+/* ========================================================================= */
+/* 80mm POS Thermal Receipt Print Specifications                            */
+/* ========================================================================= */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm !important;
+    min-width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force override any desktop shell sidebar padding on print */
+  body:has(.app-sidebar:not(.app-sidebar-collapsed)) main,
+  body:has(.app-sidebar.app-sidebar-collapsed) main,
+  main {
+    padding: 0 !important;
+    margin: 0 auto !important;
+    max-width: 80mm !important;
+    width: 80mm !important;
+  }
+
+  /* Hide app shell chrome during receipt printing */
+  .app-sidebar,
+  .app-topbar,
+  header,
+  aside,
+  nav {
+    display: none !important;
+  }
+
+  /* Thermal 80mm receipt printable boundaries */
+  .pos-receipt-80mm {
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 1mm 12mm 1mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+}
+
+

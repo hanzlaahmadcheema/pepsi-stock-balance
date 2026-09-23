@@ -23,7 +23,8 @@
     "prisma:status": "tsx scripts/prisma-guard.ts migrate status",
     "prisma:studio": "tsx scripts/prisma-guard.ts studio",
     "create:owner": "tsx scripts/create-owner.ts",
-    "test": "tsx --test --test-concurrency=1 src/lib/sync/**/*.test.ts"
+    "fifo:recalculate": "tsx scripts/recalculate-fifo.ts",
+    "test": "tsx --test --test-concurrency=1 src/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

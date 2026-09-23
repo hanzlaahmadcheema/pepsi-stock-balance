@@ -25,6 +25,10 @@ import {
   getStockMapInTx,
   generateUniqueInvoiceNumber,
 } from "./common";
+import {
+  calculateFifoCostForSaleItem,
+  recalculateAllSalesFifo,
+} from "@/lib/inventory/fifo";
 
 interface SaleItemPayload {
   productId: string;
@@ -221,10 +225,22 @@ export async function handleCreateSale(
 
   // 7. Create SaleItems and immutable StockMovements
   const productRecordMap = new Map(products.map((p) => [p.id, p]));
+  const inTxConsumedMap = new Map<string, number>();
 
   for (const item of payload.items) {
     const product = productRecordMap.get(item.productId)!;
     const itemTotal = new Prisma.Decimal((item.quantity * item.unitPrice).toFixed(2));
+    const priorConsumedInTx = inTxConsumedMap.get(item.productId) || 0;
+
+    const fifoResult = await calculateFifoCostForSaleItem(
+      tx,
+      item.productId,
+      item.quantity,
+      {
+        additionalPriorConsumed: priorConsumedInTx,
+      }
+    );
+    inTxConsumedMap.set(item.productId, priorConsumedInTx + item.quantity);
 
     await tx.saleItem.create({
       data: {
@@ -233,7 +249,7 @@ export async function handleCreateSale(
         quantity: item.quantity,
         unitPrice: new Prisma.Decimal(item.unitPrice.toFixed(2)),
         totalAmount: itemTotal,
-        purchaseCostAtSale: product.latestPurchasePrice,
+        purchaseCostAtSale: new Prisma.Decimal(fifoResult.unitCost.toFixed(2)),
       },
     });
 
@@ -498,9 +514,23 @@ export async function handleEditSale(
     where: { saleId: existingSale.id },
   });
 
+  const inTxConsumedMap = new Map<string, number>();
+
   for (const item of payload.items) {
     const product = productRecordMap.get(item.productId)!;
     const itemTotal = new Prisma.Decimal((item.quantity * item.unitPrice).toFixed(2));
+    const priorConsumedInTx = inTxConsumedMap.get(item.productId) || 0;
+
+    const fifoResult = await calculateFifoCostForSaleItem(
+      tx,
+      item.productId,
+      item.quantity,
+      {
+        excludeSaleId: existingSale.id,
+        additionalPriorConsumed: priorConsumedInTx,
+      }
+    );
+    inTxConsumedMap.set(item.productId, priorConsumedInTx + item.quantity);
 
     await tx.saleItem.create({
       data: {
@@ -509,7 +539,7 @@ export async function handleEditSale(
         quantity: item.quantity,
         unitPrice: new Prisma.Decimal(item.unitPrice.toFixed(2)),
         totalAmount: itemTotal,
-        purchaseCostAtSale: product.latestPurchasePrice,
+        purchaseCostAtSale: new Prisma.Decimal(fifoResult.unitCost.toFixed(2)),
       },
     });
   }
@@ -604,6 +634,9 @@ export async function handleEditSale(
     },
     sourceDeviceId: device.deviceId,
   });
+
+  // Reconcile FIFO acquisition costs across all completed sales in case batch allocation shifted
+  await recalculateAllSalesFifo(tx);
 }
 
 export async function handleCancelSale(
@@ -731,4 +764,7 @@ export async function handleCancelSale(
     },
     sourceDeviceId: device.deviceId,
   });
+
+  // Reconcile FIFO acquisition costs as cancelled batches are released back
+  await recalculateAllSalesFifo(tx);
 }

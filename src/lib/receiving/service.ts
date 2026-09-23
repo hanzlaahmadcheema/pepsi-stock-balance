@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { MovementType, Prisma } from "@prisma/client";
+import { recalculateAllSalesFifo } from "@/lib/inventory/fifo";
 
 export type ReceivingListItem = {
   id: string;
@@ -258,6 +259,11 @@ export async function createReceivingTransaction(input: CreateReceivingInput) {
       },
     });
 
+    // 5. If posted immediately, synchronize FIFO costing on historical sales
+    if (postImmediately) {
+      await recalculateAllSalesFifo(tx);
+    }
+
     return receiving;
   });
 }
@@ -325,6 +331,9 @@ export async function postReceivingTransaction(receivingId: string, userId: stri
         reason: `Draft receiving #${receiving.referenceNumber || receiving.id.slice(0, 8)} posted to stock ledger`,
       },
     });
+
+    // Reconcile FIFO acquisition costs across historical sales
+    await recalculateAllSalesFifo(tx);
 
     return receiving;
   });

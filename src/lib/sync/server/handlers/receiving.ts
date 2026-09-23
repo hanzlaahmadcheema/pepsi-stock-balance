@@ -17,6 +17,7 @@ import {
   recordSyncChangeLog,
   resolveUserId,
 } from "./common";
+import { recalculateAllSalesFifo } from "@/lib/inventory/fifo";
 
 interface ReceivingItemPayload {
   productId: string;
@@ -194,6 +195,9 @@ export async function handlePostReceiving(
     },
     sourceDeviceId: device.deviceId,
   });
+
+  // Reconcile FIFO acquisition costs across historical sales
+  await recalculateAllSalesFifo(tx);
 }
 
 /**

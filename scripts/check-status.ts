@@ -31,7 +31,13 @@ async function main() {
       clientSequence: true,
     },
   });
-  console.log("SAMPLE_PENDING:", JSON.stringify(pending, null, 2));
+  console.log("SAMPLE_PENDING:", JSON.stringify(pending, (key, value) =>
+    typeof value === "bigint" ? value.toString() : value, 2));
+
+  const localUsers = await prisma.user.findMany({
+    select: { id: true, name: true, role: true, authUserId: true },
+  });
+  console.log("LOCAL_USERS:", JSON.stringify(localUsers, null, 2));
 
   const salesCount = await prisma.sale.count();
   console.log("LOCAL_SALES_COUNT:", salesCount);

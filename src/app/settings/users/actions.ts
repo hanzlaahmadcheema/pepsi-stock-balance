@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPassword } from "@/lib/auth/password";
 
 export type CreateStaffState = {
   error?: string;
@@ -81,6 +82,7 @@ export async function createStaffUserAction(
         name,
         role,
         isActive: true,
+        pinHash: hashPassword(password),
       },
     });
 
@@ -266,12 +268,13 @@ export async function updateStaffUserAction(
     return { error: "Failed to update user credentials in authentication service." };
   }
 
-  // Update Prisma User — include role if it changed
+  // Update Prisma User — include role if it changed, and cache new password hash
   await prisma.user.update({
     where: { id: userId },
     data: {
       name,
       ...(newRole && newRole !== targetUser.role && { role: newRole }),
+      ...(password && { pinHash: hashPassword(password) }),
     },
   });
 

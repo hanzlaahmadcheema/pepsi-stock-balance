@@ -1,26 +1,64 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { Role, hasRole } from "./roles";
+import {
+  LOCAL_SESSION_COOKIE,
+  verifyLocalSession,
+  extractUserFromSupabaseCookies,
+} from "./session";
 import type { User as DbUser } from "@prisma/client";
 
 export type { DbUser, SupabaseAuthUser };
 
 /**
- * Retrieves the current authenticated user from Supabase Auth.
- * Uses getUser() to securely validate the JWT against Supabase servers.
+ * Retrieves the current authenticated user from local session cookie or Supabase Auth.
+ * 100% resilient offline fallback ensures local depot operations are never blocked.
  * Cached per request to eliminate redundant remote calls.
  */
 export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
-  const supabase = await createClient();
+  const cookieStore = await cookies();
 
+  // 1. Direct local session cookie check (0ms latency, 100% offline-ready)
+  const localCookie = cookieStore.get(LOCAL_SESSION_COOKIE)?.value;
+  if (localCookie) {
+    const session = await verifyLocalSession(localCookie);
+    if (session) {
+      return {
+        id: session.authUserId,
+        email: session.email || `${session.name.toLowerCase().replace(/\s+/g, "")}@pepsidepot.local`,
+        user_metadata: { name: session.name, role: session.role },
+        app_metadata: { role: session.role },
+        aud: "authenticated",
+        created_at: new Date(session.createdAt).toISOString(),
+      } as SupabaseAuthUser;
+    }
+  }
+
+  // 2. Extract from existing Supabase auth cookies (offline fallback)
+  const allCookies = cookieStore.getAll();
+  const extracted = extractUserFromSupabaseCookies(allCookies);
+  if (extracted) {
+    return {
+      id: extracted.id,
+      email: extracted.email || "user@pepsidepot.local",
+      user_metadata: extracted.user_metadata || {},
+      app_metadata: { role: extracted.role },
+      aud: "authenticated",
+      created_at: new Date().toISOString(),
+    } as SupabaseAuthUser;
+  }
+
+  // 3. Fallback: Query Supabase Auth server with fast timeout
   try {
+    const supabase = await createClient();
     const res = await Promise.race([
       supabase.auth.getUser(),
       new Promise<{ data: { user: null }; error: Error }>((_, reject) =>
-        setTimeout(() => reject(new Error("Supabase auth timeout")), 2000)
+        setTimeout(() => reject(new Error("Supabase auth timeout")), 1500)
       ),
     ]);
 
@@ -31,13 +69,7 @@ export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
     // Remote auth server unreachable (offline depot PC)
   }
 
-  // Fallback: Read validated session token directly from cookies
-  try {
-    const { data } = await supabase.auth.getSession();
-    return data.session?.user || null;
-  } catch {
-    return null;
-  }
+  return null;
 });
 
 /**

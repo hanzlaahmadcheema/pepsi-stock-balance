@@ -3,6 +3,14 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  const resetRes = await prisma.syncOutbox.updateMany({
+    where: { status: "FAILED" },
+    data: { status: "PENDING", lastError: null },
+  });
+  if (resetRes.count > 0) {
+    console.log(`Reset ${resetRes.count} failed outbox items back to PENDING.`);
+  }
+
   const outbox = await prisma.syncOutbox.groupBy({
     by: ["status"],
     _count: true,

@@ -59,8 +59,8 @@ async function main() {
     `${saleOps.length} sales, ${paymentOps.length} payments`
   );
 
-  // Re-assign sequences cleanly starting from 100
-  let seq = 100n;
+  // Re-assign sequences cleanly starting from 4
+  let seq = 4n;
   for (const op of orderedList) {
     await prisma.syncOutbox.update({
       where: { id: op.id },

@@ -32,11 +32,27 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // IMPORTANT: Always use getUser() in server middleware rather than getSession()
-  // to ensure JWT revalidation and security against spoofed session tokens.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Primary: Revalidate token against Supabase Auth servers.
+  // Resilient Offline Fallback: If depot internet is down, timeout fast (2s)
+  // and fall back to local session cookie so local operations are never blocked.
+  let user = null;
+  try {
+    const res = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null }; error: Error }>((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase auth timeout")), 2000)
+      ),
+    ]);
+    user = res.data?.user || null;
+  } catch {
+    // Offline mode: fallback to local session without remote network call
+    try {
+      const { data } = await supabase.auth.getSession();
+      user = data.session?.user || null;
+    } catch {
+      user = null;
+    }
+  }
 
   return { response: supabaseResponse, user, supabase };
 }

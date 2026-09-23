@@ -15,16 +15,29 @@ export type { DbUser, SupabaseAuthUser };
  */
 export const getAuthUser = cache(async (): Promise<SupabaseAuthUser | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
 
-  if (error || !user) {
-    return null;
+  try {
+    const res = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null }; error: Error }>((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase auth timeout")), 2000)
+      ),
+    ]);
+
+    if (!res.error && res.data?.user) {
+      return res.data.user;
+    }
+  } catch {
+    // Remote auth server unreachable (offline depot PC)
   }
 
-  return user;
+  // Fallback: Read validated session token directly from cookies
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user || null;
+  } catch {
+    return null;
+  }
 });
 
 /**

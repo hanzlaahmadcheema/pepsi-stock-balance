@@ -19,6 +19,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const initialError =
     params.error === "auth_callback_failed"
       ? "Authentication callback failed. Please try signing in again."
+      : params.error === "not_registered"
+      ? "Your account is not registered in this depot's database. Please contact the administrator."
+      : params.error === "deactivated"
+      ? "Your account has been deactivated. Please contact the administrator."
       : undefined;
 
   return (

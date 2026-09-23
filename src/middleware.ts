@@ -35,7 +35,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is already authenticated and visits login, redirect to home
+  // UNLESS there is an error parameter (e.g. not_registered or deactivated),
+  // which indicates the user was redirected to /login with an error state.
   if (user && isPublicRoute && pathname === "/login") {
+    if (request.nextUrl.searchParams.has("error")) {
+      return response;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.delete("redirectTo");

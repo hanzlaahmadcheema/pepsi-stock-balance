@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PriceTier, PaymentMethod, SaleStatus, ContainerType, ContainerMovementType, Prisma } from "@prisma/client";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type CustomerSummary = {
   id: string;
@@ -323,17 +324,32 @@ export async function createCustomer(data: {
   const opId = crypto.randomUUID();
   const now = new Date();
 
-  return prisma.customer.create({
-    data: {
-      name: trimmedName,
-      phone: data.phone?.trim() || null,
-      address: data.address?.trim() || null,
-      priceTier: data.priceTier,
-      creditAllowed: data.creditAllowed,
-      version: 1,
-      lastOperationId: opId,
-      lastUpdatedAt: now,
-    },
+  return prisma.$transaction(async (tx) => {
+    const customer = await tx.customer.create({
+      data: {
+        name: trimmedName,
+        phone: data.phone?.trim() || null,
+        address: data.address?.trim() || null,
+        priceTier: data.priceTier,
+        creditAllowed: data.creditAllowed,
+        version: 1,
+        lastOperationId: opId,
+        lastUpdatedAt: now,
+      },
+    });
+
+    await enqueueOutbox(tx, "UPSERT_CUSTOMER", customer.id, {
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      priceTier: customer.priceTier,
+      creditAllowed: customer.creditAllowed,
+      isActive: customer.isActive,
+      version: customer.version,
+      lwwTimestamp: customer.lastUpdatedAt.toISOString(),
+    });
+
+    return customer;
   });
 }
 
@@ -358,18 +374,33 @@ export async function updateCustomer(
   const opId = crypto.randomUUID();
   const now = new Date();
 
-  return prisma.customer.update({
-    where: { id },
-    data: {
-      name: trimmedName,
-      phone: data.phone?.trim() || null,
-      address: data.address?.trim() || null,
-      priceTier: data.priceTier,
-      creditAllowed: data.creditAllowed,
-      version: { increment: 1 },
-      lastOperationId: opId,
-      lastUpdatedAt: now,
-    },
+  return prisma.$transaction(async (tx) => {
+    const customer = await tx.customer.update({
+      where: { id },
+      data: {
+        name: trimmedName,
+        phone: data.phone?.trim() || null,
+        address: data.address?.trim() || null,
+        priceTier: data.priceTier,
+        creditAllowed: data.creditAllowed,
+        version: { increment: 1 },
+        lastOperationId: opId,
+        lastUpdatedAt: now,
+      },
+    });
+
+    await enqueueOutbox(tx, "UPSERT_CUSTOMER", customer.id, {
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      priceTier: customer.priceTier,
+      creditAllowed: customer.creditAllowed,
+      isActive: customer.isActive,
+      version: customer.version,
+      lwwTimestamp: customer.lastUpdatedAt.toISOString(),
+    });
+
+    return customer;
   });
 }
 
@@ -380,14 +411,29 @@ export async function setCustomerActive(id: string, isActive: boolean) {
   const opId = crypto.randomUUID();
   const now = new Date();
 
-  return prisma.customer.update({
-    where: { id },
-    data: {
-      isActive,
-      version: { increment: 1 },
-      lastOperationId: opId,
-      lastUpdatedAt: now,
-    },
+  return prisma.$transaction(async (tx) => {
+    const customer = await tx.customer.update({
+      where: { id },
+      data: {
+        isActive,
+        version: { increment: 1 },
+        lastOperationId: opId,
+        lastUpdatedAt: now,
+      },
+    });
+
+    await enqueueOutbox(tx, "UPSERT_CUSTOMER", customer.id, {
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      priceTier: customer.priceTier,
+      creditAllowed: customer.creditAllowed,
+      isActive: customer.isActive,
+      version: customer.version,
+      lwwTimestamp: customer.lastUpdatedAt.toISOString(),
+    });
+
+    return customer;
   });
 }
 
@@ -461,6 +507,17 @@ export async function recordAccountPayment(data: {
         },
         reason: `Account payment received for customer ${customer.name}`,
       },
+    });
+
+    // 5. Enqueue for Cloud Sync
+    await enqueueOutbox(tx, "RECORD_PAYMENT", payment.id, {
+      customerId: payment.customerId,
+      saleId: null,
+      amount: Number(payment.amount),
+      paymentMethod: payment.paymentMethod,
+      referenceNumber: payment.referenceNumber,
+      userId,
+      paidAt: payment.paidAt.toISOString(),
     });
 
     return payment;

@@ -87,6 +87,27 @@ export const getCurrentDbUser = cache(async (): Promise<DbUser | null> => {
     where: { authUserId: authUser.id },
   });
 
+  // If not found by authUserId, attempt reconciliation by email or name
+  if (!dbUser && authUser.email) {
+    const emailPrefix = authUser.email.split("@")[0].trim().toLowerCase();
+    const candidateName = typeof authUser.user_metadata?.name === "string" ? authUser.user_metadata.name : null;
+    const candidates = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { equals: emailPrefix, mode: "insensitive" as const } },
+          ...(candidateName ? [{ name: { equals: candidateName, mode: "insensitive" as const } }] : []),
+        ],
+      },
+    });
+
+    if (candidates.length === 1) {
+      dbUser = await prisma.user.update({
+        where: { id: candidates[0].id },
+        data: { authUserId: authUser.id },
+      });
+    }
+  }
+
   // If there are no users registered in the database, bootstrap the first authenticated user as OWNER
   if (!dbUser) {
     const totalUsers = await prisma.user.count();
@@ -124,8 +145,11 @@ export async function requireAuthUser(redirectTo = "/login"): Promise<SupabaseAu
  */
 export async function requireDbUser(redirectTo = "/login"): Promise<DbUser> {
   const dbUser = await getCurrentDbUser();
-  if (!dbUser || !dbUser.isActive) {
-    redirect(redirectTo);
+  if (!dbUser) {
+    redirect(redirectTo.includes("?") ? `${redirectTo}&error=not_registered` : `${redirectTo}?error=not_registered`);
+  }
+  if (!dbUser.isActive) {
+    redirect(redirectTo.includes("?") ? `${redirectTo}&error=deactivated` : `${redirectTo}?error=deactivated`);
   }
   return dbUser;
 }

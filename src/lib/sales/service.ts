@@ -12,6 +12,7 @@ import {
   calculateFifoCostForSaleItem,
   recalculateAllSalesFifo,
 } from "@/lib/inventory/fifo";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type SaleItemInput = {
   productId: string;
@@ -411,6 +412,20 @@ export async function createSaleTransaction(
       }
     }
 
+    // 10. Enqueue for Cloud Sync
+    await enqueueOutbox(tx, "CREATE_SALE", sale.id, {
+      invoiceNumber,
+      customerId: data.customerId,
+      saleType: data.saleType,
+      items: data.items,
+      discount: data.discount,
+      paymentMethod: data.paymentMethod,
+      paidAmount: data.paidAmount,
+      containers: data.containers,
+      userId,
+      soldAt: sale.soldAt.toISOString(),
+    });
+
     return { saleId: sale.id, invoiceNumber };
   }, { timeout: 15000, maxWait: 5000 });
 }
@@ -728,6 +743,18 @@ export async function editSaleTransaction(
     // Reconcile FIFO acquisition costs across all completed sales in case batch allocation shifted
     await recalculateAllSalesFifo(tx);
 
+    // 12. Enqueue for Cloud Sync
+    await enqueueOutbox(tx, "EDIT_SALE", existingSale.id, {
+      reason,
+      customerId: data.customerId,
+      saleType: data.saleType,
+      items: data.items,
+      discount: data.discount,
+      paymentMethod: data.paymentMethod,
+      paidAmount: data.paidAmount,
+      userId,
+    });
+
     return { saleId: existingSale.id, invoiceNumber: existingSale.invoiceNumber };
   }, { timeout: 20000, maxWait: 5000 });
 }
@@ -830,6 +857,12 @@ export async function cancelSaleTransaction(
 
     // Reconcile FIFO acquisition costs as cancelled batches are released back
     await recalculateAllSalesFifo(tx);
+
+    // 5. Enqueue for Cloud Sync
+    await enqueueOutbox(tx, "CANCEL_SALE", sale.id, {
+      reason,
+      userId,
+    });
 
     return { saleId: sale.id, invoiceNumber: sale.invoiceNumber };
   }, { timeout: 20000, maxWait: 5000 });

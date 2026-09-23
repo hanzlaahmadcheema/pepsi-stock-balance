@@ -11,8 +11,8 @@ export interface LocalSessionPayload {
 
 const SESSION_SECRET =
   process.env.SESSION_SECRET ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
   "pepsi-depot-permanent-offline-secret-key-2026";
 
 function uint8ArrayToBase64Url(bytes: Uint8Array): string {

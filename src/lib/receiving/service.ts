@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { MovementType, Prisma } from "@prisma/client";
 import { recalculateAllSalesFifo } from "@/lib/inventory/fifo";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type ReceivingListItem = {
   id: string;
@@ -259,9 +260,22 @@ export async function createReceivingTransaction(input: CreateReceivingInput) {
       },
     });
 
-    // 5. If posted immediately, synchronize FIFO costing on historical sales
+    // 5. If posted immediately, synchronize FIFO costing on historical sales and enqueue sync
     if (postImmediately) {
       await recalculateAllSalesFifo(tx);
+
+      await enqueueOutbox(tx, "POST_RECEIVING", receiving.id, {
+        supplierId,
+        referenceNumber,
+        receivedAt: receiving.receivedAt.toISOString(),
+        notes: receiving.notes,
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          purchasePrice: i.purchasePrice,
+        })),
+        userId,
+      });
     }
 
     return receiving;
@@ -334,6 +348,20 @@ export async function postReceivingTransaction(receivingId: string, userId: stri
 
     // Reconcile FIFO acquisition costs across historical sales
     await recalculateAllSalesFifo(tx);
+
+    // Enqueue for Cloud Sync
+    await enqueueOutbox(tx, "POST_RECEIVING", receiving.id, {
+      supplierId: receiving.supplierId,
+      referenceNumber: receiving.referenceNumber,
+      receivedAt: receiving.receivedAt.toISOString(),
+      notes: receiving.notes,
+      items: receiving.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        purchasePrice: Number(i.purchasePrice),
+      })),
+      userId,
+    });
 
     return receiving;
   });

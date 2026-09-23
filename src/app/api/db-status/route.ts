@@ -18,21 +18,43 @@ export async function GET() {
     localOk = false;
   }
 
-  // 2. Ping cloud Supabase (lightweight: list users with limit 1)
+  // 2. Ping cloud Supabase with 2000ms timeout
   let cloudOk = false;
   let cloudLatencyMs: number | null = null;
   try {
     const t0 = Date.now();
-    const supabase = createAdminClient();
-    const { error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+    const pingCloud = async () => {
+      const supabase = createAdminClient();
+      const { error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+      return !error;
+    };
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Cloud ping timeout")), 2000)
+    );
+
+    const isOk = await Promise.race([pingCloud(), timeoutPromise]);
     cloudLatencyMs = Date.now() - t0;
-    cloudOk = !error;
+    cloudOk = isOk;
   } catch {
     cloudOk = false;
+  }
+
+  // 3. Count pending sync operations in SyncOutbox
+  let pendingOutboxCount = 0;
+  if (localOk) {
+    try {
+      pendingOutboxCount = await prisma.syncOutbox.count({
+        where: { status: "PENDING" },
+      });
+    } catch {
+      pendingOutboxCount = 0;
+    }
   }
 
   return NextResponse.json({
     local: { ok: localOk, latencyMs: localLatencyMs },
     cloud: { ok: cloudOk, latencyMs: cloudLatencyMs },
+    sync: { pendingCount: pendingOutboxCount },
   });
 }

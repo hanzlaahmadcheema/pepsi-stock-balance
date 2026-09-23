@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { CreateProductForm } from "./create-product-form";
@@ -12,8 +12,8 @@ export const metadata = {
 };
 
 export default async function NewProductPage() {
-  // 1. Strictly enforce OWNER role server-side
-  const user = await requireRole(Role.OWNER);
+  const user = await requireDbUser();
+  const isOwner = user.role === Role.OWNER;
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -36,7 +36,7 @@ export default async function NewProductPage() {
             </p>
           </div>
 
-          <CreateProductForm />
+          <CreateProductForm isOwner={isOwner} />
         </div>
       </main>
     </div>

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireDbUser } from "@/lib/auth";
 import { Role, PriceTier, Prisma } from "@prisma/client";
 import { updateProductPriceTransaction } from "@/lib/products/service";
 
@@ -16,17 +16,17 @@ export type ProductFormState = {
 
 /**
  * Server action to create a new product along with optional initial prices.
- * Strictly enforces OWNER role server-side.
+ * Accessible to authenticated users (Staff and Owner).
  */
 export async function createProductAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
-  let ownerUser;
+  let user;
   try {
-    ownerUser = await requireRole(Role.OWNER);
+    user = await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can create new products." };
+    return { error: "Unauthorized: You must be logged in to create products." };
   }
 
   const name = (formData.get("name") as string)?.trim();
@@ -53,9 +53,12 @@ export async function createProductAction(
     return { error: "Minimum stock level must be a non-negative integer." };
   }
 
-  const latestPurchasePrice = purchaseCostRaw ? parseFloat(purchaseCostRaw) : 0;
-  if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
-    return { error: "Purchase cost must be a non-negative number." };
+  let latestPurchasePrice = 0;
+  if (user.role === Role.OWNER && purchaseCostRaw) {
+    latestPurchasePrice = parseFloat(purchaseCostRaw);
+    if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
+      return { error: "Purchase cost must be a non-negative number." };
+    }
   }
 
   // Check unique product name
@@ -121,7 +124,7 @@ export async function createProductAction(
               amount: new Prisma.Decimal(pr.amount.toFixed(2)),
               effectiveFrom: now,
               effectiveTo: null,
-              createdById: ownerUser.id,
+              createdById: user.id,
             })),
           });
         }
@@ -143,16 +146,18 @@ export async function createProductAction(
 
 /**
  * Server action to update basic product details (name, brand, sku, minimum stock, purchase cost).
- * Strictly enforces OWNER role server-side.
+ * Accessible to authenticated users (Staff and Owner).
+ * Sensitive latestPurchasePrice can only be updated by Owner.
  */
 export async function updateProductDetailsAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
+  let user;
   try {
-    await requireRole(Role.OWNER);
+    user = await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can modify product details." };
+    return { error: "Unauthorized: You must be logged in to modify product details." };
   }
 
   const productId = formData.get("productId") as string;
@@ -179,11 +184,6 @@ export async function updateProductDetailsAction(
     return { error: "Minimum stock level must be a non-negative integer." };
   }
 
-  const latestPurchasePrice = purchaseCostRaw ? parseFloat(purchaseCostRaw) : 0;
-  if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
-    return { error: "Purchase cost must be a non-negative number." };
-  }
-
   // Check for duplicate name in other products
   const duplicateName = await prisma.product.findFirst({
     where: {
@@ -208,16 +208,26 @@ export async function updateProductDetailsAction(
     }
   }
 
+  const updateData: Prisma.ProductUpdateInput = {
+    name,
+    brand,
+    sku,
+    minimumStockLevel,
+  };
+
+  // Only Owner can modify latestPurchasePrice
+  if (user.role === Role.OWNER && purchaseCostRaw !== null && purchaseCostRaw !== undefined && purchaseCostRaw !== "") {
+    const latestPurchasePrice = parseFloat(purchaseCostRaw);
+    if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
+      return { error: "Purchase cost must be a non-negative number." };
+    }
+    updateData.latestPurchasePrice = new Prisma.Decimal(latestPurchasePrice.toFixed(2));
+  }
+
   try {
     await prisma.product.update({
       where: { id: productId },
-      data: {
-        name,
-        brand,
-        sku,
-        minimumStockLevel,
-        latestPurchasePrice: new Prisma.Decimal(latestPurchasePrice.toFixed(2)),
-      },
+      data: updateData,
     });
   } catch (err) {
     console.error("Failed to update product details:", err);
@@ -231,15 +241,15 @@ export async function updateProductDetailsAction(
 
 /**
  * Server action to toggle product active/inactive status.
- * Strictly enforces OWNER role server-side.
+ * Accessible to authenticated users (Staff and Owner).
  */
 export async function toggleProductStatusAction(
   productId: string
 ): Promise<{ error?: string; success?: boolean }> {
   try {
-    await requireRole(Role.OWNER);
+    await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can change product status." };
+    return { error: "Unauthorized: You must be logged in to change product status." };
   }
 
   const product = await prisma.product.findUnique({
@@ -265,17 +275,17 @@ export async function toggleProductStatusAction(
 /**
  * Server action to update a product price tier atomically in a transaction.
  * Closes currently active price and inserts new active price, keeping full history.
- * Strictly enforces OWNER role server-side.
+ * Accessible to authenticated users (Staff and Owner).
  */
 export async function updateProductPriceAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
-  let ownerUser;
+  let user;
   try {
-    ownerUser = await requireRole(Role.OWNER);
+    user = await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can modify product prices." };
+    return { error: "Unauthorized: You must be logged in to modify product prices." };
   }
 
   const productId = formData.get("productId") as string;
@@ -298,7 +308,7 @@ export async function updateProductPriceAction(
   }
 
   try {
-    await updateProductPriceTransaction(productId, tier, amount, ownerUser.id);
+    await updateProductPriceTransaction(productId, tier, amount, user.id);
   } catch (err) {
     console.error("Failed to update product price:", err);
     return { error: "Transaction error while saving price update." };

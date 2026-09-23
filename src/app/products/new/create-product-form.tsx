@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { createProductAction } from "../actions";
 
-export function CreateProductForm() {
+export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
   const [state, formAction, isPending] = useActionState(createProductAction, null);
 
   return (
@@ -103,31 +103,33 @@ export function CreateProductForm() {
             Cost & Selling Prices
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Prices are per full crate/case. Purchase cost is kept confidential from staff.
+            Prices are per full crate/case.{isOwner ? " Purchase cost is kept confidential from staff." : ""}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label
-              htmlFor="latestPurchasePrice"
-              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-            >
-              Purchase Cost (Rs.)
-            </label>
-            <input
-              id="latestPurchasePrice"
-              name="latestPurchasePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5 block">
-              Owner only (Hidden from staff)
-            </span>
-          </div>
+          {isOwner && (
+            <div>
+              <label
+                htmlFor="latestPurchasePrice"
+                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+              >
+                Purchase Cost (Rs.)
+              </label>
+              <input
+                id="latestPurchasePrice"
+                name="latestPurchasePrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5 block">
+                Owner only (Hidden from staff)
+              </span>
+            </div>
+          )}
 
           <div>
             <label

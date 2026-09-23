@@ -5,9 +5,11 @@ import { updateProductDetailsAction } from "../actions";
 
 export function EditProductForm({
   productId,
+  isOwner = false,
   initialData,
 }: {
   productId: string;
+  isOwner?: boolean;
   initialData: {
     name: string;
     brand: string;
@@ -115,26 +117,28 @@ export function EditProductForm({
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="latestPurchasePrice"
-              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-            >
-              Purchase Cost (Rs.)
-            </label>
-            <input
-              id="latestPurchasePrice"
-              name="latestPurchasePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              defaultValue={initialData.latestPurchasePrice || "0.00"}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 tabular-nums"
-            />
-            <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5 block">
-              Confidential (Hidden from staff)
-            </span>
-          </div>
+          {isOwner && (
+            <div>
+              <label
+                htmlFor="latestPurchasePrice"
+                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+              >
+                Purchase Cost (Rs.)
+              </label>
+              <input
+                id="latestPurchasePrice"
+                name="latestPurchasePrice"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={initialData.latestPurchasePrice || "0.00"}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 tabular-nums"
+              />
+              <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5 block">
+                Confidential (Owner Only)
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end pt-2">

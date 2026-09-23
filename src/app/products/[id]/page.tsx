@@ -91,11 +91,9 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               </p>
             </div>
 
-            {isOwner && (
-              <div className="flex items-center gap-3">
-                <ProductStatusButton productId={product.id} isActive={product.isActive} />
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              <ProductStatusButton productId={product.id} isActive={product.isActive} />
+            </div>
           </div>
 
           {/* Quick Metrics Cards */}
@@ -213,29 +211,29 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
             </div>
           </div>
 
-          {/* Owner-Only Management Sections */}
-          {isOwner && (
-            <div className="space-y-8">
-              {/* Update Selling Price Form */}
-              <UpdatePriceForm
-                productId={product.id}
-                activePrices={product.activePrices.map((p) => ({
-                  tier: p.tier,
-                  amount: p.amount,
-                }))}
-              />
+          {/* Product Management Sections (Staff & Owner) */}
+          <div className="space-y-8">
+            {/* Update Selling Price Form */}
+            <UpdatePriceForm
+              productId={product.id}
+              activePrices={product.activePrices.map((p) => ({
+                tier: p.tier,
+                amount: p.amount,
+              }))}
+            />
 
-              {/* Edit Product Information Form */}
-              <EditProductForm
-                productId={product.id}
-                initialData={{
-                  name: product.name,
-                  brand: product.brand,
-                  sku: product.sku,
-                  minimumStockLevel: product.minimumStockLevel,
-                  latestPurchasePrice: product.latestPurchasePrice,
-                }}
-              />
+            {/* Edit Product Information Form */}
+            <EditProductForm
+              productId={product.id}
+              isOwner={isOwner}
+              initialData={{
+                name: product.name,
+                brand: product.brand,
+                sku: product.sku,
+                minimumStockLevel: product.minimumStockLevel,
+                latestPurchasePrice: product.latestPurchasePrice,
+              }}
+            />
 
               {/* Complete Historical Prices Ledger */}
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xs border border-zinc-200 dark:border-zinc-800 overflow-hidden">
@@ -320,7 +318,6 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 </div>
               </div>
             </div>
-          )}
         </div>
       </main>
     </div>

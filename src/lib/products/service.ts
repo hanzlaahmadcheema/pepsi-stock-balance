@@ -206,23 +206,6 @@ export async function getProductDetails(
       effectiveFrom: p.effectiveFrom,
     }));
 
-  if (!isOwner) {
-    return {
-      id: product.id,
-      name: product.name,
-      brand: product.brand,
-      sku: product.sku,
-      minimumStockLevel: product.minimumStockLevel,
-      isActive: product.isActive,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-      currentStock,
-      isLowStock,
-      activePrices,
-    };
-  }
-
-  // Owner view includes cost and complete historical ledger
   const priceHistory = product.prices.map((p) => ({
     id: p.id,
     tier: p.tier,
@@ -244,8 +227,10 @@ export async function getProductDetails(
     currentStock,
     isLowStock,
     activePrices,
-    latestPurchasePrice: product.latestPurchasePrice.toString(),
     priceHistory,
+    ...(isOwner && {
+      latestPurchasePrice: product.latestPurchasePrice.toString(),
+    }),
   };
 }
 

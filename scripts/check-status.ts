@@ -52,6 +52,15 @@ async function main() {
 
   const customersCount = await prisma.customer.count();
   console.log("LOCAL_CUSTOMERS_COUNT:", customersCount);
+
+  const products = await prisma.product.findMany();
+  console.log("LOCAL_PRODUCTS:", JSON.stringify(products, null, 2));
+
+  const suppliers = await prisma.supplier.findMany();
+  console.log("LOCAL_SUPPLIERS:", JSON.stringify(suppliers, null, 2));
+
+  const prices = await prisma.price.findMany({ where: { effectiveTo: null } });
+  console.log("LOCAL_PRICES:", JSON.stringify(prices, null, 2));
 }
 
 main().finally(() => prisma.$disconnect());

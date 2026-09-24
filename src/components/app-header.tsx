@@ -492,7 +492,7 @@ export function AppHeader({ user }: { user: DbUser }) {
           collapsed ? "lg:pl-20" : "lg:pl-64"
         }`}
       >
-        <div className="px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-10 max-w-[1720px] w-full mx-auto h-14 flex items-center justify-between gap-4">
           {/* Left: Mobile Brand & Hamburger OR Desktop Breadcrumb Trail */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Menu Toggle Button */}

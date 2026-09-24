@@ -48,7 +48,7 @@ export default async function SaleDetailsPage({ params }: SaleDetailsPageProps) 
         <AppHeader user={user} />
       </div>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 print:p-0 print:m-0 print:max-w-none">
+      <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-6 print:p-0 print:m-0 print:max-w-none">
         <InvoiceView sale={sale} isOwner={isOwner} />
       </main>
     </div>

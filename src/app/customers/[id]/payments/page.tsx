@@ -34,7 +34,7 @@ export default async function CustomerPaymentsPage({ params }: CustomerPaymentsP
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
       <AppHeader user={user} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           <Link href={`/customers/${customer.id}`} className="hover:underline">
             ← Back to {customer.name}&apos;s Ledger

@@ -60,7 +60,7 @@ export function CustomerPaymentForm({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-xs max-w-lg mx-auto">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 shadow-sm max-w-2xl xl:max-w-3xl mx-auto space-y-6">
       <div className="mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
           Record Account Payment

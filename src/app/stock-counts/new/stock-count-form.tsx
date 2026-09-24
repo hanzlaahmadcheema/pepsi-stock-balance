@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { submitStockCountAction } from "../actions";
 import { CrateStepper } from "@/components/ui/crate-stepper";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
-import { IconClipboardList } from "@/components/ui/icons";
+import { IconClipboardList, IconCheckCircle } from "@/components/ui/icons";
 
 export type ProductStockItem = {
   id: string;
@@ -111,7 +111,7 @@ export function StockCountForm({
     });
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
+    <form action={formAction} onSubmit={handleSubmit} className="w-full">
       <input type="hidden" name="businessDate" value={businessDate} />
       <input type="hidden" name="notes" value={notes} />
       <input type="hidden" name="counts" value={JSON.stringify(payloadCounts)} />
@@ -120,10 +120,10 @@ export function StockCountForm({
       {(clientError || state?.error) && (
         <div
           role="alert"
-          className="p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-sm font-medium flex items-center justify-between shadow-xs"
+          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-sm font-medium flex items-center justify-between shadow-xs"
         >
           <div className="flex items-center gap-2">
-            <span className="font-bold">Error:</span>
+            <span className="font-bold">Notice:</span>
             <span>{clientError || state?.error}</span>
           </div>
           <button
@@ -136,225 +136,238 @@ export function StockCountForm({
         </div>
       )}
 
-      {/* Approval Notice Banner */}
-      <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200 shadow-xs">
-        <IconClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold uppercase tracking-wider block mb-0.5">Physical Stock Audit & Approval Workflow</span>
-          Submitting this count records physical inventory for this business date. If any discrepancy exists, warehouse stock balances will only update once an Owner reviews and approves the count.
-        </div>
-      </div>
-
-      {/* Header config: Date & Summary */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div>
-          <label
-            htmlFor="countBusinessDate"
-            className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
-          >
-            Count Business Date *
-          </label>
-          <input
-            id="countBusinessDate"
-            type="date"
-            required
-            autoFocus
-            value={businessDate}
-            onChange={(e) => setBusinessDate(e.target.value)}
-            className="px-3 py-2 text-sm font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Date to which this physical inventory verification belongs.
-          </p>
-        </div>
-
-        {/* Live Metrics Counters */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="p-3 px-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-750 text-center">
-            <span className="text-zinc-500 dark:text-zinc-400 font-medium">Products Counted</span>
-            <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-100">
-              {totalCounted} / {products.length}
-            </div>
-          </div>
-
-          <div className="p-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-center">
-            <span className="text-emerald-700 dark:text-emerald-400 font-bold">Exact Matches</span>
-            <div className="text-lg font-black tabular-nums text-emerald-800 dark:text-emerald-300">
-              {totalMatched}
-            </div>
-          </div>
-
-          <div className="p-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-center">
-            <span className="text-amber-700 dark:text-amber-400 font-bold">Discrepancies</span>
-            <div className="text-lg font-black tabular-nums text-amber-800 dark:text-amber-300">
-              {totalDiscrepancies}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Physical Count Table */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+      {/* SINGLE UNIFIED FORM CARD */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-6 sm:p-8 space-y-8">
+        {/* Physical Stock Audit Banner */}
+        <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200 shadow-xs">
+          <IconClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div>
+            <span className="font-bold uppercase tracking-wider block mb-0.5">Physical Stock Audit & Approval Protocol</span>
+            Entering physical crate counts compares on-hand warehouse crates against system stock. If discrepancies exist, balances change only after Owner review & approval in Approvals.
+          </div>
+        </div>
+
+        {/* Date, Live Counters, & Audit Notes */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center border-b border-zinc-100 dark:border-zinc-800 pb-6">
+            <div className="md:col-span-4">
+              <label
+                htmlFor="countBusinessDate"
+                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
+              >
+                Audit Business Date *
+              </label>
+              <input
+                id="countBusinessDate"
+                type="date"
+                required
+                autoFocus
+                value={businessDate}
+                onChange={(e) => setBusinessDate(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="md:col-span-8 flex flex-wrap items-center justify-start md:justify-end gap-3 text-xs">
+              <div className="p-3 px-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-750 text-center min-w-[120px]">
+                <span className="text-zinc-500 dark:text-zinc-400 font-medium block text-[11px]">Counted</span>
+                <div className="text-base font-black tabular-nums text-zinc-900 dark:text-zinc-100 mt-0.5">
+                  {totalCounted} / {products.length}
+                </div>
+              </div>
+
+              <div className="p-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-center min-w-[120px]">
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold block text-[11px]">Exact Matches</span>
+                <div className="text-base font-black tabular-nums text-emerald-800 dark:text-emerald-300 mt-0.5">
+                  {totalMatched}
+                </div>
+              </div>
+
+              <div className="p-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-center min-w-[120px]">
+                <span className="text-amber-700 dark:text-amber-400 font-bold block text-[11px]">Discrepancies</span>
+                <div className="text-base font-black tabular-nums text-amber-800 dark:text-amber-300 mt-0.5">
+                  {totalDiscrepancies}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="notes"
+              className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
+            >
+              General Audit Notes (Optional)
+            </label>
+            <input
+              id="notes"
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. End of month physical verification, Warehouse A"
+              className="w-full px-3 py-2.5 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Physical Count Audit Table */}
+        <div className="space-y-4">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3">
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              Crate Inventory Verification
+              Product Stock Audit
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Compare system recorded crates with actual warehouse crates on floor.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Verify physical warehouse crates against recorded system inventory. If physical crates differ, specify an explanation.
             </p>
           </div>
-        </div>
 
-        <ScrollableTable>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-              <tr>
-                <th className="px-6 py-3">Product Description</th>
-                <th className="px-6 py-3 text-center">System Stock</th>
-                <th className="px-6 py-3 text-center">Physical Count</th>
-                <th className="px-6 py-3 text-center">Variance</th>
-                <th className="px-6 py-3">Discrepancy Explanation</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {products.map((p) => {
-                const c = countStates[p.id] || {
-                  counted: true,
-                  physicalQuantity: p.systemStock,
-                  reason: "",
-                };
+          <div className="space-y-3">
+            {products.map((p) => {
+              const c = countStates[p.id] || {
+                counted: false,
+                physicalQuantity: p.systemStock,
+                reason: "",
+              };
+              const diff = c.physicalQuantity - p.systemStock;
 
-                const diff = c.physicalQuantity - p.systemStock;
-                const hasDiscrepancy = diff !== 0;
-
-                return (
-                  <tr
-                    key={p.id}
-                    className={`transition-colors ${
-                      hasDiscrepancy
-                        ? "bg-amber-50/30 dark:bg-amber-950/20"
-                        : "hover:bg-zinc-50 dark:hover:bg-zinc-800/30"
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-zinc-900 dark:text-zinc-100">{p.name}</div>
-                      <div className="text-xs text-zinc-500">{p.brand}</div>
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-black text-sm tabular-nums">
-                        {p.systemStock} crates
-                      </span>
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <div className="inline-block">
-                        <CrateStepper
-                          value={c.physicalQuantity}
-                          min={0}
-                          onChange={(val) => {
-                            setCountStates((prev) => ({
-                              ...prev,
-                              [p.id]: {
-                                ...c,
-                                physicalQuantity: val,
-                              },
-                            }));
-                          }}
-                          isError={hasDiscrepancy}
-                          ariaLabel={`Physical count for ${p.name}`}
-                        />
+              return (
+                <div
+                  key={p.id}
+                  className={`p-4 rounded-xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-sm ${
+                    !c.counted
+                      ? "opacity-50 bg-zinc-50 dark:bg-zinc-800/30 border-zinc-200 dark:border-zinc-800"
+                      : diff === 0
+                      ? "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800"
+                      : "bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/80 shadow-2xs"
+                  }`}
+                >
+                  {/* Left: Checkbox & Product Name */}
+                  <div className="flex items-center gap-3 min-w-[220px]">
+                    <input
+                      type="checkbox"
+                      id={`chk-${p.id}`}
+                      checked={c.counted}
+                      onChange={(e) => {
+                        setCountStates((prev) => ({
+                          ...prev,
+                          [p.id]: { ...c, counted: e.target.checked },
+                        }));
+                      }}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor={`chk-${p.id}`} className="cursor-pointer">
+                      <div className="font-bold text-zinc-900 dark:text-zinc-100">
+                        {p.name}
                       </div>
-                    </td>
+                      <div className="text-xs text-zinc-400">{p.brand}</div>
+                    </label>
+                  </div>
 
-                    <td className="px-6 py-4 text-center">
-                      {diff === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full tabular-nums">
-                          ✓ Matched (0)
-                        </span>
-                      ) : (
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full border tabular-nums ${
-                            diff > 0
-                              ? "text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800"
-                              : "text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800"
-                          }`}
-                        >
-                          {diff > 0 ? `+${diff}` : diff} crates ({diff > 0 ? "Surplus" : "Shortage"})
-                        </span>
-                      )}
-                    </td>
+                  {/* System Stock */}
+                  <div className="w-28">
+                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                      System Stock
+                    </span>
+                    <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300 tabular-nums">
+                      {p.systemStock} crates
+                    </span>
+                  </div>
 
-                    <td className="px-6 py-4">
-                      {hasDiscrepancy ? (
+                  {/* Physical Quantity Stepper */}
+                  <div className="w-48">
+                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                      Physical Count
+                    </span>
+                    <CrateStepper
+                      defaultValue={c.physicalQuantity}
+                      min={0}
+                      onChange={(val) => {
+                        setCountStates((prev) => ({
+                          ...prev,
+                          [p.id]: { ...c, physicalQuantity: val, counted: true },
+                        }));
+                      }}
+                      ariaLabel={`Physical count for ${p.name}`}
+                    />
+                  </div>
+
+                  {/* Difference Badge */}
+                  <div className="w-28">
+                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                      Difference
+                    </span>
+                    {diff === 0 ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        Match (0)
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-black ${
+                          diff > 0
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                        }`}
+                      >
+                        {diff > 0 ? `+${diff}` : diff} crates
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reason for discrepancy (only if diff !== 0) */}
+                  <div className="flex-1 min-w-[200px]">
+                    {diff !== 0 && c.counted ? (
+                      <div>
+                        <label className="block text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 mb-0.5">
+                          Discrepancy Reason *
+                        </label>
                         <input
                           type="text"
                           required
-                          minLength={3}
                           value={c.reason}
                           onChange={(e) => {
-                            const r = e.target.value;
                             setCountStates((prev) => ({
                               ...prev,
-                              [p.id]: {
-                                ...c,
-                                reason: r,
-                              },
+                              [p.id]: { ...c, reason: e.target.value },
                             }));
                           }}
-                          placeholder="Mandatory explanation for discrepancy..."
-                          className="w-full px-3 py-2 text-xs font-medium rounded-lg border-2 border-amber-400 dark:border-amber-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                          placeholder="e.g. Unrecorded breakage, Miscount"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-amber-500"
                         />
-                      ) : (
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">
-                          No discrepancy — verified
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </ScrollableTable>
-      </div>
-
-      {/* Remarks and submit footer */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="w-full md:w-1/2">
-          <label
-            htmlFor="countNotes"
-            className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1"
-          >
-            General Count Session Notes (Optional)
-          </label>
-          <input
-            id="countNotes"
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. End of shift count, Sunday warehouse audit..."
-            className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-          />
+                      </div>
+                    ) : (
+                      <span className="text-xs text-zinc-400 italic">No discrepancy</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        {/* Submit Actions */}
+        <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-3">
           <Link
             href="/stock-counts"
-            className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400"
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 inline-flex items-center gap-2"
+            className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:active:scale-100 disabled:opacity-50 text-white font-bold text-sm shadow-sm transition-all cursor-pointer flex items-center gap-2"
           >
-            {isPending && (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            {isPending ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                <span>Submitting Audit...</span>
+              </>
+            ) : (
+              <>
+                <IconCheckCircle className="w-4 h-4" />
+                <span>Submit Stock Count for Approval</span>
+              </>
             )}
-            {isPending ? "Submitting Count..." : "Submit Count"}
           </button>
         </div>
       </div>

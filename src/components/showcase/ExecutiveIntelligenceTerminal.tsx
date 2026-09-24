@@ -132,7 +132,7 @@ export function ExecutiveIntelligenceTerminal() {
       </header>
 
       {/* 3. HERO & METRIC ORCHESTRATION (SPATIAL RHYTHM) */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28">
+      <main className="relative z-10 mx-auto max-w-[1720px] w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-16 sm:py-24 lg:py-28">
         
         {/* Eyebrow Pill */}
         <div className="flex items-center gap-2 mb-6">
@@ -420,7 +420,7 @@ export function ExecutiveIntelligenceTerminal() {
 
       {/* 5. CINEMATIC FOOTER */}
       <footer className="relative z-10 border-t border-white/[0.06] bg-black/40 py-12 px-4 sm:px-6 lg:px-8 mt-24">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-zinc-500">
+        <div className="mx-auto max-w-[1720px] w-full px-4 sm:px-6 lg:px-8 xl:px-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-zinc-500">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-white">PEPSI STOCK BALANCE</span>
             <span>//</span>

@@ -13,6 +13,7 @@ import {
   IconHistory,
   IconReceipt,
   IconFileSpreadsheet,
+  IconAlertTriangle,
 } from "@/components/ui/icons";
 import type { SaleDetails } from "@/lib/sales/service";
 
@@ -332,7 +333,10 @@ export function InvoiceView({
           {isCancelled && (
             <div className="p-4 rounded-xl bg-red-100 dark:bg-red-950/70 border-2 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <div className="font-black text-lg tracking-wider">⚠️ INVOICE CANCELLED</div>
+                <div className="font-black text-lg tracking-wider flex items-center gap-2">
+                  <IconAlertTriangle className="w-5 h-5 shrink-0" />
+                  <span>INVOICE CANCELLED</span>
+                </div>
                 <p className="text-xs mt-0.5">
                   Reason: <b>{sale.cancellationReason || "Not specified"}</b>
                 </p>

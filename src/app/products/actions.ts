@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireDbUser } from "@/lib/auth";
 import { Role, PriceTier, Prisma } from "@prisma/client";
 import { updateProductPriceTransaction } from "@/lib/products/service";
-import { setProductCrateConfig } from "@/lib/containers/settings-service";
+import { setProductCrateConfig, getContainerSettings } from "@/lib/containers/settings-service";
 
 export type ProductFormState = {
   error?: string;
@@ -40,10 +40,10 @@ export async function createProductAction(
   const wholesaleRaw = formData.get("wholesalePrice") as string;
   const keyAccountRaw = formData.get("keyAccountPrice") as string;
 
-  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string;
-  const bottlesPerCrateRaw = formData.get("bottlesPerCrate") as string;
-  const hasGlassCrate = hasGlassCrateRaw !== "false";
-  const bottlesPerCrate = Math.max(1, parseInt(bottlesPerCrateRaw || "24", 10) || 24);
+  const isReturnableRaw = formData.get("isReturnable") as string | null;
+  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string | null;
+  const hasGlassCrate = isReturnableRaw !== null ? (isReturnableRaw === "on" || isReturnableRaw === "true") : (hasGlassCrateRaw !== "false");
+  const bottlesPerCrate = getContainerSettings().defaultBottlesPerCrate || 24;
 
   // Validation
   if (!name) {
@@ -240,8 +240,8 @@ export async function updateProductDetailsAction(
     updateData.latestPurchasePrice = new Prisma.Decimal(latestPurchasePrice.toFixed(2));
   }
 
-  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string;
-  const bottlesPerCrateRaw = formData.get("bottlesPerCrate") as string;
+  const isReturnableRaw = formData.get("isReturnable") as string | null;
+  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string | null;
 
   try {
     await prisma.product.update({
@@ -249,13 +249,13 @@ export async function updateProductDetailsAction(
       data: updateData,
     });
 
-    if (hasGlassCrateRaw !== null && hasGlassCrateRaw !== undefined) {
-      const hasGlassCrate = hasGlassCrateRaw === "true" || hasGlassCrateRaw === "on";
-      const bottlesPerCrate = Math.max(1, parseInt(bottlesPerCrateRaw || "24", 10) || 24);
+    if (isReturnableRaw !== null || hasGlassCrateRaw !== null) {
+      const hasGlassCrate = isReturnableRaw !== null ? (isReturnableRaw === "on" || isReturnableRaw === "true") : (hasGlassCrateRaw === "true" || hasGlassCrateRaw === "on");
+      const defaultBottles = getContainerSettings().defaultBottlesPerCrate || 24;
       try {
         setProductCrateConfig(productId, {
           hasGlassCrate,
-          bottlesPerCrate,
+          bottlesPerCrate: defaultBottles,
         });
       } catch (crateErr) {
         console.error("Failed to update crate config for product:", crateErr);

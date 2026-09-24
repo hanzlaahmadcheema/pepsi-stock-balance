@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useActionState, useTransition } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import {
   updateContainerTypesAction,
   updateBulkProductCratesAction,
-  type CrateActionState,
 } from "./actions";
 import type { ContainerSettings } from "@/lib/containers/settings-service";
-import { IconPackage, IconCheck, IconSearch, IconAlertTriangle } from "@/components/ui/icons";
+import {
+  IconPackage,
+  IconCheck,
+  IconSearch,
+  IconAlertTriangle,
+  IconBottle,
+  IconBox,
+  IconClose,
+  IconDollarSign,
+  IconSettings,
+} from "@/components/ui/icons";
 
 interface ProductWithCrate {
   id: string;
@@ -35,21 +44,28 @@ export function CrateSettingsClient({
     null
   );
 
+  // Rate tiers state (Owner can use 1 or more)
+  const [retailRate, setRetailRate] = useState(settings.enabledRates?.retail ?? true);
+  const [wholesaleRate, setWholesaleRate] = useState(settings.enabledRates?.wholesale ?? true);
+  const [keyRate, setKeyRate] = useState(settings.enabledRates?.key ?? true);
+  const [rateWarning, setRateWarning] = useState<string | null>(null);
+
+  // Container types & capacity
   const [glassEnabled, setGlassEnabled] = useState(settings.enabledTypes.glass);
   const [plasticEnabled, setPlasticEnabled] = useState(settings.enabledTypes.plastic);
-  const [defaultBottles, setDefaultBottles] = useState(settings.defaultBottlesPerCrate);
+  const [defaultBottles, setDefaultBottles] = useState(settings.defaultBottlesPerCrate ?? 24);
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
   const [brandFilter, setBrandFilter] = useState("ALL");
 
-  // Local state for product configs
+  // Local state for product configs (only returnable flag tracked; bottle count from setting)
   const [productConfigs, setProductConfigs] = useState<Record<string, { hasGlassCrate: boolean; bottlesPerCrate: number }>>(() => {
     const map: Record<string, { hasGlassCrate: boolean; bottlesPerCrate: number }> = {};
     for (const p of initialProducts) {
       map[p.id] = {
         hasGlassCrate: p.hasGlassCrate,
-        bottlesPerCrate: p.bottlesPerCrate,
+        bottlesPerCrate: defaultBottles,
       };
     }
     return map;
@@ -57,29 +73,36 @@ export function CrateSettingsClient({
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  const handleToggleRate = (tier: "retail" | "wholesale" | "key") => {
+    setRateWarning(null);
+    let nextRetail = retailRate;
+    let nextWholesale = wholesaleRate;
+    let nextKey = keyRate;
+
+    if (tier === "retail") nextRetail = !retailRate;
+    if (tier === "wholesale") nextWholesale = !wholesaleRate;
+    if (tier === "key") nextKey = !keyRate;
+
+    // At least one rate must remain active
+    if (!nextRetail && !nextWholesale && !nextKey) {
+      setRateWarning("At least one display rate (Retail, Wholesale, or Key) must remain active.");
+      return;
+    }
+
+    setRetailRate(nextRetail);
+    setWholesaleRate(nextWholesale);
+    setKeyRate(nextKey);
+  };
+
   const handleToggleGlassCrate = (productId: string) => {
     setProductConfigs((prev) => {
-      const cur = prev[productId] || { hasGlassCrate: true, bottlesPerCrate: 24 };
+      const cur = prev[productId] || { hasGlassCrate: true, bottlesPerCrate: defaultBottles };
       const next = {
         ...prev,
         [productId]: {
           ...cur,
           hasGlassCrate: !cur.hasGlassCrate,
-        },
-      };
-      setHasUnsavedChanges(true);
-      return next;
-    });
-  };
-
-  const handleChangeBottles = (productId: string, count: number) => {
-    setProductConfigs((prev) => {
-      const cur = prev[productId] || { hasGlassCrate: true, bottlesPerCrate: 24 };
-      const next = {
-        ...prev,
-        [productId]: {
-          ...cur,
-          bottlesPerCrate: Math.max(1, count),
+          bottlesPerCrate: defaultBottles,
         },
       };
       setHasUnsavedChanges(true);
@@ -93,7 +116,7 @@ export function CrateSettingsClient({
       for (const p of filteredProducts) {
         next[p.id] = {
           hasGlassCrate: hasGlass,
-          bottlesPerCrate: next[p.id]?.bottlesPerCrate || defaultBottles,
+          bottlesPerCrate: defaultBottles,
         };
       }
       setHasUnsavedChanges(true);
@@ -127,14 +150,15 @@ export function CrateSettingsClient({
               Owner Management
             </span>
             <span className="text-xs text-zinc-500">
-              Core Operation: <strong className="text-zinc-700 dark:text-zinc-300">Glass-Only Depot</strong>
+              Core Operation: <strong className="text-zinc-700 dark:text-zinc-300">Glass &amp; Returnable Depot</strong>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Crate &amp; Returnable Container Settings
+          <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-3">
+            <IconSettings className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <span>Settings</span>
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Configure returnable glass crates, bottle counts per crate, and active container types for POS sales and customer ledgers.
+            Manage application display rates (&quot;Retail, Wholesale, Key&quot;), standard crate bottle capacity, and returnable container policies.
           </p>
         </div>
 
@@ -151,36 +175,174 @@ export function CrateSettingsClient({
       {/* Notifications */}
       {(typesState?.success || bulkState?.success) && (
         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold text-xs flex items-center gap-2">
-          <span>✓</span>
+          <IconCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span>{typesState?.message || bulkState?.message}</span>
         </div>
       )}
-      {(typesState?.error || bulkState?.error) && (
+      {(typesState?.error || bulkState?.error || rateWarning) && (
         <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold text-xs flex items-center gap-2">
-          <span>⚠️</span>
-          <span>{typesState?.error || bulkState?.error}</span>
+          <IconAlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+          <span>{rateWarning || typesState?.error || bulkState?.error}</span>
         </div>
       )}
 
       {/* ========================================================= */}
-      {/* 1. CONTAINER TYPES CONTROL PANEL                          */}
+      {/* 1. APPLICATION DISPLAY RATES & PACKAGING FORM            */}
       {/* ========================================================= */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-6 space-y-6">
-        <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <IconPackage className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span>Container Types Active in System</span>
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Control which crate and container categories appear on sales tickets, return vouchers, and customer ledgers.
-            </p>
+      <form action={typesAction} className="space-y-6">
+        <input type="hidden" name="glassEnabled" value={String(glassEnabled)} />
+        <input type="hidden" name="plasticEnabled" value={String(plasticEnabled)} />
+        <input type="hidden" name="retailRate" value={String(retailRate)} />
+        <input type="hidden" name="wholesaleRate" value={String(wholesaleRate)} />
+        <input type="hidden" name="keyRate" value={String(keyRate)} />
+
+        {/* Display Rates Panel */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-6 space-y-5">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <IconDollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <span>Application Display Rates (&quot;Retail, Wholesale, Key&quot;)</span>
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Control which price tiers appear in POS sales, customer accounts, and product pricing. Owner can use 1 or more rates.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 self-start sm:self-auto">
+              <span>Active Rates:</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                {[retailRate && "Retail", wholesaleRate && "Wholesale", keyRate && "Key"].filter(Boolean).join(", ") || "None"}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Retail Rate Tier */}
+            <div
+              onClick={() => handleToggleRate("retail")}
+              className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                retailRate
+                  ? "bg-blue-50/60 dark:bg-blue-950/20 border-blue-400 dark:border-blue-800 ring-2 ring-blue-500/20 shadow-xs"
+                  : "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700 opacity-60 hover:opacity-80"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                    retailRate ? "bg-blue-600 text-white" : "bg-zinc-300 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  }`}>
+                    R
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                      Retail Rate
+                    </h3>
+                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Standard Pricing
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-xs ${
+                  retailRate ? "bg-blue-600 text-white" : "border border-zinc-300 dark:border-zinc-600"
+                }`}>
+                  {retailRate && <IconCheck className="w-3.5 h-3.5 stroke-[3]" />}
+                </div>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Primary counter and walk-in cash customer rate. Displayed on POS invoice tickets and general catalog.
+              </p>
+            </div>
+
+            {/* Wholesale Rate Tier */}
+            <div
+              onClick={() => handleToggleRate("wholesale")}
+              className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                wholesaleRate
+                  ? "bg-purple-50/60 dark:bg-purple-950/20 border-purple-400 dark:border-purple-800 ring-2 ring-purple-500/20 shadow-xs"
+                  : "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700 opacity-60 hover:opacity-80"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                    wholesaleRate ? "bg-purple-600 text-white" : "bg-zinc-300 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  }`}>
+                    W
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                      Wholesale Rate
+                    </h3>
+                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Bulk Distributors
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-xs ${
+                  wholesaleRate ? "bg-purple-600 text-white" : "border border-zinc-300 dark:border-zinc-600"
+                }`}>
+                  {wholesaleRate && <IconCheck className="w-3.5 h-3.5 stroke-[3]" />}
+                </div>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Discounted crate rates for regional retail shops and high-volume beverage re-sellers.
+              </p>
+            </div>
+
+            {/* Key Account Rate Tier */}
+            <div
+              onClick={() => handleToggleRate("key")}
+              className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                keyRate
+                  ? "bg-amber-50/60 dark:bg-amber-950/20 border-amber-400 dark:border-amber-800 ring-2 ring-amber-500/20 shadow-xs"
+                  : "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700 opacity-60 hover:opacity-80"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                    keyRate ? "bg-amber-600 text-white" : "bg-zinc-300 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  }`}>
+                    K
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                      Key Account Rate
+                    </h3>
+                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Institutions &amp; VIP
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-xs ${
+                  keyRate ? "bg-amber-600 text-white" : "border border-zinc-300 dark:border-zinc-600"
+                }`}>
+                  {keyRate && <IconCheck className="w-3.5 h-3.5 stroke-[3]" />}
+                </div>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Special contract pricing for institutional clients, hotel chains, and marquee corporate accounts.
+              </p>
+            </div>
           </div>
         </div>
 
-        <form action={typesAction} className="space-y-6">
-          <input type="hidden" name="glassEnabled" value={String(glassEnabled)} />
-          <input type="hidden" name="plasticEnabled" value={String(plasticEnabled)} />
+        {/* Crate Packaging & Containers Panel */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-6 space-y-6">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <IconPackage className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <span>Crate Packaging &amp; Bottle Quantities</span>
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Configure standard bottle quantity per crate and active container tracking categories.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Glass Bottles & Crates (Active Core) */}
@@ -194,7 +356,7 @@ export function CrateSettingsClient({
               <div className="flex items-center justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                    🍾
+                    <IconBottle className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
@@ -215,7 +377,14 @@ export function CrateSettingsClient({
                       : "bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
                   }`}
                 >
-                  {glassEnabled ? "✓ Enabled" : "Disabled"}
+                  {glassEnabled ? (
+                    <span className="inline-flex items-center gap-1">
+                      <IconCheck className="w-3.5 h-3.5" />
+                      <span>Enabled</span>
+                    </span>
+                  ) : (
+                    "Disabled"
+                  )}
                 </button>
               </div>
 
@@ -237,7 +406,7 @@ export function CrateSettingsClient({
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shadow-xs ${
                     plasticEnabled ? "bg-emerald-600 text-white" : "bg-zinc-300 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
                   }`}>
-                    📦
+                    <IconBox className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
@@ -260,7 +429,14 @@ export function CrateSettingsClient({
                       : "bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300"
                   }`}
                 >
-                  {plasticEnabled ? "✓ Enabled" : "Enable Plastic"}
+                  {plasticEnabled ? (
+                    <span className="inline-flex items-center gap-1">
+                      <IconCheck className="w-3.5 h-3.5" />
+                      <span>Enabled</span>
+                    </span>
+                  ) : (
+                    "Enable Plastic"
+                  )}
                 </button>
               </div>
 
@@ -274,36 +450,39 @@ export function CrateSettingsClient({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <div>
               <label htmlFor="defaultBottles" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
-                Standard Default Bottles Per Crate
+                Standard Quantity of Bottles in Crate (Default: 24)
               </label>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Applied automatically when adding new beverage products (standard Pepsi/Coke glass crate is 24 bottles).
+                Global bottle capacity per crate. Products only specify whether their crate is returnable or not; bottle count is governed here.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                id="defaultBottles"
-                name="defaultBottles"
-                type="number"
-                min="1"
-                max="99"
-                value={defaultBottles}
-                onChange={(e) => setDefaultBottles(Math.max(1, parseInt(e.target.value, 10) || 24))}
-                className="w-24 px-3 py-2 text-sm font-bold text-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-              />
+              <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700">
+                <input
+                  id="defaultBottles"
+                  name="defaultBottles"
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={defaultBottles}
+                  onChange={(e) => setDefaultBottles(Math.max(1, parseInt(e.target.value, 10) || 24))}
+                  className="w-16 text-sm font-bold text-center bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-hidden"
+                />
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">bottles / crate</span>
+              </div>
 
               <button
                 type="submit"
                 disabled={isTypesPending}
-                className="px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                className="px-6 py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
               >
-                {isTypesPending ? "Saving..." : "Save Container Settings"}
+                {isTypesPending ? "Saving..." : "Save Settings"}
               </button>
             </div>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
 
       {/* ========================================================= */}
       {/* 2. PRODUCT RETURNABLE CRATE MATRIX                        */}
@@ -313,14 +492,14 @@ export function CrateSettingsClient({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Product Returnable Glass Crate Configuration
+                Product Returnable Crate Policy
               </h2>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
                 {totalReturnable} of {initialProducts.length} Returnable
               </span>
             </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Set whether each beverage product requires empty glass crates to be returned, and specify how many bottles are in that crate (default: 24).
+              Specify if each beverage uses returnable glass crates. Standard bottle capacity ({defaultBottles} bottles/crate) is managed in settings above.
             </p>
           </div>
 
@@ -329,86 +508,89 @@ export function CrateSettingsClient({
             <button
               type="button"
               onClick={() => handleBulkSetAll(true)}
-              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium"
+              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
             >
-              Set All Filtered to Glass
+              Set All to Returnable
             </button>
             <button
               type="button"
               onClick={() => handleBulkSetAll(false)}
-              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium"
+              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
             >
-              Set All Filtered to Non-Glass
+              Set All to One-Way (PET/Can)
             </button>
           </div>
         </div>
 
         {/* Search & Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="relative flex-1">
-            <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <IconSearch className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
+              placeholder="Search product name, brand, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search product name, brand, SKU..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1">
-            <button
-              type="button"
-              onClick={() => setBrandFilter("ALL")}
-              className={`px-3 py-1.5 rounded-lg font-bold shrink-0 ${
-                brandFilter === "ALL"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <select
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             >
-              All Brands
-            </button>
-            {brands.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setBrandFilter(b)}
-                className={`px-3 py-1.5 rounded-lg font-bold shrink-0 ${
-                  brandFilter === b
-                    ? "bg-blue-600 text-white"
-                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                }`}
-              >
-                {b}
-              </button>
-            ))}
+              <option value="ALL">All Brands ({brands.length})</option>
+              {brands.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+
+            {hasUnsavedChanges && (
+              <form action={bulkAction}>
+                <input
+                  type="hidden"
+                  name="configs"
+                  value={JSON.stringify(productConfigs)}
+                />
+                <button
+                  type="submit"
+                  disabled={isBulkPending}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap"
+                >
+                  {isBulkPending ? "Saving..." : "Save Crate Policies"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
-        {/* Matrix Table */}
-        <form action={bulkAction} className="space-y-4">
-          <input type="hidden" name="configs" value={JSON.stringify(productConfigs)} />
-
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-2xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 uppercase font-bold text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+        {/* Product Table */}
+        <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl">
+          <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-[11px] font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+              <tr>
+                <th className="px-5 py-3">Product Name &amp; Brand</th>
+                <th className="px-5 py-3 text-center">Returnable Crate?</th>
+                <th className="px-5 py-3">Packaging &amp; Ledger Impact</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {filteredProducts.length === 0 ? (
                 <tr>
-                  <th scope="col" className="px-5 py-3.5">Product &amp; Brand</th>
-                  <th scope="col" className="px-5 py-3.5 text-center">Returnable Glass Crate?</th>
-                  <th scope="col" className="px-5 py-3.5 text-center">Bottles Per Crate</th>
-                  <th scope="col" className="px-5 py-3.5">POS &amp; Customer Ledger Behavior</th>
+                  <td colSpan={3} className="px-5 py-8 text-center text-zinc-500">
+                    No products match the filter.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
-                {filteredProducts.map((p) => {
-                  const cfg = productConfigs[p.id] || { hasGlassCrate: true, bottlesPerCrate: 24 };
+              ) : (
+                filteredProducts.map((p) => {
+                  const cfg = productConfigs[p.id] || { hasGlassCrate: true, bottlesPerCrate: defaultBottles };
 
                   return (
                     <tr
                       key={p.id}
-                      className={`hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition-colors ${
-                        cfg.hasGlassCrate ? "" : "bg-zinc-50/40 dark:bg-zinc-900/40 opacity-75"
-                      }`}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
                     >
                       <td className="px-5 py-3.5">
                         <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
@@ -430,72 +612,62 @@ export function CrateSettingsClient({
                               : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
                           }`}
                         >
-                          {cfg.hasGlassCrate ? "✓ Yes (Glass Crate)" : "✕ No (Disposable/PET)"}
+                          {cfg.hasGlassCrate ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <IconCheck className="w-3.5 h-3.5" />
+                              <span>Returnable Crate</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5">
+                              <IconClose className="w-3.5 h-3.5" />
+                              <span>One-Way (Non-Returnable)</span>
+                            </span>
+                          )}
                         </button>
-                      </td>
-
-                      <td className="px-5 py-3.5 text-center">
-                        <div className="inline-flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            min="1"
-                            max="99"
-                            disabled={!cfg.hasGlassCrate}
-                            value={cfg.bottlesPerCrate}
-                            onChange={(e) => handleChangeBottles(p.id, parseInt(e.target.value, 10) || 24)}
-                            className={`w-16 px-2.5 py-1 text-center font-bold rounded-lg border text-xs ${
-                              cfg.hasGlassCrate
-                                ? "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                                : "border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/40 text-zinc-400 cursor-not-allowed"
-                            }`}
-                          />
-                          <span className="text-zinc-400 text-[11px]">bottles</span>
-                        </div>
                       </td>
 
                       <td className="px-5 py-3.5">
                         {cfg.hasGlassCrate ? (
                           <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>Creates returnable debt ({cfg.bottlesPerCrate} bottles/crate)</span>
+                            <span>Returnable glass crate ({defaultBottles} bottles/crate owed by customer)</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium text-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                            <span>One-way packaging; no empty crates tracked</span>
+                            <span>Disposable one-way packaging (no empty crates owed)</span>
                           </span>
                         )}
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Sticky Bottom Save Action Bar */}
-          <div className="pt-2 flex items-center justify-between">
-            <span className="text-xs text-zinc-500">
-              {hasUnsavedChanges ? (
-                <b className="text-amber-600 dark:text-amber-400">⚠️ You have unsaved crate modifications.</b>
-              ) : (
-                "All crate configurations in sync."
+                })
               )}
-            </span>
+            </tbody>
+          </table>
+        </div>
 
-            <button
-              type="submit"
-              disabled={isBulkPending}
-              className={`px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-xs transition-all cursor-pointer ${
-                hasUnsavedChanges
-                  ? "bg-blue-600 hover:bg-blue-500 ring-2 ring-blue-500/30 animate-pulse"
-                  : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              } disabled:opacity-50`}
-            >
-              {isBulkPending ? "Saving Configurations..." : "Save Product Crate Configurations"}
-            </button>
+        {hasUnsavedChanges && (
+          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-4">
+            <span className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+              You have unsaved changes to product crate policies.
+            </span>
+            <form action={bulkAction}>
+              <input
+                type="hidden"
+                name="configs"
+                value={JSON.stringify(productConfigs)}
+              />
+              <button
+                type="submit"
+                disabled={isBulkPending}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {isBulkPending ? "Saving..." : "Save Crate Policies"}
+              </button>
+            </form>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

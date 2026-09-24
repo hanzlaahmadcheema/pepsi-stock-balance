@@ -19,6 +19,8 @@ import {
   IconAlertTriangle,
   IconShield,
   IconHistory,
+  IconChevronDown,
+  IconInfo,
 } from "@/components/ui/icons";
 
 interface QuarantineManagerProps {
@@ -155,9 +157,10 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
           </div>
           <button
             onClick={() => setActionSuccess(null)}
-            className="text-emerald-600 dark:text-emerald-400 hover:opacity-75 font-bold"
+            className="text-emerald-600 dark:text-emerald-400 hover:opacity-75 p-1 rounded cursor-pointer"
+            aria-label="Dismiss alert"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -170,9 +173,10 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
           </div>
           <button
             onClick={() => setActionError(null)}
-            className="text-red-600 dark:text-red-400 hover:opacity-75 font-bold"
+            className="text-red-600 dark:text-red-400 hover:opacity-75 p-1 rounded cursor-pointer"
+            aria-label="Dismiss alert"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -340,7 +344,9 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
       {/* Quarantine Records List */}
       {filteredRecords.length === 0 ? (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
-          <div className="text-4xl mb-3">🛡️</div>
+          <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+            <IconShield className="w-6 h-6" />
+          </div>
           <h3 className="text-base font-bold text-zinc-700 dark:text-zinc-200">
             No quarantine records match your criteria
           </h3>
@@ -496,9 +502,10 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
                     <button
                       type="button"
                       onClick={() => setExpandedPayloadId(isExpanded ? null : item.id)}
-                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1.5"
                     >
-                      <span>{isExpanded ? "▼ Hide Cloud Payload" : "▶ View Cloud Payload"}</span>
+                      <IconChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? "rotate-180" : ""}`} />
+                      <span>{isExpanded ? "Hide Cloud Payload" : "View Cloud Payload"}</span>
                     </button>
                     {isExpanded && (
                       <pre className="mt-2 text-[11px] font-mono bg-zinc-900 text-zinc-100 p-3 rounded-xl overflow-x-auto max-h-60 border border-zinc-800">
@@ -512,8 +519,9 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
                     <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800">
                       <div className="text-xs text-zinc-500">
                         {!isFirstActive ? (
-                          <span className="text-amber-600 dark:text-amber-400">
-                            ⚠️ You must resolve earlier sequence #{earliestActive?.changeSequence} first.
+                          <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+                            <IconAlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                            <span>You must resolve earlier sequence #{earliestActive?.changeSequence} first.</span>
                           </span>
                         ) : (
                           <span>Ready for Owner resolution.</span>
@@ -576,15 +584,19 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
               <button
                 type="button"
                 onClick={() => setRetryTarget(null)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 font-bold"
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+                aria-label="Close dialog"
               >
-                ✕
+                <IconClose className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleRetrySubmit} className="p-6 space-y-4">
               <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-xs text-blue-800 dark:text-blue-200">
-                <p className="font-bold mb-1">ℹ️ Retry Semantics:</p>
+                <p className="font-bold mb-1 flex items-center gap-1.5">
+                  <IconInfo className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>Retry Semantics:</span>
+                </p>
                 <p>
                   Retrying re-executes this change against the local database within the pull advisory lock.
                   If successful, the mutation is applied, recorded in local processed changes, and the sync cursor advances.
@@ -645,15 +657,19 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
               <button
                 type="button"
                 onClick={() => setDiscardTarget(null)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 font-bold"
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+                aria-label="Close dialog"
               >
-                ✕
+                <IconClose className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleDiscardSubmit} className="p-6 space-y-4">
               <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-xs text-red-800 dark:text-red-200">
-                <p className="font-bold mb-1">⚠️ Warning: Discard Is Permanent</p>
+                <p className="font-bold mb-1 flex items-center gap-1.5">
+                  <IconAlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span>Warning: Discard Is Permanent</span>
+                </p>
                 <p>
                   Discarding will record this change sequence as discarded in local processed records and advance
                   the sync cursor past it. The Cloud mutation will <span className="font-bold underline">NOT</span> be

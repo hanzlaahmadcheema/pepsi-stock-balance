@@ -4,6 +4,7 @@ import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { prisma } from "@/lib/prisma";
 import { ApprovalCard } from "./approval-card";
+import { IconCheck } from "@/components/ui/icons";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pending Approvals" };
@@ -55,7 +56,9 @@ export default async function ApprovalsPage() {
 
         {pendingAdjustments.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
-            <div className="text-4xl mb-3">✅</div>
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <IconCheck className="w-6 h-6 stroke-[2.5]" />
+            </div>
             <h2 className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
               All caught up!
             </h2>

@@ -7,11 +7,24 @@ import { PriceTier } from "@prisma/client";
 export function UpdatePriceForm({
   productId,
   activePrices,
+  enabledRates,
 }: {
   productId: string;
   activePrices: { tier: PriceTier; amount: string }[];
+  enabledRates?: {
+    retail: boolean;
+    wholesale: boolean;
+    key: boolean;
+  };
 }) {
-  const [selectedTier, setSelectedTier] = useState<PriceTier>(PriceTier.RETAIL);
+  const allowedTiers = [
+    { tier: PriceTier.RETAIL, label: "Retail", enabled: enabledRates?.retail ?? true },
+    { tier: PriceTier.WHOLESALE, label: "Wholesale", enabled: enabledRates?.wholesale ?? true },
+    { tier: PriceTier.KEY_ACCOUNT, label: "Key Account", enabled: enabledRates?.key ?? true },
+  ].filter((t) => t.enabled);
+
+  const initialTier = allowedTiers.length > 0 ? allowedTiers[0].tier : PriceTier.RETAIL;
+  const [selectedTier, setSelectedTier] = useState<PriceTier>(initialTier);
   const [state, formAction, isPending] = useActionState(updateProductPriceAction, null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -64,9 +77,11 @@ export function UpdatePriceForm({
               onChange={(e) => setSelectedTier(e.target.value as PriceTier)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
             >
-              <option value={PriceTier.RETAIL}>RETAIL</option>
-              <option value={PriceTier.WHOLESALE}>WHOLESALE</option>
-              <option value={PriceTier.KEY_ACCOUNT}>KEY_ACCOUNT</option>
+              {allowedTiers.map((t) => (
+                <option key={t.tier} value={t.tier}>
+                  {t.label}
+                </option>
+              ))}
             </select>
             {currentPriceForTier && (
               <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">

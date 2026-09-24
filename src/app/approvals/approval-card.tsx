@@ -4,6 +4,7 @@ import { useState, useActionState } from "react";
 import { resolveAdjustmentAction, type StockCountActionState } from "@/app/stock-counts/actions";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { IconCheck, IconClose } from "@/components/ui/icons";
 
 interface ApprovalCardProps {
   adjustmentId: string;
@@ -45,8 +46,9 @@ export function ApprovalCard({
 
   if (isResolved) {
     return (
-      <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
-        ✓ Adjustment for <strong>{productName}</strong> has been resolved.
+      <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-emerald-700 dark:text-emerald-300 text-sm font-semibold flex items-center gap-2">
+        <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <span>Adjustment for <strong>{productName}</strong> has been resolved.</span>
       </div>
     );
   }
@@ -114,16 +116,18 @@ export function ApprovalCard({
           <button
             type="button"
             onClick={() => setDecision("APPROVE")}
-            className="px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            ✓ Approve
+            <IconCheck className="w-4 h-4" />
+            <span>Approve</span>
           </button>
           <button
             type="button"
             onClick={() => setDecision("REJECT")}
-            className="px-4 py-2 text-sm font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            ✕ Reject
+            <IconClose className="w-4 h-4" />
+            <span>Reject</span>
           </button>
         </div>
       ) : (
@@ -131,8 +135,18 @@ export function ApprovalCard({
           <input type="hidden" name="adjustmentId" value={adjustmentId} />
           <input type="hidden" name="decision" value={decision} />
 
-          <div className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-            {decision === "APPROVE" ? "✓ Approving adjustment" : "✕ Rejecting adjustment"} — provide reason:
+          <div className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+            {decision === "APPROVE" ? (
+              <>
+                <IconCheck className="w-4 h-4 text-emerald-600" />
+                <span>Approving adjustment — provide reason:</span>
+              </>
+            ) : (
+              <>
+                <IconClose className="w-4 h-4 text-red-600" />
+                <span>Rejecting adjustment — provide reason:</span>
+              </>
+            )}
           </div>
 
           <input

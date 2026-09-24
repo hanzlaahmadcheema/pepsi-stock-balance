@@ -3,6 +3,7 @@ import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { listProducts, PriceTier } from "@/lib/products/service";
+import { getContainerSettings } from "@/lib/containers/settings-service";
 import { ProductSearch } from "./product-search";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconPackage } from "@/components/ui/icons";
@@ -27,6 +28,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   const params = await searchParams;
   const searchQuery = params.q || "";
+
+  const containerSettings = getContainerSettings();
+  const enabledRates = containerSettings.enabledRates;
 
   // Query products with strict role-based data projection
   const products = await listProducts(searchQuery, isOwner);
@@ -215,24 +219,30 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             {/* Active Selling Prices */}
                             <td className="px-6 py-4">
                               <div className="flex flex-col gap-0.5 text-xs">
-                                <div>
-                                  <span className="text-zinc-400">Retail:</span>{" "}
-                                  <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                    {retailPrice ? `Rs. ${retailPrice}` : "—"}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-zinc-400">Wholesale:</span>{" "}
-                                  <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                    {wholesalePrice ? `Rs. ${wholesalePrice}` : "—"}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-zinc-400">Key Account:</span>{" "}
-                                  <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                    {keyAccountPrice ? `Rs. ${keyAccountPrice}` : "—"}
-                                  </span>
-                                </div>
+                                {enabledRates.retail && (
+                                  <div>
+                                    <span className="text-zinc-400">Retail:</span>{" "}
+                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                                      {retailPrice ? `Rs. ${retailPrice}` : "—"}
+                                    </span>
+                                  </div>
+                                )}
+                                {enabledRates.wholesale && (
+                                  <div>
+                                    <span className="text-zinc-400">Wholesale:</span>{" "}
+                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                                      {wholesalePrice ? `Rs. ${wholesalePrice}` : "—"}
+                                    </span>
+                                  </div>
+                                )}
+                                {enabledRates.key && (
+                                  <div>
+                                    <span className="text-zinc-400">Key Account:</span>{" "}
+                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                                      {keyAccountPrice ? `Rs. ${keyAccountPrice}` : "—"}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </td>
 

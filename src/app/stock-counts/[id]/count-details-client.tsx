@@ -8,7 +8,7 @@ import type {
   StockCountDetails,
   PendingAdjustmentSummary,
 } from "@/lib/stock-counts/service";
-import { IconHistory } from "@/components/ui/icons";
+import { IconHistory, IconAlertTriangle, IconCheck, IconInfo } from "@/components/ui/icons";
 
 export function CountDetailsClient({
   countDetails,
@@ -86,7 +86,17 @@ export function CountDetailsClient({
             <div>
               Inventory Status:{" "}
               <b className={countDetails.stockVerified ? "text-emerald-600" : "text-amber-600"}>
-                {countDetails.stockVerified ? "✓ Verified & Reconciled" : "⚠️ Discrepancies Pending Review"}
+                {countDetails.stockVerified ? (
+                  <span className="inline-flex items-center gap-1">
+                    <IconCheck className="w-3.5 h-3.5" />
+                    <span>Verified &amp; Reconciled</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <IconAlertTriangle className="w-3.5 h-3.5" />
+                    <span>Discrepancies Pending Review</span>
+                  </span>
+                )}
               </b>
             </div>
             {countDetails.closedAt && (
@@ -100,14 +110,18 @@ export function CountDetailsClient({
         {/* Action / Status Pill */}
         <div className="flex items-center gap-3">
           {isInReview && (
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200">
-              <span className="font-bold">⚠️ Discrepancies Detected:</span> {pendingCount} adjustments{" "}
-              {isOwner ? "awaiting your approval" : "pending Owner review"}.
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+              <IconAlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                <strong className="font-bold">Discrepancies Detected:</strong> {pendingCount} adjustments{" "}
+                {isOwner ? "awaiting your approval" : "pending Owner review"}.
+              </span>
             </div>
           )}
           {isClosed && (
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-200 font-semibold">
-              ✓ Stock count is finalized and closed.
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-200 font-semibold flex items-center gap-1.5">
+              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Stock count is finalized and closed.</span>
             </div>
           )}
         </div>
@@ -116,7 +130,7 @@ export function CountDetailsClient({
       {/* Discrepancy & Approval Clarification Banner */}
       {pendingCount > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
-          <span className="text-xl">ℹ️</span>
+          <IconInfo className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
             <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
               Your correction request has been submitted. Stock will change after approval.
@@ -182,8 +196,9 @@ export function CountDetailsClient({
 
                     <td className="px-6 py-4 text-center">
                       {item.difference === 0 ? (
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full">
-                          ✓ Matched (0)
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full">
+                          <IconCheck className="w-3 h-3" />
+                          <span>Matched (0)</span>
                         </span>
                       ) : (
                         <span

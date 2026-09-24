@@ -29,22 +29,38 @@ export async function updateContainerTypesAction(
     const plasticEnabled = formData.get("plasticEnabled") === "true";
     const defaultBottles = Math.max(1, parseInt(formData.get("defaultBottles") as string, 10) || 24);
 
+    const retailRate = formData.get("retailRate") === "true";
+    const wholesaleRate = formData.get("wholesaleRate") === "true";
+    const keyRate = formData.get("keyRate") === "true";
+
+    if (!retailRate && !wholesaleRate && !keyRate) {
+      return { error: "At least one display rate (Retail, Wholesale, or Key) must remain enabled." };
+    }
+
     updateContainerSettings({
       enabledTypes: {
         glass: glassEnabled,
         plastic: plasticEnabled,
       },
       defaultBottlesPerCrate: defaultBottles,
+      enabledRates: {
+        retail: retailRate,
+        wholesale: wholesaleRate,
+        key: keyRate,
+      },
     });
 
+    revalidatePath("/settings");
     revalidatePath("/settings/crates");
     revalidatePath("/sales/new");
     revalidatePath("/products");
+    revalidatePath("/products/new");
     revalidatePath("/customers");
+    revalidatePath("/reports/prices");
 
     return {
       success: true,
-      message: "Crate and container types updated successfully!",
+      message: "Settings and display rates updated successfully!",
     };
   } catch (err: unknown) {
     return {

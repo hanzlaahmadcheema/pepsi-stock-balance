@@ -11,7 +11,7 @@ import {
 import { openOrCreateDailyClosingAction } from "./actions";
 import { formatCurrency } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconCalendar } from "@/components/ui/icons";
+import { IconCalendar, IconCheck, IconZap, IconAlertTriangle } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 
 interface DailyClosingClientProps {
@@ -19,6 +19,11 @@ interface DailyClosingClientProps {
   recentClosings: DailyClosingListItem[];
   isOwner: boolean;
   todayDateStr: string;
+  unclosedPrevious?: {
+    dateStr: string;
+    status: DailyClosingStatus;
+    id?: string;
+  } | null;
 }
 
 export function DailyClosingClient({
@@ -26,6 +31,7 @@ export function DailyClosingClient({
   recentClosings,
   isOwner,
   todayDateStr,
+  unclosedPrevious,
 }: DailyClosingClientProps) {
   const router = useRouter();
   const [customDate, setCustomDate] = useState(todayDateStr);
@@ -88,6 +94,45 @@ export function DailyClosingClient({
         </div>
       )}
 
+      {/* Previous Day Closing Required Notice */}
+      {unclosedPrevious && !todayClosing && (
+        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs font-bold text-sm">
+              <IconAlertTriangle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                Previous Day Closing Required
+              </h3>
+              <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-0.5">
+                The business day for <strong>{unclosedPrevious.dateStr}</strong> is still <strong>{unclosedPrevious.status.replace("_", " ")}</strong>. System policy requires all prior business days to be closed before opening today&apos;s operations.
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            {unclosedPrevious.id ? (
+              <Link
+                href={`/daily-closing/${unclosedPrevious.id}`}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors inline-flex items-center gap-1.5"
+              >
+                <span>Go to {unclosedPrevious.dateStr} Closing Sheet →</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleOpenDate(unclosedPrevious.dateStr)}
+                disabled={isOpeningCustomDate}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Close {unclosedPrevious.dateStr} First →</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Featured Today's Business Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -144,10 +189,15 @@ export function DailyClosingClient({
               <button
                 type="button"
                 onClick={() => handleOpenDate(todayDateStr)}
-                disabled={isOpeningCustomDate}
-                className="px-4 py-2 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer"
+                disabled={isOpeningCustomDate || Boolean(unclosedPrevious)}
+                title={unclosedPrevious ? `Close ${unclosedPrevious.dateStr} first` : undefined}
+                className="px-4 py-2 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                {isOpeningCustomDate ? "Initializing..." : "Start Today's Closing →"}
+                {isOpeningCustomDate
+                  ? "Initializing..."
+                  : unclosedPrevious
+                  ? `Close ${unclosedPrevious.dateStr} First`
+                  : "Start Today's Closing →"}
               </button>
             )}
           </div>
@@ -247,8 +297,14 @@ export function DailyClosingClient({
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-base">
-              {isClosed ? "✓" : todaySummary.readiness.isReadyToClose ? "⚡" : "⚠️"}
+            <span className="shrink-0">
+              {isClosed ? (
+                <IconCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              ) : todaySummary.readiness.isReadyToClose ? (
+                <IconZap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              ) : (
+                <IconAlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              )}
             </span>
             <div>
               <span className="font-bold">
@@ -396,8 +452,9 @@ export function DailyClosingClient({
 
                       <td className="px-4 lg:px-6 py-4 text-center">
                         {c.cashDifference === 0 ? (
-                          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
-                            ✓ {formatCurrency(0)}
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
+                            <IconCheck className="w-3 h-3" />
+                            <span>{formatCurrency(0)}</span>
                           </span>
                         ) : c.cashDifference > 0 ? (
                           <span className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-full">
@@ -412,7 +469,7 @@ export function DailyClosingClient({
 
                       <td className="px-4 lg:px-6 py-4 text-center">
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold ${
                             c.stockVerified
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                               : c.stockCountStatus === "pending_adjustments"
@@ -420,9 +477,14 @@ export function DailyClosingClient({
                               : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
                           }`}
                         >
-                          {c.stockVerified
-                            ? "✓ Verified"
-                            : c.stockCountStatus.replace("_", " ")}
+                          {c.stockVerified ? (
+                            <>
+                              <IconCheck className="w-3 h-3" />
+                              <span>Verified</span>
+                            </>
+                          ) : (
+                            c.stockCountStatus.replace("_", " ")
+                          )}
                         </span>
                       </td>
 

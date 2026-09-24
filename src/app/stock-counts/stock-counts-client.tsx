@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DailyClosingStatus } from "@prisma/client";
 import { AdjustmentModal } from "./adjustment-modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconClipboardList } from "@/components/ui/icons";
+import { IconClipboardList, IconAlertTriangle, IconCheck } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 import type {
@@ -49,7 +49,7 @@ export function StockCountsClient({
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">⚠️</span>
+              <IconAlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <div>
                 <h2 className="font-bold text-base text-amber-900 dark:text-amber-200">
                   Pending Owner Adjustments ({pendingAdjustments.length})
@@ -218,7 +218,10 @@ export function StockCountsClient({
                             {s.pendingAdjustmentsCount} pending
                           </span>
                         ) : isClosed ? (
-                          <span className="text-emerald-600 text-xs font-semibold">✓ Verified</span>
+                          <span className="inline-flex items-center gap-1 text-emerald-600 text-xs font-semibold">
+                            <IconCheck className="w-3.5 h-3.5" />
+                            <span>Verified</span>
+                          </span>
                         ) : (
                           <span className="text-zinc-400 text-xs">—</span>
                         )}

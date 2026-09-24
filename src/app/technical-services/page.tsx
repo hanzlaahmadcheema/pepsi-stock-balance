@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
 import { TechnicalServicesForm } from "@/components/technical-services-form";
-import { IconLifebuoy, IconArrowLeft, IconShield, IconTruck, IconServer } from "@/components/ui/icons";
+import { IconLifebuoy, IconArrowLeft, IconShield, IconTruck, IconServer, IconZap } from "@/components/ui/icons";
 
 export const metadata = {
   title: "Technical Services & Support - Pepsi Stock Balance",
@@ -125,7 +125,8 @@ export default async function TechnicalServicesPage() {
               <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-1.5">
-                    <span>⚡</span> System Updates & Version Scanner
+                    <IconZap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>System Updates &amp; Version Scanner</span>
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                     Owner Only

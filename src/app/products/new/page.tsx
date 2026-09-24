@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
+import { getContainerSettings } from "@/lib/containers/settings-service";
 import { CreateProductForm } from "./create-product-form";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export const metadata = {
 export default async function NewProductPage() {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const settings = getContainerSettings();
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -36,7 +38,11 @@ export default async function NewProductPage() {
             </p>
           </div>
 
-          <CreateProductForm isOwner={isOwner} />
+          <CreateProductForm
+            isOwner={isOwner}
+            enabledRates={settings.enabledRates}
+            defaultBottles={settings.defaultBottlesPerCrate}
+          />
         </div>
       </main>
     </div>

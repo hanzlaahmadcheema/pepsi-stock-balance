@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DamageType } from "@prisma/client";
 import { recordDamageAction, type DamageActionState } from "./actions";
 import { CrateStepper } from "@/components/ui/crate-stepper";
+import { IconCheck } from "@/components/ui/icons";
 
 const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
   DAMAGED_TRANSIT: "Damaged in Transit",
@@ -55,7 +56,7 @@ export function DamageForm({ products }: { products: Product[] }) {
           className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs space-y-3"
         >
           <div className="flex items-center gap-2 font-bold text-sm text-emerald-900 dark:text-emerald-100">
-            <span>✓</span>
+            <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Damage recorded successfully. Stock written off.</span>
           </div>
           <p className="text-zinc-600 dark:text-zinc-300">

@@ -18,6 +18,10 @@ import {
   IconBanknotes,
   IconPackage,
   IconClipboardList,
+  IconCheck,
+  IconClose,
+  IconAlertTriangle,
+  IconZap,
 } from "@/components/ui/icons";
 
 interface DailyClosingDetailsClientProps {
@@ -181,7 +185,8 @@ export function DailyClosingDetailsClient({
         <div className="flex items-center gap-3">
           {isClosed ? (
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-900 dark:text-emerald-200 font-semibold flex items-center gap-2">
-              <span>✓ Official closing finalized.</span>
+              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Official closing finalized.</span>
               {isOwner && (
                 <button
                   type="button"
@@ -193,12 +198,14 @@ export function DailyClosingDetailsClient({
               )}
             </div>
           ) : isInReview ? (
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 font-semibold">
-              ⚠️ In Review: Awaiting Owner final verification and close.
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 font-semibold flex items-center gap-2">
+              <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>In Review: Awaiting Owner final verification and close.</span>
             </div>
           ) : (
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 font-semibold">
-              ⚡ Open Session: Prepare physical cash and submit when operations conclude.
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 font-semibold flex items-center gap-2">
+              <IconZap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Open Session: Prepare physical cash and submit when operations conclude.</span>
             </div>
           )}
         </div>
@@ -363,7 +370,10 @@ export function DailyClosingDetailsClient({
             <div className="flex justify-between items-center">
               <span>Variance / Difference:</span>
               {currentDifference === 0 ? (
-                <span className="font-bold text-emerald-600">✓ {formatCurrency(0)} (Balanced)</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-600">
+                  <IconCheck className="w-3.5 h-3.5" />
+                  <span>{formatCurrency(0)} (Balanced)</span>
+                </span>
               ) : currentDifference > 0 ? (
                 <span className="font-bold text-blue-600">+{formatCurrency(currentDifference)} (Over)</span>
               ) : (
@@ -459,7 +469,10 @@ export function DailyClosingDetailsClient({
         {summary.stockCount.pendingAdjustments.length > 0 && (
           <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 space-y-2 text-xs text-amber-900 dark:text-amber-200">
             <div className="font-bold flex items-center justify-between">
-              <span>⚠️ Action Required: Pending Physical Stock Adjustments</span>
+              <span className="flex items-center gap-1.5">
+                <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Action Required: Pending Physical Stock Adjustments</span>
+              </span>
               <Link
                 href="/stock-counts"
                 className="underline hover:no-underline font-semibold text-amber-800 dark:text-amber-300"
@@ -554,12 +567,14 @@ export function DailyClosingDetailsClient({
                 </div>
                 <div>
                   {summary.readiness.isReadyToClose ? (
-                    <span className="text-emerald-700 dark:text-emerald-300 font-bold">
-                      ✓ All checks passed
+                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-bold">
+                      <IconCheck className="w-3.5 h-3.5" />
+                      <span>All checks passed</span>
                     </span>
                   ) : (
-                    <span className="text-red-700 dark:text-red-300 font-bold">
-                      ⚠️ Blocked: {summary.readiness.blockingReasons[0]}
+                    <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 font-bold">
+                      <IconAlertTriangle className="w-3.5 h-3.5" />
+                      <span>Blocked: {summary.readiness.blockingReasons[0]}</span>
                     </span>
                   )}
                 </div>
@@ -603,9 +618,16 @@ export function DailyClosingDetailsClient({
                     <button
                       type="submit"
                       disabled={isFinalizing || !summary.readiness.isReadyToClose}
-                      className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer"
+                      className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-2"
                     >
-                      {isFinalizing ? "Finalizing Day..." : "✓ Finalize & Close Business Day"}
+                      {isFinalizing ? (
+                        "Finalizing Day..."
+                      ) : (
+                        <>
+                          <IconCheck className="w-4 h-4" />
+                          <span>Finalize &amp; Close Business Day</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
@@ -834,7 +856,10 @@ export function DailyClosingDetailsClient({
                       <td className="px-6 py-3 text-center font-bold text-sm">{item.physicalQuantity} crates</td>
                       <td className="px-6 py-3 text-center">
                         {item.difference === 0 ? (
-                          <span className="text-emerald-600 font-bold">✓ 0</span>
+                          <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                            <IconCheck className="w-3 h-3" />
+                            <span>0</span>
+                          </span>
                         ) : item.difference > 0 ? (
                           <span className="text-blue-600 font-bold">+{item.difference}</span>
                         ) : (
@@ -891,9 +916,10 @@ export function DailyClosingDetailsClient({
               <button
                 type="button"
                 onClick={() => setShowReopenModal(false)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+                aria-label="Close dialog"
               >
-                ✕
+                <IconClose className="w-4 h-4" />
               </button>
             </div>
 

@@ -5,7 +5,7 @@ import { Role, ReturnStatus } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { getReturnDetails } from "@/lib/returns/service";
 import { InspectionPanel } from "./inspection-panel";
-import { IconPackage, IconHistory } from "@/components/ui/icons";
+import { IconPackage, IconHistory, IconAlertTriangle } from "@/components/ui/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,7 @@ export default async function ReturnDetailsPage({ params }: ReturnDetailsPagePro
         {/* Quarantine / Inspection Explanation Banner */}
         {isQuarantined && (
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
-            <span className="text-xl">⚠️</span>
+            <IconAlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
                 Returned goods have been placed in inspection.

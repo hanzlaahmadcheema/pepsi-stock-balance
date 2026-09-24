@@ -490,8 +490,81 @@ export async function getDailyClosingSummary(dateStr: string): Promise<DailyClos
   };
 }
 
+export type UnclosedPreviousDay = {
+  dateStr: string;
+  status: DailyClosingStatus;
+  id?: string;
+};
+
+/**
+ * Checks if there is any preceding business day that has not been finalized and closed.
+ * Opening a new business day is blocked if a prior day is unclosed or has unclosed activity.
+ */
+export async function getUnclosedPreviousDay(
+  currentDateStr: string
+): Promise<UnclosedPreviousDay | null> {
+  const { dbDate, startOfDay } = getBusinessDateRange(currentDateStr);
+
+  // 1. Check for any explicit unclosed DailyClosing session from earlier dates
+  const priorUnclosed = await prisma.dailyClosing.findFirst({
+    where: {
+      businessDate: { lt: dbDate },
+      status: { not: DailyClosingStatus.CLOSED },
+    },
+    orderBy: { businessDate: "desc" },
+    select: { id: true, businessDate: true, status: true },
+  });
+
+  if (priorUnclosed) {
+    return {
+      id: priorUnclosed.id,
+      dateStr: priorUnclosed.businessDate.toISOString().slice(0, 10),
+      status: priorUnclosed.status,
+    };
+  }
+
+  // 2. Check if there was operational activity (completed sales) on any prior day that was never closed
+  const priorSale = await prisma.sale.findFirst({
+    where: {
+      soldAt: { lt: startOfDay },
+      status: SaleStatus.COMPLETED,
+    },
+    orderBy: { soldAt: "desc" },
+    select: { soldAt: true },
+  });
+
+  if (priorSale) {
+    const tz = getBusinessTimeZone();
+    const priorSaleDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(priorSale.soldAt);
+
+    if (priorSaleDateStr < currentDateStr) {
+      const { dbDate: priorDbDate } = getBusinessDateRange(priorSaleDateStr);
+      const priorClosing = await prisma.dailyClosing.findUnique({
+        where: { businessDate: priorDbDate },
+        select: { id: true, status: true },
+      });
+
+      if (!priorClosing || priorClosing.status !== DailyClosingStatus.CLOSED) {
+        return {
+          id: priorClosing?.id,
+          dateStr: priorSaleDateStr,
+          status: priorClosing?.status || DailyClosingStatus.OPEN,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
 /**
  * Finds or creates an initial DailyClosing session in OPEN status for a business date.
+ * Strict rule: Next day opening requires previous day closing.
  */
 export async function getOrCreateDailyClosing(
   dateStr: string,
@@ -506,6 +579,15 @@ export async function getOrCreateDailyClosing(
 
     if (existing) {
       return { closingId: existing.id, wasCreated: false };
+    }
+
+    // Require previous day closing before opening a new day
+    const unclosedPrior = await getUnclosedPreviousDay(dateStr);
+    if (unclosedPrior) {
+      const statusLabel = unclosedPrior.status.replace("_", " ");
+      throw new Error(
+        `Cannot open business day (${dateStr}): Previous business day (${unclosedPrior.dateStr}) is still ${statusLabel}. You must finalize and close previous day operations before opening the next day.`
+      );
     }
 
     const created = await tx.dailyClosing.create({

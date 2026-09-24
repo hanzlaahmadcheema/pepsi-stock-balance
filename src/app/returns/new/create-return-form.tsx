@@ -7,7 +7,7 @@ import { createReturnAction } from "../actions";
 import { CrateStepper } from "@/components/ui/crate-stepper";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 import type { SaleReturnEligibility } from "@/lib/returns/service";
-import { IconShield, IconSearch, IconCheckCircle, IconRotateCcw } from "@/components/ui/icons";
+import { IconShield, IconSearch, IconCheckCircle, IconRotateCcw, IconAlertTriangle } from "@/components/ui/icons";
 
 type ReturnLineSelection = {
   productId: string;
@@ -219,8 +219,9 @@ export function CreateReturnForm({
                 </button>
               </div>
               {searchError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 font-semibold">
-                  ⚠️ {searchError}
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 font-semibold flex items-center gap-1.5">
+                  <IconAlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{searchError}</span>
                 </p>
               )}
             </div>

@@ -21,6 +21,7 @@ import {
   IconAlertTriangle,
   IconClose,
   IconKeyboard,
+  IconBottle,
 } from "@/components/ui/icons";
 import type { StaffProductListItem } from "@/lib/products/service";
 import type { CustomerSummary } from "@/lib/customers/service";
@@ -80,9 +81,19 @@ export function CreateSaleForm({
   const paidAmountInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
+  // Filter active sale types based on settings (Owner can use 1 or more)
+  const enabledRates = containerSettings?.enabledRates || { retail: true, wholesale: true, key: true };
+  const allowedSaleTypes = useMemo<SaleType[]>(() => {
+    const list: SaleType[] = [];
+    if (enabledRates.retail) list.push(SaleType.RETAIL);
+    if (enabledRates.wholesale) list.push(SaleType.WHOLESALE);
+    if (enabledRates.key) list.push(SaleType.KEY_ACCOUNT);
+    return list.length > 0 ? list : [SaleType.RETAIL];
+  }, [enabledRates]);
+
   // POS State
   const [customerId, setCustomerId] = useState<string>(initialCustomerId || "");
-  const [saleType, setSaleType] = useState<SaleType>(SaleType.RETAIL);
+  const [saleType, setSaleType] = useState<SaleType>(allowedSaleTypes[0]);
   const [discount, setDiscount] = useState<string>("0");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [paidAmount, setPaidAmount] = useState<string>("0");
@@ -142,9 +153,10 @@ export function CreateSaleForm({
     if (newCustomerId) {
       const cust = customers.find((c) => c.id === newCustomerId);
       if (cust) {
-        let newType: SaleType = SaleType.RETAIL;
-        if (cust.priceTier === PriceTier.WHOLESALE) newType = SaleType.WHOLESALE;
-        else if (cust.priceTier === PriceTier.KEY_ACCOUNT) newType = SaleType.KEY_ACCOUNT;
+        let newType: SaleType = allowedSaleTypes[0];
+        if (cust.priceTier === PriceTier.WHOLESALE && enabledRates.wholesale) newType = SaleType.WHOLESALE;
+        else if (cust.priceTier === PriceTier.KEY_ACCOUNT && enabledRates.key) newType = SaleType.KEY_ACCOUNT;
+        else if (cust.priceTier === PriceTier.RETAIL && enabledRates.retail) newType = SaleType.RETAIL;
 
         setSaleType(newType);
         setItems((prev) =>
@@ -589,13 +601,14 @@ export function CreateSaleForm({
         <button
           type="button"
           onClick={() => setMobileTab("catalog")}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === "catalog"
               ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
               : "text-zinc-600 dark:text-zinc-400"
           }`}
         >
-          📦 Catalog ({products.length})
+          <IconPackage className="w-3.5 h-3.5" />
+          <span>Catalog ({products.length})</span>
         </button>
         <button
           type="button"
@@ -606,7 +619,8 @@ export function CreateSaleForm({
               : "text-zinc-600 dark:text-zinc-400"
           }`}
         >
-          <span>🧾 Ticket</span>
+          <IconReceipt className="w-3.5 h-3.5" />
+          <span>Ticket</span>
           <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[11px] font-black tabular-nums">
             {totalCratesSold} crates
           </span>
@@ -670,9 +684,10 @@ export function CreateSaleForm({
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs p-1"
+                      className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded transition-colors"
+                      aria-label="Clear search"
                     >
-                      ✕
+                      <IconClose className="w-3.5 h-3.5" />
                     </button>
                   ) : (
                     <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
@@ -788,11 +803,13 @@ export function CreateSaleForm({
                   <div className="mb-1">
                     {prod.crateConfig && !prod.crateConfig.hasGlassCrate ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                        📦 One-way (PET/Can)
+                        <IconPackage className="w-3 h-3 text-zinc-400" />
+                        <span>One-way (PET/Can)</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/40">
-                        🍾 {prod.crateConfig?.bottlesPerCrate || 24}b Glass
+                        <IconBottle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                        <span>{prod.crateConfig?.bottlesPerCrate || 24}b Glass</span>
                       </span>
                     )}
                   </div>
@@ -975,7 +992,7 @@ export function CreateSaleForm({
               {/* Price Tier Override Pills */}
               <div className="pt-1 flex items-center gap-1.5">
                 <span className="text-[10px] text-zinc-400 uppercase font-semibold">Tier:</span>
-                {(["RETAIL", "WHOLESALE", "KEY_ACCOUNT"] as SaleType[]).map((t) => (
+                {allowedSaleTypes.map((t) => (
                   <button
                     key={t}
                     type="button"

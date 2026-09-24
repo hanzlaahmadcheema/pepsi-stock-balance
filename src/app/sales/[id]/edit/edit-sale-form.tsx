@@ -7,6 +7,7 @@ import { SaleType, PaymentMethod, PriceTier } from "@prisma/client";
 import { editSaleAction } from "../../actions";
 import { formatCurrency } from "@/lib/formatters";
 import { CrateStepper } from "@/components/ui/crate-stepper";
+import { IconAlertTriangle, IconCheck, IconClose } from "@/components/ui/icons";
 import type { StaffProductListItem } from "@/lib/products/service";
 import type { CustomerSummary } from "@/lib/customers/service";
 import type { SaleDetails } from "@/lib/sales/service";
@@ -25,10 +26,16 @@ export function EditSaleForm({
   sale,
   products,
   customers,
+  enabledRates = { retail: true, wholesale: true, key: true },
 }: {
   sale: SaleDetails;
   products: ProductOption[];
   customers: CustomerOption[];
+  enabledRates?: {
+    retail: boolean;
+    wholesale: boolean;
+    key: boolean;
+  };
 }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(editSaleAction, null);
@@ -257,7 +264,8 @@ export function EditSaleForm({
           htmlFor="editReason"
           className="block text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200 mb-2 flex items-center gap-1.5"
         >
-          <span className="text-amber-600">⚠️</span> Mandatory Edit Reason *
+          <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span>Mandatory Edit Reason *</span>
         </label>
         <textarea
           id="editReason"
@@ -313,10 +321,19 @@ export function EditSaleForm({
                 <b className="text-zinc-800 dark:text-zinc-200">{selectedCustomer.priceTier}</b>
               </div>
               <div>
-                <span className="text-zinc-500">Credit Status: </span>
-                <b className={selectedCustomer.creditAllowed ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-600"}>
-                  {selectedCustomer.creditAllowed ? "✓ Approved" : "✕ Not Allowed"}
-                </b>
+                <span className={selectedCustomer.creditAllowed ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-600"}>
+                  {selectedCustomer.creditAllowed ? (
+                    <span className="inline-flex items-center gap-1">
+                      <IconCheck className="w-3.5 h-3.5" />
+                      <span>Approved</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <IconClose className="w-3.5 h-3.5" />
+                      <span>Not Allowed</span>
+                    </span>
+                  )}
+                </span>
               </div>
               <div>
                 <span className="text-zinc-500">Balance: </span>
@@ -334,23 +351,25 @@ export function EditSaleForm({
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { type: SaleType.RETAIL, label: "Retail" },
-              { type: SaleType.WHOLESALE, label: "Wholesale" },
-              { type: SaleType.KEY_ACCOUNT, label: "Key Account" },
-            ].map(({ type, label }) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleSaleTypeChange(type)}
-                className={`py-2.5 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
-                  saleType === type
-                    ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-                    : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+              { type: SaleType.RETAIL, label: "Retail", enabled: enabledRates?.retail ?? true },
+              { type: SaleType.WHOLESALE, label: "Wholesale", enabled: enabledRates?.wholesale ?? true },
+              { type: SaleType.KEY_ACCOUNT, label: "Key Account", enabled: enabledRates?.key ?? true },
+            ]
+              .filter((t) => t.enabled || saleType === t.type)
+              .map(({ type, label }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleSaleTypeChange(type)}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
+                    saleType === type
+                      ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+                      : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
             Switching tier updates rates for all line items to standard tier prices.
@@ -440,8 +459,9 @@ export function EditSaleForm({
                         </span>
                       )}
                       {isOverStock && (
-                        <span className="text-red-600 dark:text-red-400 font-bold">
-                          ⚠️ Requested {item.quantity} exceeds available {availableForEdit} crates!
+                        <span className="text-red-600 dark:text-red-400 font-bold inline-flex items-center gap-1">
+                          <IconAlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Requested {item.quantity} exceeds available {availableForEdit} crates!</span>
                         </span>
                       )}
                     </div>
@@ -661,20 +681,23 @@ export function EditSaleForm({
             </div>
 
             {creditAmount > 0 && !customerId && (
-              <div role="alert" className="p-3 text-xs rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold">
-                ⚠️ Anonymous sales cannot be on credit. Please select a registered Customer or collect the full amount.
+              <div role="alert" className="p-3 text-xs rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold flex items-center gap-2">
+                <IconAlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>Anonymous sales cannot be on credit. Please select a registered Customer or collect the full amount.</span>
               </div>
             )}
 
             {creditAmount > 0 && selectedCustomer && !selectedCustomer.creditAllowed && (
-              <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
-                ⚠️ Customer &ldquo;{selectedCustomer.name}&rdquo; is not approved for credit purchases.
+              <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold flex items-center gap-2">
+                <IconAlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                <span>Customer &ldquo;{selectedCustomer.name}&rdquo; is not approved for credit purchases.</span>
               </div>
             )}
 
             {hasOverStock && (
-              <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold">
-                ⚠️ One or more crate quantities exceed available warehouse stock.
+              <div role="alert" className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 font-semibold flex items-center gap-2">
+                <IconAlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                <span>One or more crate quantities exceed available warehouse stock.</span>
               </div>
             )}
           </div>

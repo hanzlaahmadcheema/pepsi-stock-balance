@@ -5,7 +5,7 @@ import { createSupplierAction, updateSupplierAction } from "./actions";
 import { SupplierStatusButton } from "./supplier-status-button";
 import type { SupplierData } from "@/lib/suppliers/service";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconTruck } from "@/components/ui/icons";
+import { IconTruck, IconClose } from "@/components/ui/icons";
 
 export function SupplierModal({
   supplierToEdit,
@@ -48,9 +48,10 @@ export function SupplierModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-medium cursor-pointer"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
 

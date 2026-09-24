@@ -8,15 +8,22 @@ import { CustomerStatusButton } from "./customer-status-button";
 import type { CustomerSummary } from "@/lib/customers/service";
 import { formatCurrency } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconUsers } from "@/components/ui/icons";
+import { IconUsers, IconClose } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 
 export function CustomerModal({
   customerToEdit,
+  isOwner = false,
+  enabledRates = { retail: true, wholesale: true, key: true },
   onClose,
 }: {
   customerToEdit?: CustomerSummary | null;
   isOwner?: boolean;
+  enabledRates?: {
+    retail: boolean;
+    wholesale: boolean;
+    key: boolean;
+  };
   onClose: () => void;
 }) {
   const isEditing = Boolean(customerToEdit);
@@ -53,9 +60,10 @@ export function CustomerModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-bold"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
 
@@ -125,9 +133,17 @@ export function CustomerModal({
               defaultValue={customerToEdit?.priceTier || PriceTier.RETAIL}
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value={PriceTier.RETAIL}>RETAIL</option>
-              <option value={PriceTier.WHOLESALE}>WHOLESALE</option>
-              <option value={PriceTier.KEY_ACCOUNT}>KEY ACCOUNT</option>
+              {[
+                { tier: PriceTier.RETAIL, label: "RETAIL", enabled: enabledRates?.retail ?? true },
+                { tier: PriceTier.WHOLESALE, label: "WHOLESALE", enabled: enabledRates?.wholesale ?? true },
+                { tier: PriceTier.KEY_ACCOUNT, label: "KEY ACCOUNT", enabled: enabledRates?.key ?? true },
+              ]
+                .filter((t) => t.enabled || customerToEdit?.priceTier === t.tier)
+                .map((t) => (
+                  <option key={t.tier} value={t.tier}>
+                    {t.label}
+                  </option>
+                ))}
             </select>
           </div>
 

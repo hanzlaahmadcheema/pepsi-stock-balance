@@ -3,6 +3,7 @@
 import { useState, useActionState } from "react";
 import { resolveAdjustmentAction } from "./actions";
 import type { PendingAdjustmentSummary } from "@/lib/stock-counts/service";
+import { IconClose, IconCheck } from "@/components/ui/icons";
 
 export function AdjustmentModal({
   adjustment,
@@ -31,9 +32,10 @@ export function AdjustmentModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 font-bold"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
 
@@ -95,24 +97,26 @@ export function AdjustmentModal({
               <button
                 type="button"
                 onClick={() => setDecision("APPROVE")}
-                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                   decision === "APPROVE"
                     ? "bg-emerald-600 text-white border-emerald-600"
                     : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                 }`}
               >
-                ✅ APPROVE ADJUSTMENT
+                <IconCheck className="w-3.5 h-3.5" />
+                <span>APPROVE ADJUSTMENT</span>
               </button>
               <button
                 type="button"
                 onClick={() => setDecision("REJECT")}
-                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                   decision === "REJECT"
                     ? "bg-red-600 text-white border-red-600"
                     : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                 }`}
               >
-                ❌ REJECT ADJUSTMENT
+                <IconClose className="w-3.5 h-3.5" />
+                <span>REJECT ADJUSTMENT</span>
               </button>
             </div>
             <p className="text-xs text-zinc-500 mt-1">

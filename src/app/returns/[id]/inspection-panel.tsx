@@ -4,7 +4,7 @@ import { useState, useActionState } from "react";
 import { InspectionResult } from "@prisma/client";
 import { inspectReturnAction } from "../actions";
 import type { ReturnDetails } from "@/lib/returns/service";
-import { IconShield } from "@/components/ui/icons";
+import { IconShield, IconCheck } from "@/components/ui/icons";
 
 export function InspectionPanel({
   returnRecord,
@@ -45,7 +45,8 @@ export function InspectionPanel({
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
         <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          <span>✅ Quarantine Inspection Completed</span>
+          <IconCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <span>Quarantine Inspection Completed</span>
         </h3>
         <p className="text-xs text-zinc-500">
           This return has been fully inspected by{" "}

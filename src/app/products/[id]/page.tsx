@@ -5,10 +5,11 @@ import { Role, PriceTier } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
 import { getProductDetails } from "@/lib/products/service";
-import { getProductCrateConfig } from "@/lib/containers/settings-service";
+import { getProductCrateConfig, getContainerSettings } from "@/lib/containers/settings-service";
 import { ProductStatusButton } from "./product-status-button";
 import { EditProductForm } from "./edit-product-form";
 import { UpdatePriceForm } from "./update-price-form";
+import { IconAlertTriangle, IconCheck, IconBottle, IconPackage } from "@/components/ui/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,8 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   const wholesalePrice = product.activePrices.find((p) => p.tier === PriceTier.WHOLESALE)?.amount;
   const keyAccountPrice = product.activePrices.find((p) => p.tier === PriceTier.KEY_ACCOUNT)?.amount;
 
+  const containerSettings = getContainerSettings();
+  const enabledRates = containerSettings.enabledRates;
   const crateConfig = getProductCrateConfig({ id: product.id, name: product.name });
 
   return (
@@ -114,12 +117,14 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               </div>
               <div className="mt-2">
                 {product.isLowStock ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                    ⚠ Below minimum threshold ({product.minimumStockLevel})
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    <IconAlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Below minimum threshold ({product.minimumStockLevel})</span>
                   </span>
                 ) : (
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    ✓ Healthy inventory level
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                    <IconCheck className="w-3.5 h-3.5" />
+                    <span>Healthy inventory level</span>
                   </span>
                 )}
               </div>
@@ -144,11 +149,21 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
             {/* Packaging / Empties Tracking */}
             <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Packaging & Empties
+                Packaging &amp; Empties
               </span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50">
-                  {crateConfig.hasGlassCrate ? "🍾 Glass Crate" : "📦 Non-Returnable"}
+                <span className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 inline-flex items-center gap-2">
+                  {crateConfig.hasGlassCrate ? (
+                    <>
+                      <IconBottle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <span>Glass Crate</span>
+                    </>
+                  ) : (
+                    <>
+                      <IconPackage className="w-5 h-5 text-zinc-400" />
+                      <span>Non-Returnable</span>
+                    </>
+                  )}
                 </span>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
@@ -191,43 +206,49 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Retail */}
-              <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
-                <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
-                  Retail Tier
-                </span>
-                <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
-                  {retailPrice ? `Rs. ${retailPrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+              {enabledRates.retail && (
+                <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
+                  <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
+                    Retail Tier
+                  </span>
+                  <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
+                    {retailPrice ? `Rs. ${retailPrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+                  </div>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
+                    Anonymous sales & standard retail
+                  </span>
                 </div>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
-                  Anonymous sales & standard retail
-                </span>
-              </div>
+              )}
 
               {/* Wholesale */}
-              <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
-                <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
-                  Wholesale Tier
-                </span>
-                <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
-                  {wholesalePrice ? `Rs. ${wholesalePrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+              {enabledRates.wholesale && (
+                <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
+                  <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
+                    Wholesale Tier
+                  </span>
+                  <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
+                    {wholesalePrice ? `Rs. ${wholesalePrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+                  </div>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
+                    Bulk retail shops & market distributors
+                  </span>
                 </div>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
-                  Bulk retail shops & market distributors
-                </span>
-              </div>
+              )}
 
               {/* Key Account */}
-              <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
-                <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
-                  Key Account Tier
-                </span>
-                <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
-                  {keyAccountPrice ? `Rs. ${keyAccountPrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+              {enabledRates.key && (
+                <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50">
+                  <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
+                    Key Account Tier
+                  </span>
+                  <div className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">
+                    {keyAccountPrice ? `Rs. ${keyAccountPrice}` : <span className="text-zinc-400 text-lg">Not Set</span>}
+                  </div>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
+                    Institutional, hotels & contract clients
+                  </span>
                 </div>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">
-                  Institutional, hotels & contract clients
-                </span>
-              </div>
+              )}
             </div>
           </div>
 
@@ -240,6 +261,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 tier: p.tier,
                 amount: p.amount,
               }))}
+              enabledRates={enabledRates}
             />
 
             {/* Edit Product Information Form */}

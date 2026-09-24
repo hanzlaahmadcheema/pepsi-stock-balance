@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/app-header";
 import { getSaleDetails } from "@/lib/sales/service";
 import { listProducts, type StaffProductListItem } from "@/lib/products/service";
 import { listCustomers } from "@/lib/customers/service";
+import { getContainerSettings } from "@/lib/containers/settings-service";
 import { EditSaleForm } from "./edit-sale-form";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,7 @@ export default async function EditSalePage({ params }: EditSalePageProps) {
           sale={sale}
           products={activeProducts}
           customers={activeCustomers}
+          enabledRates={getContainerSettings().enabledRates}
         />
       </main>
     </div>

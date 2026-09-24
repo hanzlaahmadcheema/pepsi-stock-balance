@@ -32,6 +32,7 @@ import {
   IconLifebuoy,
   IconServer,
   IconKeyboard,
+  IconSettings,
 } from "@/components/ui/icons";
 import { DbStatusIndicator } from "@/components/db-status-indicator";
 import { SystemVersionPill } from "@/components/system-version-pill";
@@ -91,7 +92,7 @@ const NAV_GROUPS: NavGroup[] = [
       { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
       { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
-      { name: "Crate & Container Settings", href: "/settings/crates", icon: IconBox, ownerOnly: true },
+      { name: "Settings", href: "/settings", icon: IconSettings, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
       { name: "System Updates", href: "/settings/system-update", icon: IconServer, ownerOnly: true },
       { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
@@ -116,16 +117,17 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const first = parts[0];
 
   if (first === "sales") {
-    const items: BreadcrumbItem[] = [
-      { label: "Sales" },
-      { label: "Sales History", href: "/sales" },
-    ];
-    if (parts[1] === "new") items.push({ label: "New Sale" });
-    else if (parts[2] === "edit") {
-      items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
-      items.push({ label: "Edit" });
-    } else if (parts[1]) {
-      items.push({ label: `Invoice #${parts[1].slice(0, 8)}` });
+    const items: BreadcrumbItem[] = [{ label: "Sales" }];
+    if (parts[1] === "new") {
+      items.push({ label: "New Sale" });
+    } else {
+      items.push({ label: "Sales History", href: "/sales" });
+      if (parts[2] === "edit") {
+        items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
+        items.push({ label: "Edit" });
+      } else if (parts[1]) {
+        items.push({ label: `Invoice #${parts[1].slice(0, 8)}` });
+      }
     }
     return items;
   }
@@ -243,10 +245,10 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     ];
   }
 
-  if (first === "settings" && parts[1] === "crates") {
+  if (first === "settings" && (!parts[1] || parts[1] === "crates")) {
     return [
       { label: "Management" },
-      { label: "Crate & Container Settings", href: "/settings/crates" },
+      { label: "Settings", href: "/settings" },
     ];
   }
 
@@ -383,6 +385,12 @@ export function AppHeader({ user }: { user: DbUser }) {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/" || pathname === "/dashboard";
+    if (href === "/sales") {
+      return pathname === "/sales" || (pathname.startsWith("/sales/") && !pathname.startsWith("/sales/new"));
+    }
+    if (href === "/settings") {
+      return pathname === "/settings" || pathname.startsWith("/settings/crates");
+    }
     return pathname === href || pathname.startsWith(href + "/");
   };
 

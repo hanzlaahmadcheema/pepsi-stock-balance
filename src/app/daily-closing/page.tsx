@@ -5,6 +5,7 @@ import {
   getTodayBusinessDateString,
   getDailyClosingSummary,
   listDailyClosings,
+  getUnclosedPreviousDay,
 } from "@/lib/daily-closing/service";
 import { DailyClosingClient } from "./daily-closing-client";
 
@@ -19,8 +20,11 @@ export default async function DailyClosingPage() {
   const isOwner = user.role === Role.OWNER;
 
   const todayDateStr = getTodayBusinessDateString();
-  const todaySummary = await getDailyClosingSummary(todayDateStr);
-  const recentClosings = await listDailyClosings(60);
+  const [todaySummary, recentClosings, unclosedPrevious] = await Promise.all([
+    getDailyClosingSummary(todayDateStr),
+    listDailyClosings(60),
+    getUnclosedPreviousDay(todayDateStr),
+  ]);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
@@ -32,6 +36,7 @@ export default async function DailyClosingPage() {
           recentClosings={recentClosings}
           isOwner={isOwner}
           todayDateStr={todayDateStr}
+          unclosedPrevious={unclosedPrevious}
         />
       </main>
     </div>

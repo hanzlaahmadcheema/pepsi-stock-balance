@@ -4,6 +4,8 @@ import { AppHeader } from "@/components/app-header";
 import { listProducts, type StaffProductListItem } from "@/lib/products/service";
 import { listCustomers } from "@/lib/customers/service";
 import { getContainerSettings, getProductCrateConfig } from "@/lib/containers/settings-service";
+import { getTodayBusinessDateString, getUnclosedPreviousDay } from "@/lib/daily-closing/service";
+import { IconAlertTriangle } from "@/components/ui/icons";
 import { CreateSaleForm } from "./create-sale-form";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +36,10 @@ export default async function NewSalePage({ searchParams }: NewSalePageProps) {
   const allCustomers = await listCustomers();
   const activeCustomers = allCustomers.filter((c) => c.isActive);
 
+  // 3. Check if prior business day was unclosed
+  const todayDateStr = getTodayBusinessDateString();
+  const unclosedPrevious = await getUnclosedPreviousDay(todayDateStr);
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
       <AppHeader user={user} />
@@ -54,6 +60,23 @@ export default async function NewSalePage({ searchParams }: NewSalePageProps) {
             </p>
           </div>
         </div>
+
+        {unclosedPrevious && (
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs font-semibold text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <IconAlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Attention: Previous day ({unclosedPrevious.dateStr}) daily closing is still {unclosedPrevious.status.replace("_", " ")}. Ensure previous operations are finalized.
+              </span>
+            </div>
+            <Link
+              href={unclosedPrevious.id ? `/daily-closing/${unclosedPrevious.id}` : "/daily-closing"}
+              className="text-amber-700 dark:text-amber-300 underline font-bold hover:opacity-80 shrink-0"
+            >
+              Go to Closing →
+            </Link>
+          </div>
+        )}
 
         <CreateSaleForm
           products={activeProducts}

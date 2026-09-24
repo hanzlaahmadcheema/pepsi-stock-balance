@@ -18,6 +18,8 @@ import {
   IconCreditCard,
   IconQrCode,
   IconPlus,
+  IconCheck,
+  IconZap,
 } from "@/components/ui/icons";
 
 export const dynamic = "force-dynamic";
@@ -294,8 +296,9 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-between text-xs">
-            <span className="font-medium text-emerald-800 dark:text-emerald-300">
-              ✓ All daily operational checkpoints are currently up to date.
+            <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800 dark:text-emerald-300">
+              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>All daily operational checkpoints are currently up to date.</span>
             </span>
             <span className="text-zinc-500 dark:text-zinc-400">
               Stock Count: {data.stockCount.status.toUpperCase()} · Closing: {data.dailyClosing.status}
@@ -856,7 +859,9 @@ export default async function HomePage() {
                 className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 transition-all shadow-xs hover:shadow-md flex flex-col justify-between"
               >
                 <div>
-                  <div className="text-2xl mb-1">⚡</div>
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center mb-2">
+                    <IconZap className="w-5 h-5 text-white" />
+                  </div>
                   <div className="font-bold text-white text-sm">+ New Sale / Invoice</div>
                   <p className="text-xs text-blue-100 mt-1">Start a fresh retail or wholesale invoice immediately.</p>
                 </div>

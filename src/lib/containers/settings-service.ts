@@ -6,12 +6,19 @@ export interface ProductCrateConfig {
   bottlesPerCrate: number; // Default 24 bottles per crate
 }
 
+export interface EnabledRatesConfig {
+  retail: boolean;
+  wholesale: boolean;
+  key: boolean;
+}
+
 export interface ContainerSettings {
   enabledTypes: {
     glass: boolean; // Active by default (we deal with only glass)
     plastic: boolean; // Disabled by default, preserved without permanent deletion
   };
   defaultBottlesPerCrate: number; // Default 24
+  enabledRates: EnabledRatesConfig;
   productConfigs: Record<string, ProductCrateConfig>;
 }
 
@@ -23,6 +30,11 @@ const DEFAULT_SETTINGS: ContainerSettings = {
     plastic: false, // Disabled by default as requested: "we deals with only glass, don't delete plastic permanently just disable it"
   },
   defaultBottlesPerCrate: 24,
+  enabledRates: {
+    retail: true,
+    wholesale: true,
+    key: true,
+  },
   productConfigs: {},
 };
 
@@ -105,12 +117,23 @@ export function getContainerSettings(): ContainerSettings {
   try {
     const raw = fs.readFileSync(SETTINGS_FILE_PATH, "utf-8");
     const parsed = JSON.parse(raw);
+    const rawRates = parsed.enabledRates;
+    const enabledRates: EnabledRatesConfig = {
+      retail: rawRates?.retail ?? true,
+      wholesale: rawRates?.wholesale ?? true,
+      key: rawRates?.key ?? true,
+    };
+    if (!enabledRates.retail && !enabledRates.wholesale && !enabledRates.key) {
+      enabledRates.retail = true;
+    }
+
     cachedSettings = {
       enabledTypes: {
         glass: parsed.enabledTypes?.glass ?? true,
         plastic: parsed.enabledTypes?.plastic ?? false,
       },
       defaultBottlesPerCrate: parsed.defaultBottlesPerCrate ?? 24,
+      enabledRates,
       productConfigs: parsed.productConfigs || {},
     };
     return cachedSettings;
@@ -122,6 +145,14 @@ export function getContainerSettings(): ContainerSettings {
 
 export function updateContainerSettings(partial: Partial<ContainerSettings>): ContainerSettings {
   const current = getContainerSettings();
+  const nextRates: EnabledRatesConfig = {
+    ...current.enabledRates,
+    ...(partial.enabledRates || {}),
+  };
+  if (!nextRates.retail && !nextRates.wholesale && !nextRates.key) {
+    nextRates.retail = true;
+  }
+
   const updated: ContainerSettings = {
     ...current,
     ...partial,
@@ -129,6 +160,7 @@ export function updateContainerSettings(partial: Partial<ContainerSettings>): Co
       ...current.enabledTypes,
       ...(partial.enabledTypes || {}),
     },
+    enabledRates: nextRates,
     productConfigs: {
       ...current.productConfigs,
       ...(partial.productConfigs || {}),

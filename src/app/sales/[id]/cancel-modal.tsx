@@ -2,6 +2,7 @@
 
 import { useState, useActionState } from "react";
 import { cancelSaleAction } from "../actions";
+import { IconClose, IconAlertTriangle } from "@/components/ui/icons";
 
 export function CancelSaleModal({
   saleId,
@@ -29,9 +30,10 @@ export function CancelSaleModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 font-bold"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
-            ✕
+            <IconClose className="w-4 h-4" />
           </button>
         </div>
 
@@ -39,7 +41,10 @@ export function CancelSaleModal({
           <input type="hidden" name="saleId" value={saleId} />
 
           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-xs text-red-700 dark:text-red-300">
-            <p className="font-bold mb-1">⚠️ Warning: Invoice Cancellation</p>
+            <p className="font-bold mb-1 flex items-center gap-1.5">
+              <IconAlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+              <span>Warning: Invoice Cancellation</span>
+            </p>
             <p>
               Cancelling this invoice will immediately:
             </p>

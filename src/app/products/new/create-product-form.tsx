@@ -5,7 +5,21 @@ import Link from "next/link";
 import { createProductAction } from "../actions";
 import { IconPackage, IconCheckCircle } from "@/components/ui/icons";
 
-export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
+interface CreateProductFormProps {
+  isOwner?: boolean;
+  enabledRates?: {
+    retail: boolean;
+    wholesale: boolean;
+    key: boolean;
+  };
+  defaultBottles?: number;
+}
+
+export function CreateProductForm({
+  isOwner = false,
+  enabledRates = { retail: true, wholesale: true, key: true },
+  defaultBottles = 24,
+}: CreateProductFormProps) {
   const [state, formAction, isPending] = useActionState(createProductAction, null);
 
   return (
@@ -105,54 +119,35 @@ export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
           </div>
         </div>
 
-        {/* Returnable Glass Crate Configuration */}
-        <div className="space-y-4 pt-2">
-          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3">
+        {/* Returnable Crate Tracking */}
+        <div className="space-y-3 pt-2">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-2">
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              Returnable Container / Crate Tracking
+              Crate Returnability
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Define if this product uses returnable glass crates (shell &amp; bottles), or is disposable one-way packaging (PET / Cans).
+              Specify if this product uses returnable crates. Standard bottle capacity ({defaultBottles} bottles per crate) is configured in Settings.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="hasGlassCrate"
-                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-              >
-                Packaging / Crate Returnability *
-              </label>
-              <select
-                id="hasGlassCrate"
-                name="hasGlassCrate"
-                defaultValue="true"
-                className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="true">🍾 Returnable Glass Crate (Empties Owed by Customer)</option>
-                <option value="false">📦 Disposable / One-Way (PET, Aluminum Can, Shrink)</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="bottlesPerCrate"
-                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-              >
-                Bottles Per Crate (Default: 24) *
-              </label>
+          <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+            <label htmlFor="isReturnable" className="flex items-start gap-3 cursor-pointer">
               <input
-                id="bottlesPerCrate"
-                name="bottlesPerCrate"
-                type="number"
-                min="1"
-                max="99"
-                defaultValue="24"
-                required
-                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+                id="isReturnable"
+                name="isReturnable"
+                type="checkbox"
+                defaultChecked={true}
+                className="mt-0.5 w-5 h-5 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
-            </div>
+              <div>
+                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                  Returnable Crate
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                  Check if customers owe empty glass crates and bottles for this item. Bottle capacity ({defaultBottles} bottles/crate) is managed in Settings.
+                </span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -160,10 +155,10 @@ export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
         <div className="space-y-4 pt-2">
           <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3">
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              Pricing & Cost per Crate
+              Pricing &amp; Cost per Crate
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Set unit selling prices for different customer tiers.{isOwner ? " Purchase cost is visible to Owner only." : ""}
+              Set unit selling prices for active customer tiers.{isOwner ? " Purchase cost is visible to Owner only." : ""}
             </p>
           </div>
 
@@ -191,60 +186,66 @@ export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
               </div>
             )}
 
-            <div>
-              <label
-                htmlFor="retailPrice"
-                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-              >
-                Retail Price (Rs.) *
-              </label>
-              <input
-                id="retailPrice"
-                name="retailPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                placeholder="0.00"
-                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
-              />
-            </div>
+            {enabledRates.retail && (
+              <div>
+                <label
+                  htmlFor="retailPrice"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+                >
+                  Retail Price (Rs.) *
+                </label>
+                <input
+                  id="retailPrice"
+                  name="retailPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+                />
+              </div>
+            )}
 
-            <div>
-              <label
-                htmlFor="wholesalePrice"
-                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-              >
-                Wholesale Price (Rs.)
-              </label>
-              <input
-                id="wholesalePrice"
-                name="wholesalePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
-              />
-            </div>
+            {enabledRates.wholesale && (
+              <div>
+                <label
+                  htmlFor="wholesalePrice"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+                >
+                  Wholesale Price (Rs.)
+                </label>
+                <input
+                  id="wholesalePrice"
+                  name="wholesalePrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+                />
+              </div>
+            )}
 
-            <div>
-              <label
-                htmlFor="keyAccountPrice"
-                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-              >
-                Key Account Price (Rs.)
-              </label>
-              <input
-                id="keyAccountPrice"
-                name="keyAccountPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
-              />
-            </div>
+            {enabledRates.key && (
+              <div>
+                <label
+                  htmlFor="keyAccountPrice"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+                >
+                  Key Account Price (Rs.)
+                </label>
+                <input
+                  id="keyAccountPrice"
+                  name="keyAccountPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+                />
+              </div>
+            )}
           </div>
         </div>
 

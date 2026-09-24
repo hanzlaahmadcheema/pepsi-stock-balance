@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { SystemVersionInfo } from "@/lib/version/service";
-import { IconServer, IconShield, IconCheck, IconRotateCcw } from "@/components/ui/icons";
+import { IconServer, IconShield, IconCheck, IconRotateCcw, IconZap, IconRocket, IconWifiOff, IconArrowUp } from "@/components/ui/icons";
 
 export function SystemUpdateClient({
   initialData,
@@ -137,7 +137,7 @@ export function SystemUpdateClient({
               </>
             ) : (
               <>
-                <span>🔄</span>
+                <IconRotateCcw className="w-3.5 h-3.5" />
                 <span>Scan for Updates</span>
               </>
             )}
@@ -161,7 +161,7 @@ export function SystemUpdateClient({
                 </>
               ) : (
                 <>
-                  <span>⚡</span>
+                  <IconZap className="w-3.5 h-3.5" />
                   <span>{isUpdateAvailable ? "Update to Latest Release" : "Force Pull & Rebuild"}</span>
                 </>
               )}
@@ -175,7 +175,7 @@ export function SystemUpdateClient({
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
             <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <span className="text-xl">🚀</span>
+              <IconRocket className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-amber-950 dark:text-amber-100">
@@ -200,7 +200,7 @@ export function SystemUpdateClient({
       ) : data.status === "OFFLINE" ? (
         <div className="bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 flex items-center justify-center shrink-0">
-            <span className="text-xl">📡</span>
+            <IconWifiOff className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
@@ -299,13 +299,23 @@ export function SystemUpdateClient({
             </div>
             {data.remote && (
               <span
-                className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${
                   isUpdateAvailable
                     ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
                     : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200"
                 }`}
               >
-                {isUpdateAvailable ? "▲ Newer Commit Available" : "✓ In Sync"}
+                {isUpdateAvailable ? (
+                  <>
+                    <IconArrowUp className="w-3 h-3" />
+                    <span>Newer Commit Available</span>
+                  </>
+                ) : (
+                  <>
+                    <IconCheck className="w-3 h-3" />
+                    <span>In Sync</span>
+                  </>
+                )}
               </span>
             )}
           </div>

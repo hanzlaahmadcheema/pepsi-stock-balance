@@ -24,21 +24,32 @@ set "NSSM_EXE=nssm.exe"
 if exist "C:\ProgramData\chocolatey\bin\nssm.exe" set "NSSM_EXE=C:\ProgramData\chocolatey\bin\nssm.exe"
 if exist "C:\nssm\win64\nssm.exe" set "NSSM_EXE=C:\nssm\win64\nssm.exe"
 
+set "HAS_NSSM=0"
+where "%NSSM_EXE%" >nul 2>&1
+if %errorLevel% equ 0 set "HAS_NSSM=1"
+if exist "%NSSM_EXE%" set "HAS_NSSM=1"
+
 set "WEB_SVC=PepsiDepotWeb"
 set "SYNC_SVC=PepsiDepotSync"
-"%NSSM_EXE%" status "%WEB_SVC%" >nul 2>&1
-if %errorLevel% neq 0 (
-    set "WEB_SVC=Pepsi Depot Web"
-    set "SYNC_SVC=Pepsi Depot Sync"
+if %HAS_NSSM% equ 1 (
+    "%NSSM_EXE%" status "%WEB_SVC%" >nul 2>&1
+    if !errorLevel! neq 0 (
+        set "WEB_SVC=Pepsi Depot Web"
+        set "SYNC_SVC=Pepsi Depot Sync"
+    )
 )
 
 :: 3. Delay 2 seconds to allow the Web UI HTTP response to return cleanly
 timeout /t 2 /nobreak >nul
 
 :: 4. Stop Services to release file locks
-echo [%DATE% %TIME%] [1/4] Stopping services to release file locks... >> "%LOG_FILE%"
-"%NSSM_EXE%" stop "%WEB_SVC%" >> "%LOG_FILE%" 2>&1
-"%NSSM_EXE%" stop "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
+if %HAS_NSSM% equ 1 (
+    echo [%DATE% %TIME%] [1/5] Stopping services to release file locks... >> "%LOG_FILE%"
+    "%NSSM_EXE%" stop "%WEB_SVC%" >> "%LOG_FILE%" 2>&1
+    "%NSSM_EXE%" stop "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
+) else (
+    echo [%DATE% %TIME%] [1/5] No NSSM services detected. Continuing... >> "%LOG_FILE%"
+)
 
 :: 5. Pull latest code from GitHub
 echo [%DATE% %TIME%] [2/5] Pulling latest code from origin main... >> "%LOG_FILE%"
@@ -63,9 +74,13 @@ if %BUILD_EXIT% neq 0 (
 )
 
 :: 8. Restart Services
-echo [%DATE% %TIME%] [5/5] Starting services... >> "%LOG_FILE%"
-"%NSSM_EXE%" start "%WEB_SVC%" >> "%LOG_FILE%" 2>&1
-"%NSSM_EXE%" start "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
+if %HAS_NSSM% equ 1 (
+    echo [%DATE% %TIME%] [5/5] Starting services... >> "%LOG_FILE%"
+    "%NSSM_EXE%" start "%WEB_SVC%" >> "%LOG_FILE%" 2>&1
+    "%NSSM_EXE%" start "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
+) else (
+    echo [%DATE% %TIME%] [5/5] No NSSM services to restart. >> "%LOG_FILE%"
+)
 
 echo [%DATE% %TIME%] [COMPLETE] Automated update finished. >> "%LOG_FILE%"
 exit /b 0

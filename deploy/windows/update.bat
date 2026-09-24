@@ -6,13 +6,12 @@ echo  Pepsi Stock Balance - Automated Windows Update Script
 echo ==============================================================================
 echo.
 
-:: 1. Verify Administrative Privileges
+:: 1. Verify Administrative Privileges (auto-request elevation if needed)
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [ERROR] Administrator privileges required.
-    echo Please right-click update.bat and select "Run as administrator".
-    pause
-    exit /b 1
+    echo [INFO] Administrative privileges required. Requesting elevation...
+    powershell -Command "Start-Process cmd -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs"
+    exit /b
 )
 
 :: 2. Resolve Application Directory
@@ -31,23 +30,35 @@ set "NSSM_EXE=nssm.exe"
 if exist "C:\ProgramData\chocolatey\bin\nssm.exe" set "NSSM_EXE=C:\ProgramData\chocolatey\bin\nssm.exe"
 if exist "C:\nssm\win64\nssm.exe" set "NSSM_EXE=C:\nssm\win64\nssm.exe"
 
-:: Detect Service Names
+set "HAS_NSSM=0"
+where "%NSSM_EXE%" >nul 2>&1
+if %errorLevel% equ 0 set "HAS_NSSM=1"
+if exist "%NSSM_EXE%" set "HAS_NSSM=1"
+
 set "WEB_SVC=PepsiDepotWeb"
 set "SYNC_SVC=PepsiDepotSync"
-"%NSSM_EXE%" status "%WEB_SVC%" >nul 2>&1
-if %errorLevel% neq 0 (
-    set "WEB_SVC=Pepsi Depot Web"
-    set "SYNC_SVC=Pepsi Depot Sync"
+if %HAS_NSSM% equ 1 (
+    "%NSSM_EXE%" status "%WEB_SVC%" >nul 2>&1
+    if !errorLevel! neq 0 (
+        set "WEB_SVC=Pepsi Depot Web"
+        set "SYNC_SVC=Pepsi Depot Sync"
+    )
+    echo [OK] Using NSSM at: %NSSM_EXE%
+    echo [OK] Target services: %WEB_SVC% / %SYNC_SVC%
+) else (
+    echo [NOTICE] NSSM service manager not found.
+    echo Proceeding with Git update and application build.
 )
-
-echo [OK] Using NSSM at: %NSSM_EXE%
-echo [OK] Target services: %WEB_SVC% / %SYNC_SVC%
 echo.
 
 :: 4. Stop Services before building to release file locks
-echo [1/5] Stopping services to release file locks...
-"%NSSM_EXE%" stop "%WEB_SVC%"
-"%NSSM_EXE%" stop "%SYNC_SVC%"
+if %HAS_NSSM% equ 1 (
+    echo [1/5] Stopping services to release file locks...
+    "%NSSM_EXE%" stop "%WEB_SVC%"
+    "%NSSM_EXE%" stop "%SYNC_SVC%"
+) else (
+    echo [1/5] No NSSM services running. Skipping stop step...
+)
 
 :: 5. Pull latest code from GitHub
 echo.
@@ -68,7 +79,7 @@ git log -n 1 --oneline
 :: 6. Update dependencies if needed
 echo.
 echo [3/5] Verifying Node packages...
-call npm install
+call npm install --no-audit --no-fund
 
 :: 7. Build Next.js app and standalone Sync Daemon bundle
 echo.
@@ -81,18 +92,28 @@ if %errorLevel% neq 0 (
 
 :: 8. Restart Services
 :restart_services
-echo.
-echo [5/5] Starting services...
-"%NSSM_EXE%" start "%WEB_SVC%"
-"%NSSM_EXE%" start "%SYNC_SVC%"
+if %HAS_NSSM% equ 1 (
+    echo.
+    echo [5/5] Starting services...
+    "%NSSM_EXE%" start "%WEB_SVC%"
+    "%NSSM_EXE%" start "%SYNC_SVC%"
 
-echo.
-echo ==============================================================================
-echo  Current Service Status:
-echo ==============================================================================
-"%NSSM_EXE%" status "%WEB_SVC%"
-"%NSSM_EXE%" status "%SYNC_SVC%"
-echo ==============================================================================
+    echo.
+    echo ==============================================================================
+    echo  Current Service Status:
+    echo ==============================================================================
+    "%NSSM_EXE%" status "%WEB_SVC%"
+    "%NSSM_EXE%" status "%SYNC_SVC%"
+    echo ==============================================================================
+) else (
+    echo.
+    echo ==============================================================================
+    echo  Update Completed Successfully!
+    echo ==============================================================================
+    echo  Start the application with:
+    echo    npm run start   (or npm run dev)
+    echo ==============================================================================
+)
 
 pause
 exit /b 0

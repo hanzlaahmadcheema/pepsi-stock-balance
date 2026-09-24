@@ -29,8 +29,10 @@ import {
   IconSun,
   IconMoon,
   IconLifebuoy,
+  IconServer,
 } from "@/components/ui/icons";
 import { DbStatusIndicator } from "@/components/db-status-indicator";
+import { SystemVersionPill } from "@/components/system-version-pill";
 
 interface NavItem {
   name: string;
@@ -88,6 +90,7 @@ const NAV_GROUPS: NavGroup[] = [
       { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
+      { name: "System Updates", href: "/settings/system-update", icon: IconServer, ownerOnly: true },
       { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
     ],
   },
@@ -241,6 +244,13 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return [
       { label: "Management" },
       { label: "User Management", href: "/settings/users" },
+    ];
+  }
+
+  if (first === "settings" && parts[1] === "system-update") {
+    return [
+      { label: "Management" },
+      { label: "System Updates", href: "/settings/system-update" },
     ];
   }
 
@@ -552,6 +562,9 @@ export function AppHeader({ user }: { user: DbUser }) {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* DB Connection Status Pills */}
             <DbStatusIndicator />
+
+            {/* Git Repository Version & Update Indicator Pill */}
+            <SystemVersionPill isOwner={isOwner} />
 
             {/* Theme Toggle Button in Topbar */}
             <button

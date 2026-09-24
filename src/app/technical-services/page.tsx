@@ -121,6 +121,28 @@ export default async function TechnicalServicesPage() {
               </div>
             </div>
 
+            {user?.role === "OWNER" && (
+              <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-1.5">
+                    <span>⚡</span> System Updates & Version Scanner
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                    Owner Only
+                  </span>
+                </div>
+                <p className="text-blue-700 dark:text-blue-300">
+                  Scan GitHub remote repository and deploy the latest software release with one click.
+                </p>
+                <Link
+                  href="/settings/system-update"
+                  className="inline-flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+                >
+                  <span>Open System Updates Console →</span>
+                </Link>
+              </div>
+            )}
+
             <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
               <p className="font-semibold text-zinc-900 dark:text-zinc-100">
                 Operating Depot Hours

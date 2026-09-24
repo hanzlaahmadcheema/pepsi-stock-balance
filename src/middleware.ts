@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   "/executive-preview",
   "/api/sync",
   "/api/db-status",
+  "/api/system/version",
   "/technical-services",
 ];
 

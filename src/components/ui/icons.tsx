@@ -362,4 +362,13 @@ export function IconCheckCircle({ className = "w-4 h-4", ...props }: IconProps) 
   );
 }
 
+export function IconKeyboard({ className = "w-4 h-4", ...props }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9h.01M9 9h.01M12 9h.01M15 9h.01M18 9h.01M6 12h.01M9 12h.01M12 12h.01M15 12h.01M18 12h.01M8 15h8" />
+    </svg>
+  );
+}
+
 

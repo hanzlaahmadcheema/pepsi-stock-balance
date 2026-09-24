@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { logoutAction } from "@/app/login/actions";
 import { Role } from "@prisma/client";
 import type { DbUser } from "@/lib/auth";
+import { KeyboardShortcutsModal } from "@/components/ui/keyboard-shortcuts-modal";
 import {
   IconMenu,
   IconClose,
@@ -30,6 +31,7 @@ import {
   IconMoon,
   IconLifebuoy,
   IconServer,
+  IconKeyboard,
 } from "@/components/ui/icons";
 import { DbStatusIndicator } from "@/components/db-status-indicator";
 import { SystemVersionPill } from "@/components/system-version-pill";
@@ -277,10 +279,68 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
 export function AppHeader({ user }: { user: DbUser }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const isOwner = user.role === Role.OWNER;
+
+  // Global Keyboard Shortcuts (Alt + N, Alt + H, Alt + P, Alt + C, Alt + R, ?)
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT";
+
+      // Alt + N: New Sale
+      if (e.altKey && (e.key === "n" || e.key === "N")) {
+        e.preventDefault();
+        router.push("/sales/new");
+        return;
+      }
+
+      // Alt + H: Dashboard / Home
+      if (e.altKey && (e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        router.push("/");
+        return;
+      }
+
+      // Alt + P: Products
+      if (e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        router.push("/products");
+        return;
+      }
+
+      // Alt + C: Customers (if not on /sales/new where Alt+C is clear cart)
+      if (e.altKey && (e.key === "c" || e.key === "C") && !pathname.startsWith("/sales/new")) {
+        e.preventDefault();
+        router.push("/customers");
+        return;
+      }
+
+      // Alt + R: Business Reports
+      if (e.altKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        router.push("/reports");
+        return;
+      }
+
+      // '?' when not in an input on any non-POS page: toggle shortcuts modal
+      if (e.key === "?" && !isInput && !pathname.startsWith("/sales/new")) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts);
+    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+  }, [router, pathname]);
 
   // Restore desktop collapsed preference
   useEffect(() => {
@@ -595,6 +655,18 @@ export function AppHeader({ user }: { user: DbUser }) {
               )}
             </button>
 
+            {/* Keyboard Shortcuts Cheat Sheet Button */}
+            <button
+              type="button"
+              onClick={() => setShortcutsOpen(true)}
+              className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium"
+              title="Keyboard Shortcuts (?)"
+              aria-label="Keyboard Shortcuts"
+            >
+              <IconKeyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <kbd className="hidden sm:inline-block px-1 py-0.2 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">?</kbd>
+            </button>
+
             {/* Quick Register Action */}
             <Link
               href="/sales/new"
@@ -818,6 +890,13 @@ export function AppHeader({ user }: { user: DbUser }) {
           <span>Menu</span>
         </button>
       </nav>
+
+      {/* Global Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+        isPosContext={pathname.startsWith("/sales/new")}
+      />
     </>
   );
 }

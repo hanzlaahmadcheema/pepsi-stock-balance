@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState, useEffect, useMemo } from "react";
+import { useState, useActionState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SaleType, PaymentMethod, PriceTier } from "@prisma/client";
@@ -8,6 +8,7 @@ import { createSaleAction } from "../actions";
 import { formatCurrency } from "@/lib/formatters";
 import { CrateStepper } from "@/components/ui/crate-stepper";
 import { CompletionCard } from "@/components/ui/completion-card";
+import { KeyboardShortcutsModal } from "@/components/ui/keyboard-shortcuts-modal";
 import {
   IconPrinter,
   IconPlus,
@@ -19,6 +20,7 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconClose,
+  IconKeyboard,
 } from "@/components/ui/icons";
 import type { StaffProductListItem } from "@/lib/products/service";
 import type { CustomerSummary } from "@/lib/customers/service";
@@ -70,6 +72,13 @@ export function CreateSaleForm({
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createSaleAction, null);
   const [clientError, setClientError] = useState<string | null>(null);
+
+  // Form & Input Refs for fast keyboard navigation
+  const formRef = useRef<HTMLFormElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const customerSelectRef = useRef<HTMLSelectElement>(null);
+  const paidAmountInputRef = useRef<HTMLInputElement>(null);
+  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
   // POS State
   const [customerId, setCustomerId] = useState<string>(initialCustomerId || "");
@@ -327,6 +336,111 @@ export function CreateSaleForm({
     totalCratesSold,
   ]);
 
+  // Keyboard shortcut listener for fast counter operations
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT";
+
+      // F2: Focus Product Search
+      if (e.key === "F2") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      // '/' when not in input focuses search
+      if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // F4: Focus Customer Select
+      if (e.key === "F4") {
+        e.preventDefault();
+        customerSelectRef.current?.focus();
+        return;
+      }
+
+      // F7: Auto-Match Returnable Empties
+      if (e.key === "F7") {
+        e.preventDefault();
+        const plasticActive = containerSettings?.enabledTypes?.plastic ?? false;
+        setPlasticCrates(plasticActive ? returnableSummary.returnableCrates : 0);
+        setGlassBottles(returnableSummary.expectedBottles);
+        return;
+      }
+
+      // F8: Exact Tender (Pay in Full)
+      if (e.key === "F8") {
+        e.preventDefault();
+        setPaidAmount(totalAmount.toFixed(2));
+        return;
+      }
+
+      // F9: Focus Amount Received (Tender input)
+      if (e.key === "F9") {
+        e.preventDefault();
+        paidAmountInputRef.current?.focus();
+        paidAmountInputRef.current?.select();
+        return;
+      }
+
+      // Ctrl + Enter or Cmd + Enter: Finalize & Complete Invoice
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (items.length > 0 && !isPending) {
+          formRef.current?.requestSubmit();
+        }
+        return;
+      }
+
+      // Alt + C: Clear cart
+      if (e.altKey && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        if (items.length > 0) {
+          handleClearCart();
+        }
+        return;
+      }
+
+      // '?' when not typing in an input: Open shortcuts modal
+      if (e.key === "?" && !isInput) {
+        e.preventDefault();
+        setShortcutsModalOpen((prev) => !prev);
+        return;
+      }
+
+      // Escape: close modal or clear search
+      if (e.key === "Escape") {
+        if (shortcutsModalOpen) {
+          setShortcutsModalOpen(false);
+          return;
+        }
+        if (searchQuery) {
+          setSearchQuery("");
+          return;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    items.length,
+    isPending,
+    totalAmount,
+    returnableSummary,
+    containerSettings,
+    shortcutsModalOpen,
+    searchQuery,
+  ]);
+
   const handleResetForNewSale = () => {
     setCompletedSale(null);
     setCustomerId("");
@@ -340,6 +454,19 @@ export function CreateSaleForm({
     setItems([]);
     router.refresh();
   };
+
+  // When sale is completed, pressing Enter or Space rings up the next sale
+  useEffect(() => {
+    if (!completedSale) return;
+    const handleNextSaleShortcut = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleResetForNewSale();
+      }
+    };
+    window.addEventListener("keydown", handleNextSaleShortcut);
+    return () => window.removeEventListener("keydown", handleNextSaleShortcut);
+  }, [completedSale]);
 
   // Submission validation
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -427,7 +554,7 @@ export function CreateSaleForm({
     }));
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="w-full">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="w-full">
       <input type="hidden" name="items" value={JSON.stringify(payloadItems)} />
       <input type="hidden" name="customerId" value={customerId} />
       <input type="hidden" name="saleType" value={saleType} />
@@ -496,30 +623,80 @@ export function CreateSaleForm({
           {/* Search & Brand Filter Toolbar */}
           <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {/* Search Bar */}
+              {/* Search Bar with Barcode Scanner & Enter Key Auto-add */}
               <div className="relative flex-1">
                 <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Fast search product, brand, size..."
-                  className="w-full pl-10 pr-9 py-2.5 text-sm font-medium rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const q = searchQuery.trim().toLowerCase();
+                      if (!q) return;
+
+                      // 1. Exact SKU match (barcode scanners transmit SKU + Enter)
+                      const exactSku = products.find((p) => p.sku && p.sku.toLowerCase() === q);
+                      if (exactSku && exactSku.currentStock > 0) {
+                        handleAddProductToTicket(exactSku, 1);
+                        setSearchQuery("");
+                        return;
+                      }
+
+                      // 2. Exact Name match
+                      const exactName = products.find((p) => p.name.toLowerCase() === q);
+                      if (exactName && exactName.currentStock > 0) {
+                        handleAddProductToTicket(exactName, 1);
+                        setSearchQuery("");
+                        return;
+                      }
+
+                      // 3. If filtered list has exactly 1 result, auto-add it
+                      if (filteredProducts.length === 1 && filteredProducts[0].currentStock > 0) {
+                        handleAddProductToTicket(filteredProducts[0], 1);
+                        setSearchQuery("");
+                        return;
+                      }
+                    }
+                  }}
+                  placeholder="Fast search product or scan barcode..."
+                  className="w-full pl-10 pr-16 py-2.5 text-sm font-medium rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
                 />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs p-1"
-                  >
-                    ✕
-                  </button>
-                )}
+
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  ) : (
+                    <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                      F2
+                    </kbd>
+                  )}
+                </div>
               </div>
 
-              {/* Items Counter Badge */}
+              {/* Items Counter Badge & Shortcuts Trigger */}
               <div className="flex items-center justify-between sm:justify-end gap-2 text-xs text-zinc-500">
-                <span>Showing <strong className="text-zinc-800 dark:text-zinc-200">{filteredProducts.length}</strong> products</span>
+                <span className="hidden sm:inline">
+                  Showing <strong className="text-zinc-800 dark:text-zinc-200">{filteredProducts.length}</strong> products
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShortcutsModalOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-300 font-semibold shadow-2xs transition-colors cursor-pointer"
+                  title="Keyboard Shortcuts Cheat Sheet (?)"
+                >
+                  <IconKeyboard className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Keys</span>
+                  <kbd className="px-1 text-[10px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">?</kbd>
+                </button>
               </div>
             </div>
 
@@ -740,8 +917,11 @@ export function CreateSaleForm({
             {/* Customer Selector & Pricing Tier */}
             <div className="space-y-2 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-750">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Customer
+                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <span>Customer</span>
+                  <kbd className="px-1 py-0.2 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
+                    F4
+                  </kbd>
                 </label>
                 {customerId && (
                   <button
@@ -755,6 +935,7 @@ export function CreateSaleForm({
               </div>
 
               <select
+                ref={customerSelectRef}
                 value={customerId}
                 onChange={(e) => handleCustomerChange(e.target.value)}
                 className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
@@ -925,10 +1106,11 @@ export function CreateSaleForm({
                     type="button"
                     onClick={handleAutoFillContainers}
                     disabled={returnableSummary.returnableCrates === 0}
-                    className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Match with returnable crates sold"
+                    className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                    title="Match with returnable crates sold (F7)"
                   >
-                    Match ({returnableSummary.returnableCrates})
+                    <span>Match ({returnableSummary.returnableCrates})</span>
+                    <kbd className="text-[9px] font-mono opacity-60">F7</kbd>
                   </button>
                 </div>
               </div>
@@ -1014,8 +1196,11 @@ export function CreateSaleForm({
             {/* Payment Tender Row & Shortcuts */}
             <div className="space-y-2 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-750">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Amount Received (Rs.)
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                  <span>Amount Received (Rs.)</span>
+                  <kbd className="px-1 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
+                    F9
+                  </kbd>
                 </label>
                 <div className="flex items-center gap-2">
                   <button
@@ -1029,14 +1214,17 @@ export function CreateSaleForm({
                   <button
                     type="button"
                     onClick={handlePayInFull}
-                    className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                    title="Exact Tender / Pay in Full (F8)"
                   >
-                    Exact (Pay in Full)
+                    <span>Exact (Pay in Full)</span>
+                    <kbd className="px-1 text-[9px] font-mono bg-blue-100 dark:bg-blue-950/80 rounded">F8</kbd>
                   </button>
                 </div>
               </div>
 
               <input
+                ref={paidAmountInputRef}
                 type="number"
                 min="0"
                 step="any"
@@ -1080,6 +1268,7 @@ export function CreateSaleForm({
               type="submit"
               disabled={isPending || items.length === 0}
               className="w-full py-4 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.985] disabled:active:scale-100 disabled:opacity-50 text-white font-extrabold text-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              title="Complete Sale Invoice (Ctrl + Enter)"
             >
               {isPending ? (
                 <>
@@ -1092,12 +1281,67 @@ export function CreateSaleForm({
                   <span>
                     COMPLETE SALE — {formatCurrency(totalAmount)}
                   </span>
+                  <kbd className="text-xs font-mono font-bold opacity-80 bg-white/20 px-2 py-0.5 rounded ml-2 hidden sm:inline-block">
+                    Ctrl+↵
+                  </kbd>
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Cashier Quick-Keys Helper Bar */}
+      <div className="hidden lg:flex items-center justify-between px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-600 dark:text-zinc-400 shadow-2xs mt-4">
+        <div className="flex items-center gap-3.5 flex-wrap">
+          <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+            <IconKeyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span>Hotkeys:</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">F2</kbd>
+            <span>Search</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">Enter</kbd>
+            <span>Scan Barcode</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">F4</kbd>
+            <span>Customer</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">F7</kbd>
+            <span>Match Empties</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">F8</kbd>
+            <span>Pay in Full</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">F9</kbd>
+            <span>Tender</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">Ctrl+↵</kbd>
+            <span>Complete</span>
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShortcutsModalOpen(true)}
+          className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer shrink-0 ml-3"
+        >
+          All Shortcuts [?]
+        </button>
+      </div>
+
+      {/* Keyboard Shortcuts Cheat Sheet Modal */}
+      <KeyboardShortcutsModal
+        isOpen={shortcutsModalOpen}
+        onClose={() => setShortcutsModalOpen(false)}
+        isPosContext={true}
+      />
     </form>
   );
 }

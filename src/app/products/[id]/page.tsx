@@ -5,6 +5,7 @@ import { Role, PriceTier } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
 import { getProductDetails } from "@/lib/products/service";
+import { getProductCrateConfig } from "@/lib/containers/settings-service";
 import { ProductStatusButton } from "./product-status-button";
 import { EditProductForm } from "./edit-product-form";
 import { UpdatePriceForm } from "./update-price-form";
@@ -45,6 +46,8 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   const retailPrice = product.activePrices.find((p) => p.tier === PriceTier.RETAIL)?.amount;
   const wholesalePrice = product.activePrices.find((p) => p.tier === PriceTier.WHOLESALE)?.amount;
   const keyAccountPrice = product.activePrices.find((p) => p.tier === PriceTier.KEY_ACCOUNT)?.amount;
+
+  const crateConfig = getProductCrateConfig({ id: product.id, name: product.name });
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -97,7 +100,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
           </div>
 
           {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Current Stock */}
             <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -135,6 +138,23 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
                 System highlights re-order warning when stock reaches this level.
+              </p>
+            </div>
+
+            {/* Packaging / Empties Tracking */}
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Packaging & Empties
+              </span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50">
+                  {crateConfig.hasGlassCrate ? "🍾 Glass Crate" : "📦 Non-Returnable"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                {crateConfig.hasGlassCrate
+                  ? `${crateConfig.bottlesPerCrate} bottles/crate • Empties tracked`
+                  : "One-way disposable • No empty return owed"}
               </p>
             </div>
 
@@ -232,6 +252,8 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 sku: product.sku,
                 minimumStockLevel: product.minimumStockLevel,
                 latestPurchasePrice: product.latestPurchasePrice,
+                hasGlassCrate: crateConfig.hasGlassCrate,
+                bottlesPerCrate: crateConfig.bottlesPerCrate,
               }}
             />
 

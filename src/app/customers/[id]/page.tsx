@@ -4,6 +4,7 @@ import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { getCustomerDetails } from "@/lib/customers/service";
+import { getContainerSettings } from "@/lib/containers/settings-service";
 import { CustomerDetailActions } from "./customer-detail-actions";
 import { formatCurrency, formatCrates } from "@/lib/formatters";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
@@ -33,6 +34,12 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
   if (!customer) {
     notFound();
   }
+
+  const containerSettings = getContainerSettings();
+  const bpc = containerSettings.defaultBottlesPerCrate || 24;
+  const glassCratesEquiv = Math.floor(customer.glassBottleBalance / bpc);
+  const glassLooseBottles = customer.glassBottleBalance % bpc;
+  const showPlastic = containerSettings.enabledTypes.plastic || customer.plasticCrateBalance !== 0;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
@@ -146,37 +153,59 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
         </div>
 
         {/* Container Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              Plastic Crate Balance
-            </span>
-            <div
-              className={`text-2xl font-bold tabular-nums mt-1 ${
-                customer.plasticCrateBalance > 0
-                  ? "text-orange-600 dark:text-orange-400"
-                  : "text-zinc-900 dark:text-zinc-50"
-              }`}
-            >
-              {formatCrates(customer.plasticCrateBalance)}
+        <div className={`grid grid-cols-1 ${showPlastic ? "md:grid-cols-2" : "md:grid-cols-1"} gap-4`}>
+          {showPlastic && (
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                  Plastic Crate Balance
+                </span>
+                {!containerSettings.enabledTypes.plastic && (
+                  <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded font-medium">
+                    Inactive Type
+                  </span>
+                )}
+              </div>
+              <div
+                className={`text-2xl font-bold tabular-nums mt-1 ${
+                  customer.plasticCrateBalance > 0
+                    ? "text-orange-600 dark:text-orange-400"
+                    : "text-zinc-900 dark:text-zinc-50"
+                }`}
+              >
+                {formatCrates(customer.plasticCrateBalance)}
+              </div>
+              <p className="text-xs text-zinc-400 mt-1">Outstanding plastic crates with customer</p>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">Outstanding plastic crates with customer</p>
-          </div>
+          )}
 
           <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              Glass Bottle Balance
-            </span>
-            <div
-              className={`text-2xl font-bold tabular-nums mt-1 ${
-                customer.glassBottleBalance > 0
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-zinc-900 dark:text-zinc-50"
-              }`}
-            >
-              {customer.glassBottleBalance} bottles
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                Glass Bottle &amp; Crate Balance
+              </span>
+              <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
+                Standard {bpc} b/crate
+              </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">Outstanding glass bottles with customer</p>
+            <div className="flex items-baseline gap-3 mt-1 flex-wrap">
+              <div
+                className={`text-2xl font-bold tabular-nums ${
+                  customer.glassBottleBalance > 0
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-zinc-900 dark:text-zinc-50"
+                }`}
+              >
+                {customer.glassBottleBalance} bottles
+              </div>
+              <div className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                (≈ {glassCratesEquiv} full {glassCratesEquiv === 1 ? "crate" : "crates"}
+                {glassLooseBottles > 0 ? ` + ${glassLooseBottles} loose` : ""})
+              </div>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1">
+              Outstanding returnable glass bottles owed by customer
+            </p>
           </div>
         </div>
 

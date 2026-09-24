@@ -16,6 +16,8 @@ export function EditProductForm({
     sku: string | null;
     minimumStockLevel: number;
     latestPurchasePrice?: string;
+    hasGlassCrate?: boolean;
+    bottlesPerCrate?: number;
   };
 }) {
   const [state, formAction, isPending] = useActionState(updateProductDetailsAction, null);
@@ -139,6 +141,48 @@ export function EditProductForm({
               </span>
             </div>
           )}
+
+          <div>
+            <label
+              htmlFor="hasGlassCrate"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+            >
+              Packaging / Crate Returnability
+            </label>
+            <select
+              id="hasGlassCrate"
+              name="hasGlassCrate"
+              defaultValue={initialData.hasGlassCrate ? "true" : "false"}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="true">🍾 Returnable Glass Crate</option>
+              <option value="false">📦 One-Way / Non-Returnable (PET/Can/Disposable)</option>
+            </select>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 block">
+              Determines whether empty crates & glass bottles are owed.
+            </span>
+          </div>
+
+          <div>
+            <label
+              htmlFor="bottlesPerCrate"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+            >
+              Bottles Per Crate
+            </label>
+            <input
+              id="bottlesPerCrate"
+              name="bottlesPerCrate"
+              type="number"
+              min="1"
+              max="96"
+              defaultValue={initialData.bottlesPerCrate ?? 24}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 block">
+              Standard glass crate holds 24 bottles.
+            </span>
+          </div>
         </div>
 
         <div className="flex justify-end pt-2">

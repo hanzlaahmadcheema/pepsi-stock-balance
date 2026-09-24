@@ -105,6 +105,57 @@ export function CreateProductForm({ isOwner = false }: { isOwner?: boolean }) {
           </div>
         </div>
 
+        {/* Returnable Glass Crate Configuration */}
+        <div className="space-y-4 pt-2">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+              Returnable Container / Crate Tracking
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Define if this product uses returnable glass crates (shell &amp; bottles), or is disposable one-way packaging (PET / Cans).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="hasGlassCrate"
+                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+              >
+                Packaging / Crate Returnability *
+              </label>
+              <select
+                id="hasGlassCrate"
+                name="hasGlassCrate"
+                defaultValue="true"
+                className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="true">🍾 Returnable Glass Crate (Empties Owed by Customer)</option>
+                <option value="false">📦 Disposable / One-Way (PET, Aluminum Can, Shrink)</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="bottlesPerCrate"
+                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+              >
+                Bottles Per Crate (Default: 24) *
+              </label>
+              <input
+                id="bottlesPerCrate"
+                name="bottlesPerCrate"
+                type="number"
+                min="1"
+                max="99"
+                defaultValue="24"
+                required
+                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Pricing Tiers & Cost */}
         <div className="space-y-4 pt-2">
           <div className="border-b border-zinc-100 dark:border-zinc-800 pb-3">

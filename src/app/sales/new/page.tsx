@@ -3,6 +3,7 @@ import { requireDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
 import { listProducts, type StaffProductListItem } from "@/lib/products/service";
 import { listCustomers } from "@/lib/customers/service";
+import { getContainerSettings, getProductCrateConfig } from "@/lib/containers/settings-service";
 import { CreateSaleForm } from "./create-sale-form";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +22,13 @@ export default async function NewSalePage({ searchParams }: NewSalePageProps) {
   const user = await requireDbUser();
   const { customerId } = await searchParams;
 
-  // 1. Fetch active products with current stock
+  // 1. Fetch active products with current stock and crate configuration
   const allProducts = await listProducts(undefined, false);
-  const activeProducts = allProducts.filter((p) => p.isActive) as StaffProductListItem[];
+  const containerSettings = getContainerSettings();
+  const activeProducts = (allProducts.filter((p) => p.isActive) as StaffProductListItem[]).map((p) => ({
+    ...p,
+    crateConfig: getProductCrateConfig({ id: p.id, name: p.name }),
+  }));
 
   // 2. Fetch active customers
   const allCustomers = await listCustomers();
@@ -54,6 +59,7 @@ export default async function NewSalePage({ searchParams }: NewSalePageProps) {
           products={activeProducts}
           customers={activeCustomers}
           initialCustomerId={customerId}
+          containerSettings={containerSettings}
         />
       </main>
     </div>

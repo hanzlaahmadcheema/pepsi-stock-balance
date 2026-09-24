@@ -89,6 +89,7 @@ const NAV_GROUPS: NavGroup[] = [
       { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
       { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+      { name: "Crate & Container Settings", href: "/settings/crates", icon: IconBox, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
       { name: "System Updates", href: "/settings/system-update", icon: IconServer, ownerOnly: true },
       { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
@@ -237,6 +238,13 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return [
       { label: "Management" },
       { label: "Sync Status", href: "/sync/quarantine" },
+    ];
+  }
+
+  if (first === "settings" && parts[1] === "crates") {
+    return [
+      { label: "Management" },
+      { label: "Crate & Container Settings", href: "/settings/crates" },
     ];
   }
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireDbUser } from "@/lib/auth";
 import { Role, PriceTier, Prisma } from "@prisma/client";
 import { updateProductPriceTransaction } from "@/lib/products/service";
+import { setProductCrateConfig } from "@/lib/containers/settings-service";
 
 export type ProductFormState = {
   error?: string;
@@ -38,6 +39,11 @@ export async function createProductAction(
   const retailRaw = formData.get("retailPrice") as string;
   const wholesaleRaw = formData.get("wholesalePrice") as string;
   const keyAccountRaw = formData.get("keyAccountPrice") as string;
+
+  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string;
+  const bottlesPerCrateRaw = formData.get("bottlesPerCrate") as string;
+  const hasGlassCrate = hasGlassCrateRaw !== "false";
+  const bottlesPerCrate = Math.max(1, parseInt(bottlesPerCrateRaw || "24", 10) || 24);
 
   // Validation
   if (!name) {
@@ -135,6 +141,16 @@ export async function createProductAction(
     );
 
     createdProductId = result.id;
+
+    // Persist product crate configuration
+    try {
+      setProductCrateConfig(createdProductId, {
+        hasGlassCrate,
+        bottlesPerCrate,
+      });
+    } catch (crateErr) {
+      console.error("Failed to save crate config for new product:", crateErr);
+    }
   } catch (err) {
     console.error("Failed to create product:", err);
     return { error: "Database error while saving new product." };
@@ -224,11 +240,27 @@ export async function updateProductDetailsAction(
     updateData.latestPurchasePrice = new Prisma.Decimal(latestPurchasePrice.toFixed(2));
   }
 
+  const hasGlassCrateRaw = formData.get("hasGlassCrate") as string;
+  const bottlesPerCrateRaw = formData.get("bottlesPerCrate") as string;
+
   try {
     await prisma.product.update({
       where: { id: productId },
       data: updateData,
     });
+
+    if (hasGlassCrateRaw !== null && hasGlassCrateRaw !== undefined) {
+      const hasGlassCrate = hasGlassCrateRaw === "true" || hasGlassCrateRaw === "on";
+      const bottlesPerCrate = Math.max(1, parseInt(bottlesPerCrateRaw || "24", 10) || 24);
+      try {
+        setProductCrateConfig(productId, {
+          hasGlassCrate,
+          bottlesPerCrate,
+        });
+      } catch (crateErr) {
+        console.error("Failed to update crate config for product:", crateErr);
+      }
+    }
   } catch (err) {
     console.error("Failed to update product details:", err);
     return { error: "Database error while updating product." };

@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/icons";
 import type { StaffProductListItem } from "@/lib/products/service";
 import type { CustomerSummary } from "@/lib/customers/service";
+import type { ContainerSettings, ProductCrateConfig } from "@/lib/containers/settings-service";
 
-type ProductOption = StaffProductListItem;
+type ProductOption = StaffProductListItem & { crateConfig?: ProductCrateConfig };
 type CustomerOption = CustomerSummary;
 
 type FormLineItem = {
@@ -59,10 +60,12 @@ export function CreateSaleForm({
   products,
   customers,
   initialCustomerId,
+  containerSettings,
 }: {
   products: ProductOption[];
   customers: CustomerOption[];
   initialCustomerId?: string;
+  containerSettings?: ContainerSettings;
 }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createSaleAction, null);
@@ -242,9 +245,30 @@ export function CreateSaleForm({
     return acc + (parseInt(item.quantity.toString(), 10) || 0);
   }, 0);
 
+  // Returnable Glass Crates & Bottles calculation: Only items with returnable glass packaging count
+  const returnableSummary = useMemo(() => {
+    let returnableCrates = 0;
+    let expectedBottles = 0;
+    for (const item of items) {
+      if (!item.productId) continue;
+      const prod = products.find((p) => p.id === item.productId);
+      const cfg = prod?.crateConfig || {
+        hasGlassCrate: true,
+        bottlesPerCrate: containerSettings?.defaultBottlesPerCrate || 24,
+      };
+      if (cfg.hasGlassCrate) {
+        const qty = parseInt(item.quantity.toString(), 10) || 0;
+        returnableCrates += qty;
+        expectedBottles += qty * (cfg.bottlesPerCrate || 24);
+      }
+    }
+    return { returnableCrates, expectedBottles };
+  }, [items, products, containerSettings]);
+
   const handleAutoFillContainers = () => {
-    setPlasticCrates(totalCratesSold);
-    setGlassBottles(totalCratesSold * 24);
+    const plasticActive = containerSettings?.enabledTypes?.plastic ?? false;
+    setPlasticCrates(plasticActive ? returnableSummary.returnableCrates : 0);
+    setGlassBottles(returnableSummary.expectedBottles);
   };
 
   const discountNum = parseFloat(discount) || 0;
@@ -583,6 +607,19 @@ export function CreateSaleForm({
                     )}
                   </div>
 
+                  {/* Packaging Type Pill */}
+                  <div className="mb-1">
+                    {prod.crateConfig && !prod.crateConfig.hasGlassCrate ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                        📦 One-way (PET/Can)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/40">
+                        🍾 {prod.crateConfig?.bottlesPerCrate || 24}b Glass
+                      </span>
+                    )}
+                  </div>
+
                   {/* Product Title */}
                   <div className="my-1.5">
                     <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -855,23 +892,43 @@ export function CreateSaleForm({
             {/* Container Returns & Discounts Bar */}
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-zinc-600 dark:text-zinc-400">Empty Crates Returned:</span>
+                <div>
+                  <span className="font-bold text-zinc-700 dark:text-zinc-300 block">
+                    {containerSettings?.enabledTypes?.plastic ? "Empty Crates Received:" : "Empty Returnable Crates:"}
+                  </span>
+                  <span className="text-[11px] text-zinc-400">
+                    {returnableSummary.returnableCrates > 0
+                      ? `Returnable sold: ${returnableSummary.returnableCrates} crates (${returnableSummary.expectedBottles} bottles)`
+                      : "No returnable crates (PET/Can)"}
+                  </span>
+                </div>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
                     min="0"
-                    value={plasticCrates}
-                    onChange={(e) => setPlasticCrates(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    className="w-14 px-2 py-1 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center"
+                    value={
+                      glassBottles > 0
+                        ? Math.round(glassBottles / (containerSettings?.defaultBottlesPerCrate || 24))
+                        : (plasticCrates || "")
+                    }
+                    onChange={(e) => {
+                      const count = Math.max(0, parseInt(e.target.value, 10) || 0);
+                      const bpc = containerSettings?.defaultBottlesPerCrate || 24;
+                      const plasticActive = containerSettings?.enabledTypes?.plastic ?? false;
+                      setGlassBottles(count * bpc);
+                      setPlasticCrates(plasticActive ? count : 0);
+                    }}
+                    className="w-16 px-2 py-1 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center"
                     placeholder="0"
                   />
                   <button
                     type="button"
                     onClick={handleAutoFillContainers}
-                    className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300"
-                    title="Match with sold crates"
+                    disabled={returnableSummary.returnableCrates === 0}
+                    className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Match with returnable crates sold"
                   >
-                    Match ({totalCratesSold})
+                    Match ({returnableSummary.returnableCrates})
                   </button>
                 </div>
               </div>

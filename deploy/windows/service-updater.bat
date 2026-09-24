@@ -41,14 +41,18 @@ echo [%DATE% %TIME%] [1/4] Stopping services to release file locks... >> "%LOG_F
 "%NSSM_EXE%" stop "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
 
 :: 5. Pull latest code from GitHub
-echo [%DATE% %TIME%] [2/4] Pulling latest code from origin main... >> "%LOG_FILE%"
+echo [%DATE% %TIME%] [2/5] Pulling latest code from origin main... >> "%LOG_FILE%"
 git fetch origin main >> "%LOG_FILE%" 2>&1
 git reset --hard origin/main >> "%LOG_FILE%" 2>&1
 echo [%DATE% %TIME%] Head is now at: >> "%LOG_FILE%"
 git log -1 --oneline >> "%LOG_FILE%" 2>&1
 
-:: 6. Build Next.js app and daemon
-echo [%DATE% %TIME%] [3/4] Running production build (Prisma, Next.js, daemon)... >> "%LOG_FILE%"
+:: 6. Verify and install Node packages if modified
+echo [%DATE% %TIME%] [3/5] Verifying Node packages... >> "%LOG_FILE%"
+call npm install --no-audit --no-fund >> "%LOG_FILE%" 2>&1
+
+:: 7. Build Next.js app and daemon
+echo [%DATE% %TIME%] [4/5] Running production build (Prisma, Next.js, daemon)... >> "%LOG_FILE%"
 call npm run build >> "%LOG_FILE%" 2>&1
 set BUILD_EXIT=%errorLevel%
 
@@ -58,8 +62,8 @@ if %BUILD_EXIT% neq 0 (
     echo [%DATE% %TIME%] [OK] Production build completed successfully. >> "%LOG_FILE%"
 )
 
-:: 7. Restart Services
-echo [%DATE% %TIME%] [4/4] Starting services... >> "%LOG_FILE%"
+:: 8. Restart Services
+echo [%DATE% %TIME%] [5/5] Starting services... >> "%LOG_FILE%"
 "%NSSM_EXE%" start "%WEB_SVC%" >> "%LOG_FILE%" 2>&1
 "%NSSM_EXE%" start "%SYNC_SVC%" >> "%LOG_FILE%" 2>&1
 

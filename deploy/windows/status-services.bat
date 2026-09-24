@@ -27,9 +27,9 @@ echo %SYNC_SVC%:
 "%NSSM_EXE%" status "%SYNC_SVC%"
 echo.
 
-echo [2] Querying Runtime Health Endpoint (http://localhost:3000/api/health):
+echo [2] Querying Runtime Health Endpoint (http://localhost:3000/health):
 echo ----------------------------------------------------
-powershell -Command "try { $res = Invoke-RestMethod -Uri 'http://localhost:3000/api/health' -Method Get -TimeoutSec 5; Write-Output ($res | ConvertTo-Json -Depth 4) } catch { Write-Host '[ERROR] Health check failed to respond: ' $_.Exception.Message -ForegroundColor Red }"
+powershell -Command "try { $res = Invoke-RestMethod -Uri 'http://localhost:3000/health' -Method Get -TimeoutSec 5; Write-Output ($res | ConvertTo-Json -Depth 4) } catch { Write-Host '[ERROR] Health check failed to respond: ' $_.Exception.Message -ForegroundColor Red }"
 
 echo.
 echo [3] Log File Inspection (C:\PepsiDepot\logs):

@@ -59,7 +59,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <div id="main-content">{children}</div>
+        <div id="main-content" className="pb-16 lg:pb-0">{children}</div>
         <TechnicalServicesWidget />
       </body>
     </html>

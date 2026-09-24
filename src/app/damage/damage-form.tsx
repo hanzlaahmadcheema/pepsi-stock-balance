@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DamageType } from "@prisma/client";
 import { recordDamageAction, type DamageActionState } from "./actions";
@@ -51,9 +52,23 @@ export function DamageForm({ products }: { products: Product[] }) {
       {state?.success && (
         <div
           role="status"
-          className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-semibold"
+          className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs space-y-3"
         >
-          ✓ Damage record saved. Stock reduced.
+          <div className="flex items-center gap-2 font-bold text-sm text-emerald-900 dark:text-emerald-100">
+            <span>✓</span>
+            <span>Damage recorded successfully. Stock written off.</span>
+          </div>
+          <p className="text-zinc-600 dark:text-zinc-300">
+            Available warehouse stock has been reduced and logged in the inventory ledger.
+          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Link
+              href="/products"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-2xs"
+            >
+              View Updated Stock
+            </Link>
+          </div>
         </div>
       )}
 

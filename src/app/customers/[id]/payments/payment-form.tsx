@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PaymentMethod } from "@prisma/client";
 import { recordAccountPaymentAction } from "../../actions";
 import { formatCurrency } from "@/lib/formatters";
+import { CompletionCard } from "@/components/ui/completion-card";
 
 export function CustomerPaymentForm({
   customerId,
@@ -20,11 +21,38 @@ export function CustomerPaymentForm({
   const [state, formAction, isPending] = useActionState(recordAccountPaymentAction, null);
   const [amount, setAmount] = useState<string>("");
 
+  const paidNum = parseFloat(amount) || 0;
+  const remaining = Math.max(0, Math.round((outstandingBalance - paidNum) * 100) / 100);
+
   if (state?.success) {
-    // Redirect back to customer ledger
-    setTimeout(() => {
-      router.push(`/customers/${customerId}`);
-    }, 1200);
+    return (
+      <CompletionCard
+        title="Payment Recorded Successfully"
+        subtitle={`The payment has been credited to ${customerName}'s account ledger.`}
+        referenceLabel="Customer Account"
+        referenceNumber={customerName}
+        details={[
+          { label: "Previous Balance", value: formatCurrency(outstandingBalance) },
+          { label: "Payment Collected", value: formatCurrency(paidNum), color: "success", highlight: true },
+          {
+            label: "Remaining Balance",
+            value: remaining > 0 ? formatCurrency(remaining) : "All Cleared (Rs. 0)",
+            color: remaining > 0 ? "warning" : "default",
+            highlight: true,
+          },
+        ]}
+        primaryAction={{
+          label: "View Customer Account",
+          href: `/customers/${customerId}`,
+        }}
+        secondaryActions={[
+          {
+            label: "All Customers",
+            href: "/customers",
+          },
+        ]}
+      />
+    );
   }
 
   const handlePayFull = () => {

@@ -60,7 +60,7 @@ async function main() {
   );
 
   // Re-assign sequences cleanly starting from 4
-  let seq = 4n;
+  let seq = BigInt(4);
   for (const op of orderedList) {
     await prisma.syncOutbox.update({
       where: { id: op.id },
@@ -69,7 +69,7 @@ async function main() {
         status: "PENDING",
       },
     });
-    seq += 1n;
+    seq += BigInt(1);
   }
 
   console.log("=== Reordering complete! ===");

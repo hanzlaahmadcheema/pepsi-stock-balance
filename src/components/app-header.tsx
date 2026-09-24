@@ -47,42 +47,48 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    id: "front-office",
-    title: "Front Office",
+    id: "home",
+    title: "Home",
     items: [
       { name: "Dashboard", href: "/", icon: IconChartBar },
-      { name: "Sales & Invoicing", href: "/sales", icon: IconReceipt },
-      { name: "Customers & Credit", href: "/customers", icon: IconUsers },
     ],
   },
   {
-    id: "warehouse",
-    title: "Warehouse Operations",
+    id: "sales",
+    title: "Sales",
     items: [
-      { name: "Products & Pricing", href: "/products", icon: IconPackage },
-      { name: "Receiving Deliveries", href: "/receiving", icon: IconTruck },
-      { name: "Returns & Quarantine", href: "/returns", icon: IconRotateCcw },
-      { name: "Damaged Stock", href: "/damage", icon: IconAlertTriangle },
-      { name: "Stock Counts", href: "/stock-counts", icon: IconClipboardList },
+      { name: "New Sale", href: "/sales/new", icon: IconPlus },
+      { name: "Sales History", href: "/sales", icon: IconReceipt },
     ],
   },
   {
-    id: "admin",
-    title: "Admin & Reconciliation",
+    id: "stock",
+    title: "Stock & Warehouse",
+    items: [
+      { name: "Current Stock", href: "/products", icon: IconPackage },
+      { name: "Receive Stock", href: "/receiving", icon: IconTruck },
+      { name: "Returns", href: "/returns", icon: IconRotateCcw },
+      { name: "Damaged / Expired", href: "/damage", icon: IconAlertTriangle },
+      { name: "Stock Adjustments", href: "/stock-counts", icon: IconClipboardList },
+    ],
+  },
+  {
+    id: "customers",
+    title: "Customers",
+    items: [
+      { name: "Customers & Accounts", href: "/customers", icon: IconUsers },
+    ],
+  },
+  {
+    id: "management",
+    title: "Management & Day",
     items: [
       { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
       { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
       { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
       { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
       { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
-      { name: "Sync Quarantine", href: "/sync/quarantine", icon: IconAlertOctagon, ownerOnly: true },
-    ],
-  },
-  {
-    id: "support",
-    title: "Support & Services",
-    items: [
-      { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy },
+      { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
     ],
   },
 ];
@@ -95,7 +101,7 @@ interface BreadcrumbItem {
 function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/" || pathname === "/dashboard") {
     return [
-      { label: "Front Office" },
+      { label: "Home" },
       { label: "Dashboard", href: "/" },
     ];
   }
@@ -105,10 +111,10 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
   if (first === "sales") {
     const items: BreadcrumbItem[] = [
-      { label: "Front Office" },
-      { label: "Sales & Invoicing", href: "/sales" },
+      { label: "Sales" },
+      { label: "Sales History", href: "/sales" },
     ];
-    if (parts[1] === "new") items.push({ label: "New Invoice" });
+    if (parts[1] === "new") items.push({ label: "New Sale" });
     else if (parts[2] === "edit") {
       items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
       items.push({ label: "Edit" });
@@ -120,22 +126,22 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
   if (first === "customers") {
     const items: BreadcrumbItem[] = [
-      { label: "Front Office" },
-      { label: "Customers & Credit", href: "/customers" },
+      { label: "Customers" },
+      { label: "Customers & Accounts", href: "/customers" },
     ];
     if (parts[2] === "payments") {
-      items.push({ label: "Customer Ledger", href: `/customers/${parts[1]}` });
+      items.push({ label: "Customer Account", href: `/customers/${parts[1]}` });
       items.push({ label: "Record Payment" });
     } else if (parts[1]) {
-      items.push({ label: "Customer Ledger" });
+      items.push({ label: "Customer Account" });
     }
     return items;
   }
 
   if (first === "products") {
     const items: BreadcrumbItem[] = [
-      { label: "Warehouse" },
-      { label: "Products & Pricing", href: "/products" },
+      { label: "Stock" },
+      { label: "Current Stock", href: "/products" },
     ];
     if (parts[1] === "new") items.push({ label: "New Product" });
     else if (parts[1]) items.push({ label: "Product Details" });
@@ -144,64 +150,64 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
   if (first === "receiving") {
     const items: BreadcrumbItem[] = [
-      { label: "Warehouse" },
-      { label: "Receiving Deliveries", href: "/receiving" },
+      { label: "Stock" },
+      { label: "Receive Stock", href: "/receiving" },
     ];
-    if (parts[1] === "new") items.push({ label: "New Delivery Intake" });
-    else if (parts[1]) items.push({ label: "Intake Voucher" });
+    if (parts[1] === "new") items.push({ label: "Receive Delivery" });
+    else if (parts[1]) items.push({ label: "Delivery Voucher" });
     return items;
   }
 
   if (first === "returns") {
     const items: BreadcrumbItem[] = [
-      { label: "Warehouse" },
+      { label: "Stock" },
       { label: "Returns & Quarantine", href: "/returns" },
     ];
-    if (parts[1] === "new") items.push({ label: "Initiate Return" });
+    if (parts[1] === "new") items.push({ label: "Record Return" });
     else if (parts[1]) items.push({ label: "Inspection & Voucher" });
     return items;
   }
 
   if (first === "damage") {
     return [
-      { label: "Warehouse" },
-      { label: "Damaged Stock", href: "/damage" },
+      { label: "Stock" },
+      { label: "Damaged / Expired", href: "/damage" },
     ];
   }
 
   if (first === "stock-counts") {
     const items: BreadcrumbItem[] = [
-      { label: "Warehouse" },
-      { label: "Stock Counts", href: "/stock-counts" },
+      { label: "Stock" },
+      { label: "Stock Adjustments", href: "/stock-counts" },
     ];
-    if (parts[1] === "new") items.push({ label: "New Count Session" });
-    else if (parts[1]) items.push({ label: "Count Audit & Discrepancies" });
+    if (parts[1] === "new") items.push({ label: "New Stock Count" });
+    else if (parts[1]) items.push({ label: "Stock Count Audit" });
     return items;
   }
 
   if (first === "daily-closing") {
     const items: BreadcrumbItem[] = [
-      { label: "Admin" },
+      { label: "Management" },
       { label: "Daily Closing", href: "/daily-closing" },
     ];
-    if (parts[1]) items.push({ label: "Reconciliation Session" });
+    if (parts[1]) items.push({ label: "Daily Reconciliation" });
     return items;
   }
 
   if (first === "reports") {
     const items: BreadcrumbItem[] = [
-      { label: "Admin" },
+      { label: "Management" },
       { label: "Business Reports", href: "/reports" },
     ];
     const reportNames: Record<string, string> = {
-      sales: "Sales & Invoicing",
-      profit: "Gross Profit & Margins",
-      stock: "Inventory Valuation",
-      receiving: "Supplier Intake",
-      damage: "Damaged Goods",
+      sales: "Sales Report",
+      profit: "Gross Profit Report",
+      stock: "Stock Valuation",
+      receiving: "Goods Intake Report",
+      damage: "Damaged Stock Report",
       dispatch: "Stock Dispatch",
       customers: "Customer Balances",
-      prices: "Price Tiers & History",
+      prices: "Price Tiers",
       "fast-slow": "Product Velocity",
     };
     if (parts[1] && reportNames[parts[1]]) {
@@ -212,41 +218,41 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
   if (first === "approvals") {
     return [
-      { label: "Admin" },
+      { label: "Management" },
       { label: "Pending Approvals", href: "/approvals" },
     ];
   }
 
   if (first === "suppliers") {
     return [
-      { label: "Admin" },
+      { label: "Management" },
       { label: "Suppliers Directory", href: "/suppliers" },
     ];
   }
 
   if (first === "sync") {
     return [
-      { label: "Admin" },
-      { label: "Sync Quarantine", href: "/sync/quarantine" },
+      { label: "Management" },
+      { label: "Sync Status", href: "/sync/quarantine" },
     ];
   }
 
   if (first === "settings" && parts[1] === "users") {
     return [
-      { label: "Admin" },
-      { label: "Staff User Provisioning", href: "/settings/users" },
+      { label: "Management" },
+      { label: "User Management", href: "/settings/users" },
     ];
   }
 
   if (first === "technical-services") {
     return [
-      { label: "Support & Services" },
+      { label: "Management" },
       { label: "Technical Services", href: "/technical-services" },
     ];
   }
 
   return [
-    { label: "Operational Workspace" },
+    { label: "Workspace" },
     { label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Home", href: `/${first || ""}` },
   ];
 }
@@ -724,6 +730,74 @@ export function AppHeader({ user }: { user: DbUser }) {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* 4. MOBILE BOTTOM QUICK ACTION BAR (<lg screens)                           */}
+      {/* ========================================================================= */}
+      <nav
+        aria-label="Mobile quick navigation"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around h-16 px-2 shadow-lg"
+      >
+        <Link
+          href="/"
+          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
+            pathname === "/" || pathname === "/dashboard"
+              ? "text-blue-600 dark:text-blue-400 font-bold"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          <IconChartBar className="w-5 h-5 mb-0.5" />
+          <span>Home</span>
+        </Link>
+
+        <Link
+          href="/products"
+          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
+            pathname.startsWith("/products")
+              ? "text-blue-600 dark:text-blue-400 font-bold"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          <IconPackage className="w-5 h-5 mb-0.5" />
+          <span>Stock</span>
+        </Link>
+
+        {/* Center Primary Action: + New Sale */}
+        <Link
+          href="/sales/new"
+          className="flex flex-col items-center justify-center -mt-5 mx-1"
+          aria-label="New Sale"
+        >
+          <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
+            <IconPlus className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+            New Sale
+          </span>
+        </Link>
+
+        <Link
+          href="/customers"
+          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
+            pathname.startsWith("/customers")
+              ? "text-blue-600 dark:text-blue-400 font-bold"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          <IconUsers className="w-5 h-5 mb-0.5" />
+          <span>Customers</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+        >
+          <IconMenu className="w-5 h-5 mb-0.5" />
+          <span>Menu</span>
+        </button>
+      </nav>
     </>
   );
 }
+

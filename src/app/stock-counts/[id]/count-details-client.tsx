@@ -113,6 +113,21 @@ export function CountDetailsClient({
         </div>
       </div>
 
+      {/* Discrepancy & Approval Clarification Banner */}
+      {pendingCount > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
+          <span className="text-xl">ℹ️</span>
+          <div>
+            <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+              Your correction request has been submitted. Stock will change after approval.
+            </h3>
+            <p className="text-xs text-amber-900/80 dark:text-amber-300/80 mt-1">
+              There {pendingCount === 1 ? "is 1 discrepancy" : `are ${pendingCount} discrepancies`} between physical counts and system records. Warehouse stock remains unchanged until the Owner reviews and confirms the adjustments.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Count Sheet Table */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">

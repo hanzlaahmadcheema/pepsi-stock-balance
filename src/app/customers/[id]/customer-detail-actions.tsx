@@ -23,7 +23,7 @@ export function CustomerDetailActions({
             href={`/sales/new?customerId=${customer.id}`}
             className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
           >
-            + Create Sale
+            + New Sale
           </Link>
         )}
 

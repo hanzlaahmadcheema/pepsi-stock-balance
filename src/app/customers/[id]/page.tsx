@@ -128,7 +128,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
 
           <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              Current Outstanding Balance
+              Amount Customer Owes
             </span>
             <div
               className={`text-2xl font-extrabold tabular-nums mt-1 ${
@@ -139,7 +139,9 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
             >
               {formatCurrency(customer.outstandingBalance)}
             </div>
-            <p className="text-xs text-zinc-400 mt-1">Net pending amount due</p>
+            <p className="text-xs text-zinc-400 mt-1">
+              {customer.outstandingBalance > 0 ? "Pending credit to be collected" : "Account fully paid"}
+            </p>
           </div>
         </div>
 

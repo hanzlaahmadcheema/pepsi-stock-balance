@@ -51,6 +51,21 @@ export default async function ReturnDetailsPage({ params }: ReturnDetailsPagePro
           <span>Return #{returnRecord.id.slice(0, 8)}</span>
         </div>
 
+        {/* Quarantine / Inspection Explanation Banner */}
+        {isQuarantined && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+                Returned goods have been placed in inspection.
+              </h3>
+              <p className="text-xs text-amber-900/80 dark:text-amber-300/80 mt-1">
+                These returned items are currently in quarantine and are <strong>NOT available for sale</strong>. They will only enter sellable warehouse stock after an owner completes quality inspection and approves them.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Voucher Header */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>

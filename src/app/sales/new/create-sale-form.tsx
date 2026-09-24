@@ -7,6 +7,8 @@ import { SaleType, PaymentMethod, PriceTier } from "@prisma/client";
 import { createSaleAction } from "../actions";
 import { formatCurrency } from "@/lib/formatters";
 import { CrateStepper } from "@/components/ui/crate-stepper";
+import { CompletionCard } from "@/components/ui/completion-card";
+import { IconPrinter, IconPlus, IconReceipt } from "@/components/ui/icons";
 import type { StaffProductListItem } from "@/lib/products/service";
 import type { CustomerSummary } from "@/lib/customers/service";
 
@@ -176,12 +178,66 @@ export function CreateSaleForm({
     return prod ? item.quantity > prod.currentStock : false;
   });
 
-  // Redirect on successful creation
+  // Contextual completion receipt state
+  const [completedSale, setCompletedSale] = useState<{
+    saleId: string;
+    invoiceNumber: string;
+    customerName: string;
+    totalAmount: number;
+    paidAmount: number;
+    creditAmount: number;
+    itemCount: number;
+    cratesSold: number;
+  } | null>(null);
+
   useEffect(() => {
-    if (state?.success && state.saleId) {
-      router.push(`/sales/${state.saleId}`);
+    if (state?.success && state.saleId && !completedSale) {
+      setCompletedSale({
+        saleId: state.saleId,
+        invoiceNumber: state.invoiceNumber || state.saleId.slice(0, 8),
+        customerName: selectedCustomer ? selectedCustomer.name : "Walk-in Customer",
+        totalAmount,
+        paidAmount: paidAmountNum,
+        creditAmount,
+        itemCount: items.filter((i) => Boolean(i.productId)).length,
+        cratesSold: totalCratesSold,
+      });
     }
-  }, [state?.success, state?.saleId, router]);
+  }, [
+    state?.success,
+    state?.saleId,
+    state?.invoiceNumber,
+    completedSale,
+    selectedCustomer,
+    totalAmount,
+    paidAmountNum,
+    creditAmount,
+    items,
+    totalCratesSold,
+  ]);
+
+  const handleResetForNewSale = () => {
+    const initialProd = products[0];
+    const initialPrice = initialProd ? getProductDefaultPrice(initialProd, SaleType.RETAIL) : 0;
+    setCompletedSale(null);
+    setCustomerId("");
+    setSaleType(SaleType.RETAIL);
+    setDiscount("0");
+    setPaymentMethod(PaymentMethod.CASH);
+    setPaidAmount("0");
+    setPlasticCrates(0);
+    setGlassBottles(0);
+    setClientError(null);
+    setItems([
+      {
+        key: `sale-reset-${Date.now()}`,
+        productId: initialProd?.id || "",
+        quantity: 1,
+        unitPrice: initialPrice,
+      },
+    ]);
+    router.refresh();
+  };
 
   // Prepare submission payload
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -192,10 +248,16 @@ export function CreateSaleForm({
       return;
     }
 
-    if (hasOverStock) {
-      e.preventDefault();
-      setClientError("One or more items exceed available warehouse stock. Please adjust quantities.");
-      return;
+    // Specific beginner-friendly error for insufficient stock
+    for (const item of validItems) {
+      const prod = products.find((p) => p.id === item.productId);
+      if (prod && item.quantity > prod.currentStock) {
+        e.preventDefault();
+        setClientError(
+          `Only ${prod.currentStock} crates of "${prod.name}" are available in the warehouse (you requested ${item.quantity}).`
+        );
+        return;
+      }
     }
 
     if (creditAmount > 0 && !customerId) {
@@ -211,6 +273,49 @@ export function CreateSaleForm({
     }
     setClientError(null);
   };
+
+  if (completedSale) {
+    return (
+      <CompletionCard
+        title="Sale Completed Successfully"
+        subtitle="Invoice and warehouse dispatch have been recorded in the system."
+        referenceLabel="Invoice #"
+        referenceNumber={completedSale.invoiceNumber}
+        details={[
+          { label: "Customer", value: completedSale.customerName },
+          { label: "Crates Dispatched", value: `${completedSale.cratesSold} crates (${completedSale.itemCount} items)` },
+          { label: "Total Amount", value: formatCurrency(completedSale.totalAmount), highlight: true },
+          { label: "Amount Paid", value: formatCurrency(completedSale.paidAmount), color: "success" },
+          {
+            label: "Remaining Credit Due",
+            value: completedSale.creditAmount > 0 ? formatCurrency(completedSale.creditAmount) : "Paid in Full (Rs. 0)",
+            color: completedSale.creditAmount > 0 ? "warning" : "default",
+            highlight: completedSale.creditAmount > 0,
+          },
+        ]}
+        primaryAction={{
+          label: "+ Ring Up Next Sale",
+          onClick: handleResetForNewSale,
+          icon: <IconPlus className="w-5 h-5" />,
+        }}
+        secondaryActions={[
+          {
+            label: "Print 80mm Receipt",
+            href: `/sales/${completedSale.saleId}`,
+            icon: <IconPrinter className="w-4 h-4" />,
+          },
+          {
+            label: "View Full Invoice",
+            href: `/sales/${completedSale.saleId}`,
+          },
+          {
+            label: "Sales History",
+            href: "/sales",
+          },
+        ]}
+      />
+    );
+  }
 
   const payloadItems = items
     .filter((i) => Boolean(i.productId))

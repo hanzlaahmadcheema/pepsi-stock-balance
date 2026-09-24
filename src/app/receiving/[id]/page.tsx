@@ -52,6 +52,41 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
             </span>
           </div>
 
+          {/* Contextual Success & Navigation Banner */}
+          {receiving.isPosted && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                    Stock Received Successfully
+                  </h3>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                    Warehouse stock updated: <strong>+{receiving.totalCrates} crates</strong> added across {receiving.items.length} products.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/receiving/new"
+                  className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
+                >
+                  + Receive More Stock
+                </Link>
+                <Link
+                  href="/products"
+                  className="px-3 py-2 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-semibold text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  View Current Stock
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Header & Status */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
             <div>

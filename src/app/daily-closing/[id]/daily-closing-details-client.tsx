@@ -75,6 +75,44 @@ export function DailyClosingDetailsClient({
         <span>Reconciliation ({summary.businessDate})</span>
       </div>
 
+      {/* Official Closing Success State */}
+      {isClosed && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-emerald-950 dark:text-emerald-100">
+                Day closed successfully.
+              </h2>
+              <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
+                All counter sales, payment collections, and cash drawer balances have been officially audited and locked.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
+            >
+              Back to Dashboard
+            </Link>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setShowReopenModal(true)}
+                className="px-3.5 py-2 rounded-xl border border-red-200 dark:border-red-900 bg-white dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Reopen Session
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header Voucher Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

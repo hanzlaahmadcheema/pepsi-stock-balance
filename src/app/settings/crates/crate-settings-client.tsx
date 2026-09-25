@@ -17,7 +17,10 @@ import {
   IconClose,
   IconDollarSign,
   IconSettings,
+  IconReceipt,
+  IconSparkles,
 } from "@/components/ui/icons";
+import { DeveloperCredit } from "@/components/ui/developer-credit";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 
 interface ProductWithCrate {
@@ -174,10 +177,24 @@ export function CrateSettingsClient({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/settings/branding"
+            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition flex items-center gap-1.5"
+          >
+            <IconSparkles className="w-3.5 h-3.5" />
+            <span>Business Branding</span>
+          </Link>
+          <Link
+            href="/settings/invoice-design"
+            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1.5"
+          >
+            <IconReceipt className="w-3.5 h-3.5" />
+            <span>Invoice Design</span>
+          </Link>
           <Link
             href="/products"
-            className="px-4 py-2 text-xs font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+            className="px-3.5 py-2 text-xs font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
           >
             ← View Products Catalog
           </Link>
@@ -698,6 +715,9 @@ export function CrateSettingsClient({
           </div>
         )}
       </div>
+
+      {/* Developer Credit */}
+      <DeveloperCredit variant="card" />
     </div>
   );
 }

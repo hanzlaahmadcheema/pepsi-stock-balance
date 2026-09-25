@@ -95,6 +95,15 @@ export function InvoiceView({
             <span>Print 80mm Receipt</span>
           </button>
 
+          <Link
+            href="/settings/invoice-design"
+            className="px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors flex items-center gap-1.5"
+            title="Customize 80mm receipt sections and typography"
+          >
+            <IconReceipt className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Design Layout</span>
+          </Link>
+
           {/* Edit and Cancel Actions (Depot mode only) */}
           {!isCancelled && !isCloudPortal() && (
             <>

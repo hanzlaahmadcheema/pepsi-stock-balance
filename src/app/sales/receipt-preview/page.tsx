@@ -545,12 +545,22 @@ export default function ReceiptPreviewPage() {
           </p>
         </div>
 
-        {/* Safety Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
-          <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span className="font-semibold">
-            Zero Paper Used: All validation is performed digitally in-browser.
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/settings/invoice-design"
+            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition flex items-center gap-1.5"
+          >
+            <IconReceipt className="w-3.5 h-3.5" />
+            <span>Customize Receipt Sections</span>
+          </Link>
+
+          {/* Safety Badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
+            <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="font-semibold">
+              Zero Paper Used: All validation is performed digitally in-browser.
+            </span>
+          </div>
         </div>
       </div>
 

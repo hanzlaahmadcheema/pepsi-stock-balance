@@ -137,14 +137,18 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
 
   if (unappliedRows.length === 0) return;
 
-  let expected = baseSeq + BigInt(1);
   let needsCompaction = false;
-  for (const row of unappliedRows) {
-    if (row.clientSequence !== expected) {
+  // Check for internal sequence gaps between unapplied operations (e.g. 1, 3, 4)
+  for (let i = 1; i < unappliedRows.length; i++) {
+    if (unappliedRows[i].clientSequence !== unappliedRows[i - 1].clientSequence + BigInt(1)) {
       needsCompaction = true;
       break;
     }
-    expected += BigInt(1);
+  }
+
+  // Check for gap between last SYNCED operation and the first unapplied operation
+  if (baseSeq > BigInt(0) && unappliedRows[0].clientSequence !== baseSeq + BigInt(1)) {
+    needsCompaction = true;
   }
 
   if (!needsCompaction) return;
@@ -176,7 +180,30 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
  * before or alongside any receiving records referencing them.
  */
 async function ensureLocalSuppliersEnqueued(tx: TransactionClient): Promise<void> {
-  const localSuppliers = await tx.supplier.findMany();
+  const receivingOps = await tx.syncOutbox.findMany({
+    where: {
+      operationType: "RECEIVE_STOCK",
+      status: { in: ["PENDING", "IN_FLIGHT"] },
+    },
+    select: { payload: true },
+  });
+
+  if (receivingOps.length === 0) return;
+
+  const supplierIds = new Set<string>();
+  for (const op of receivingOps) {
+    const p = op.payload as Record<string, unknown> | null;
+    if (p && typeof p.supplierId === "string") {
+      supplierIds.add(p.supplierId);
+    }
+  }
+
+  if (supplierIds.size === 0) return;
+
+  const localSuppliers = await tx.supplier.findMany({
+    where: { id: { in: Array.from(supplierIds) } },
+  });
+
   for (const s of localSuppliers) {
     const existing = await tx.syncOutbox.findFirst({
       where: {
@@ -283,9 +310,6 @@ export async function pushPendingOperations(
       // 2b. Ensure any local suppliers exist in SyncOutbox
       await ensureLocalSuppliersEnqueued(tx);
 
-      // 2c. Auto-compact sequences of un-synced operations to guarantee contiguous ordering.
-      await compactOutboxSequences(tx);
-
       // 3. Check if any FAILED operations exist in the outbox.
       // Under strict sequence ordering, no operation at or after a FAILED operation
       // can be pushed until that failed operation is resolved.
@@ -368,6 +392,45 @@ export async function pushPendingOperations(
         if (!response.ok && response.status !== 207) {
           // Non-2xx that isn't 207 Multi-Status: treat as transient network error.
           const errorText = await response.text().catch(() => "Unknown body");
+
+          // Check if server rejected due to sequence gap and indicated expected sequence
+          const gapMatch = errorText.match(/expected\s+(\d+)/i);
+          if (gapMatch && gapMatch[1]) {
+            const expSeq = BigInt(gapMatch[1]);
+            const tempOffset = BigInt("9000000000000000000");
+            const remaining = await tx.syncOutbox.findMany({
+              where: { status: { in: ["IN_FLIGHT", "PENDING"] } },
+              orderBy: { clientSequence: "asc" },
+              select: { id: true },
+            });
+            for (let i = 0; i < remaining.length; i++) {
+              await tx.syncOutbox.update({
+                where: { id: remaining[i].id },
+                data: { clientSequence: tempOffset + BigInt(i) },
+              });
+            }
+            let s = expSeq;
+            for (let i = 0; i < remaining.length; i++) {
+              await tx.syncOutbox.update({
+                where: { id: remaining[i].id },
+                data: {
+                  clientSequence: s,
+                  status: "PENDING",
+                  lastError: `Sequence aligned to ${s} (server requested ${expSeq}).`,
+                },
+              });
+              s += BigInt(1);
+            }
+            return {
+              success: false,
+              syncedCount: 0,
+              failedCount: 0,
+              retryCount: remaining.length,
+              nothingToPush: false,
+              networkError: `Aligned outbox sequences to ${expSeq} after server sequence gap detection.`,
+            };
+          }
+
           // Reset all IN_FLIGHT back to PENDING for retry.
           await tx.syncOutbox.updateMany({
             where: { id: { in: pendingRows.map((r) => r.id) }, status: "IN_FLIGHT" },

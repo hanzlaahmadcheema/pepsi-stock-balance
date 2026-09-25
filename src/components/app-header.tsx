@@ -33,9 +33,16 @@ import {
   IconSettings,
   IconHistory,
   IconBanknotes,
+  IconSparkles,
 } from "@/components/ui/icons";
 import { DbStatusIndicator } from "@/components/db-status-indicator";
 import { SystemVersionPill } from "@/components/system-version-pill";
+import { DeveloperCredit } from "@/components/ui/developer-credit";
+import {
+  getStoredBrandingConfig,
+  BrandingConfig,
+  DEFAULT_BRANDING_CONFIG,
+} from "@/lib/branding/branding-config";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 import { useTheme } from "@/lib/ui-preferences";
 
@@ -94,6 +101,8 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
           { name: "Pending Approvals", href: "/approvals", icon: IconShield },
           { name: "Suppliers", href: "/suppliers", icon: IconBox },
           { name: "Settings", href: "/settings", icon: IconSettings },
+          { name: "Business Branding", href: "/settings/branding", icon: IconSparkles },
+          { name: "Invoice Design", href: "/settings/invoice-design", icon: IconReceipt },
           { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
           { name: "System Updates", href: "/settings/system-update", icon: IconServer },
           { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
@@ -251,8 +260,10 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   if (first === "suppliers") return [{ label: "Suppliers Directory" }];
   if (first === "sync") return [{ label: "Depot Sync Status" }];
 
-  if (first === "settings" && parts[1] === "users") return [{ label: "User Management" }];
-  if (first === "settings" && parts[1] === "system-update") return [{ label: "System Updates" }];
+  if (first === "settings" && parts[1] === "users") return [{ label: "Settings", href: "/settings" }, { label: "User Management" }];
+  if (first === "settings" && parts[1] === "system-update") return [{ label: "Settings", href: "/settings" }, { label: "System Updates" }];
+  if (first === "settings" && parts[1] === "branding") return [{ label: "Settings", href: "/settings" }, { label: "Business Branding" }];
+  if (first === "settings" && parts[1] === "invoice-design") return [{ label: "Settings", href: "/settings" }, { label: "Invoice Design" }];
   if (first === "settings") return [{ label: "Settings" }];
   if (first === "technical-services") return [{ label: "Technical Services" }];
 
@@ -268,6 +279,17 @@ export function AppHeader({ user }: { user: DbUser }) {
   const isOwner = user.role === Role.OWNER;
   const isCloud = isCloudPortal();
   const navGroups = getNavGroups(isCloud);
+  const [branding, setBranding] = useState<BrandingConfig>(DEFAULT_BRANDING_CONFIG);
+
+  useEffect(() => {
+    setBranding(getStoredBrandingConfig());
+    const handleBrandingChange = (e: Event) => {
+      const customEvent = e as CustomEvent<BrandingConfig>;
+      if (customEvent.detail) setBranding(customEvent.detail);
+    };
+    window.addEventListener("app_branding_changed", handleBrandingChange);
+    return () => window.removeEventListener("app_branding_changed", handleBrandingChange);
+  }, []);
 
   // Global Keyboard Shortcuts (Alt + N, Alt + H, Alt + P, Alt + C, Alt + R, ?)
   useEffect(() => {
@@ -410,12 +432,16 @@ export function AppHeader({ user }: { user: DbUser }) {
       <aside className="app-sidebar group/rail fixed inset-y-0 left-0 z-40 hidden flex-col border-r-2 border-rule bg-surface text-ink lg:flex">
         {/* Brand */}
         <div className="flex shrink-0 items-center gap-3 border-b-2 border-rule px-4 py-3.5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-2xl font-bold text-white">
-            P
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-2xl font-bold text-white uppercase">
+            {branding.businessName.charAt(0) || "P"}
           </span>
           <div className="sr-only leading-tight group-hover/rail:not-sr-only group-focus-within/rail:not-sr-only">
-            <span className="block text-lg font-bold text-ink">Pepsi Distribution</span>
-            <span className="block text-sm font-semibold text-ink-3">Stock &amp; Balance System</span>
+            <span className="block text-lg font-bold text-ink truncate max-w-[190px]">
+              {branding.businessName}
+            </span>
+            <span className="block text-sm font-semibold text-ink-3 truncate max-w-[190px]">
+              {branding.tagline || "Stock & Balance System"}
+            </span>
           </div>
         </div>
 
@@ -451,7 +477,8 @@ export function AppHeader({ user }: { user: DbUser }) {
               </span>
             </button>
           </form>
-          <div className="hidden justify-center pt-1 group-hover/rail:flex group-focus-within/rail:flex">
+          <div className="hidden justify-center pt-1 group-hover/rail:flex group-focus-within/rail:flex flex-col items-center gap-1.5">
+            <DeveloperCredit variant="sidebar" />
             <SystemVersionPill isOwner={isOwner} />
           </div>
         </div>
@@ -570,10 +597,13 @@ export function AppHeader({ user }: { user: DbUser }) {
           <div className="relative flex h-full w-[22rem] max-w-[90vw] flex-col border-r-2 border-rule bg-surface text-ink shadow-2xl">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-rule px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-xl font-bold text-white">
-                  P
+                <span className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-xl font-bold text-white uppercase">
+                  {branding.businessName.charAt(0) || "P"}
                 </span>
-                <span className="text-lg font-bold">All Screens</span>
+                <div className="min-w-0">
+                  <span className="block text-base font-bold truncate max-w-[170px]">{branding.businessName}</span>
+                  <span className="block text-xs font-semibold text-ink-3 truncate max-w-[170px]">{branding.tagline || "All Screens"}</span>
+                </div>
               </div>
               <button
                 type="button"
@@ -606,6 +636,7 @@ export function AppHeader({ user }: { user: DbUser }) {
             </nav>
 
             <div className="shrink-0 space-y-3 border-t-2 border-rule bg-surface-alt px-4 py-3">
+              <DeveloperCredit variant="drawer" />
               <TextSizeControl />
               <form action={logoutAction}>
                 <button type="submit" className="btn btn-danger w-full">

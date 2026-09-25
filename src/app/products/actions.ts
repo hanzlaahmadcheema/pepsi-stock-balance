@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireDbUser } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role, PriceTier, Prisma } from "@prisma/client";
 import { updateProductPriceTransaction } from "@/lib/products/service";
 import { setProductCrateConfig, getContainerSettings } from "@/lib/containers/settings-service";
@@ -23,6 +24,7 @@ export async function createProductAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
+  assertNotCloudPortal("Create Product");
   let user;
   try {
     user = await requireDbUser();
@@ -169,6 +171,7 @@ export async function updateProductDetailsAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
+  assertNotCloudPortal("Update Product Details");
   let user;
   try {
     user = await requireDbUser();
@@ -278,6 +281,7 @@ export async function updateProductDetailsAction(
 export async function toggleProductStatusAction(
   productId: string
 ): Promise<{ error?: string; success?: boolean }> {
+  assertNotCloudPortal("Toggle Product Status");
   try {
     await requireDbUser();
   } catch {
@@ -313,6 +317,7 @@ export async function updateProductPriceAction(
   _prevState: ProductFormState | null,
   formData: FormData
 ): Promise<ProductFormState> {
+  assertNotCloudPortal("Update Product Price");
   let user;
   try {
     user = await requireDbUser();

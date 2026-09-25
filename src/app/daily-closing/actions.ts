@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser, requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 import {
   getOrCreateDailyClosing,
@@ -22,6 +23,7 @@ export type ActionState = {
 export async function openOrCreateDailyClosingAction(
   dateStr: string
 ): Promise<{ closingId: string }> {
+  assertNotCloudPortal("Open/Create Daily Closing");
   const user = await requireDbUser();
 
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -43,6 +45,7 @@ export async function submitDailyClosingAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Submit Daily Closing");
     const user = await requireDbUser();
 
     const closingId = formData.get("closingId") as string;
@@ -83,6 +86,7 @@ export async function finalizeDailyClosingAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Finalize Daily Closing");
     const user = await requireRole(Role.OWNER);
 
     const closingId = formData.get("closingId") as string;
@@ -126,6 +130,7 @@ export async function reopenDailyClosingAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Reopen Daily Closing");
     const user = await requireRole(Role.OWNER);
 
     const closingId = formData.get("closingId") as string;

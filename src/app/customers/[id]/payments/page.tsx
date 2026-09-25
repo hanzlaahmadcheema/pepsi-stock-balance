@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { getCustomerDetails } from "@/lib/customers/service";
 import { CustomerPaymentForm } from "./payment-form";
 
@@ -23,6 +24,9 @@ export async function generateMetadata({ params }: CustomerPaymentsPageProps) {
 
 export default async function CustomerPaymentsPage({ params }: CustomerPaymentsPageProps) {
   const { id } = await params;
+  if (isCloudPortal()) {
+    redirect(`/customers/${id}`);
+  }
   const user = await requireDbUser();
   const customer = await getCustomerDetails(id);
 

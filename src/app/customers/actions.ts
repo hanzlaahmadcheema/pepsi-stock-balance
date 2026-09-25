@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser, requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role, PriceTier, PaymentMethod } from "@prisma/client";
 import {
   createCustomer,
@@ -21,6 +22,7 @@ export async function createCustomerAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Create Customer");
     await requireDbUser(); // Both OWNER and STAFF can create customers
 
     const name = formData.get("name") as string;
@@ -61,6 +63,7 @@ export async function updateCustomerAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Update Customer");
     await requireRole(Role.OWNER); // Owner only
 
     const id = formData.get("id") as string;
@@ -103,6 +106,7 @@ export async function toggleCustomerActiveAction(
   isActive: boolean
 ): Promise<{ success?: boolean; error?: string }> {
   try {
+    assertNotCloudPortal("Toggle Customer Status");
     await requireRole(Role.OWNER); // Owner only
 
     if (!customerId) {
@@ -128,6 +132,7 @@ export async function recordAccountPaymentAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
+    assertNotCloudPortal("Record Payment");
     const user = await requireDbUser();
 
     const customerId = formData.get("customerId") as string;

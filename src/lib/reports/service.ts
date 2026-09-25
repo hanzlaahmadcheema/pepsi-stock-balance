@@ -7,6 +7,7 @@ import {
   PriceTier,
   ContainerType,
   ContainerMovementType,
+  PaymentMethod,
   Prisma,
 } from "@prisma/client";
 import { getBusinessTimeZone, getTodayBusinessDateString } from "@/lib/daily-closing/service";
@@ -1708,6 +1709,401 @@ export async function getFastSlowMovingReport(
   };
 }
 
+// ==========================================
+// 10. CUSTOMER AGING REPORT (AR AGING)
+// ==========================================
+
+export type AgingBucket = {
+  current: number;    // 0 - 30 days
+  days31To60: number; // 31 - 60 days
+  days61To90: number; // 61 - 90 days
+  over90: number;     // > 90 days
+  total: number;
+};
+
+export type CustomerAgingRow = {
+  customerId: string;
+  customerName: string;
+  phone: string | null;
+  priceTier: PriceTier;
+  creditAllowed: boolean;
+  totalBilled: number;
+  totalPaid: number;
+  outstandingBalance: number;
+  buckets: AgingBucket;
+  oldestUnpaidDays: number;
+  unpaidInvoicesCount: number;
+};
+
+export type AgingReportParams = {
+  search?: string;
+  hasBalanceOnly?: boolean;
+  page?: number;
+  limit?: number;
+};
+
+export type AgingReportResult = {
+  summary: {
+    totalCustomersWithBalance: number;
+    totalOutstanding: number;
+    buckets: AgingBucket;
+  };
+  rows: CustomerAgingRow[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalRows: number;
+    totalPages: number;
+  };
+};
+
+export async function getAgingReport(
+  params: AgingReportParams
+): Promise<AgingReportResult> {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.max(10, Math.min(100, params.limit || 50));
+  const hasBalanceOnly = params.hasBalanceOnly !== false;
+
+  const whereClause: Prisma.CustomerWhereInput = { isActive: true };
+  if (params.search?.trim()) {
+    whereClause.OR = [
+      { name: { contains: params.search.trim(), mode: "insensitive" } },
+      { phone: { contains: params.search.trim() } },
+    ];
+  }
+
+  const customers = await prisma.customer.findMany({
+    where: whereClause,
+    orderBy: { name: "asc" },
+  });
+
+  const customerIds = customers.map((c) => c.id);
+
+  // Completed sales for these customers, newest first
+  const sales = await prisma.sale.findMany({
+    where: {
+      customerId: { in: customerIds },
+      status: SaleStatus.COMPLETED,
+    },
+    select: {
+      id: true,
+      customerId: true,
+      invoiceNumber: true,
+      totalAmount: true,
+      soldAt: true,
+    },
+    orderBy: { soldAt: "desc" },
+  });
+
+  // Group sales by customer
+  const salesByCustomer = new Map<string, typeof sales>();
+  for (const s of sales) {
+    if (!s.customerId) continue;
+    const list = salesByCustomer.get(s.customerId) || [];
+    list.push(s);
+    salesByCustomer.set(s.customerId, list);
+  }
+
+  // Payments for these customers
+  const payments = await prisma.payment.groupBy({
+    by: ["customerId"],
+    where: {
+      customerId: { in: customerIds },
+      OR: [{ saleId: null }, { sale: { status: SaleStatus.COMPLETED } }],
+    },
+    _sum: { amount: true },
+  });
+  const paymentsMap = new Map(
+    payments.map((p) => [p.customerId!, Number(p._sum.amount || 0)])
+  );
+
+  const now = new Date();
+  const summaryBuckets: AgingBucket = {
+    current: 0,
+    days31To60: 0,
+    days61To90: 0,
+    over90: 0,
+    total: 0,
+  };
+
+  const calculatedRows: CustomerAgingRow[] = [];
+
+  for (const customer of customers) {
+    const custSales = salesByCustomer.get(customer.id) || [];
+    const totalBilled = custSales.reduce((acc, s) => acc + Number(s.totalAmount), 0);
+    const totalPaid = paymentsMap.get(customer.id) || 0;
+    const outstandingBalance = Math.max(0, Math.round((totalBilled - totalPaid) * 100) / 100);
+
+    if (hasBalanceOnly && outstandingBalance <= 0) {
+      continue;
+    }
+
+    const rowBuckets: AgingBucket = {
+      current: 0,
+      days31To60: 0,
+      days61To90: 0,
+      over90: 0,
+      total: outstandingBalance,
+    };
+
+    let oldestUnpaidDays = 0;
+    let unpaidInvoicesCount = 0;
+
+    if (outstandingBalance > 0) {
+      // FIFO aging applied to payments: payments cover oldest sales first,
+      // so outstanding balance resides in the most recent sales.
+      let remainingToAllocate = outstandingBalance;
+
+      for (const sale of custSales) {
+        if (remainingToAllocate <= 0.001) break;
+        const saleAmt = Number(sale.totalAmount);
+        const unpaidPortion = Math.min(remainingToAllocate, saleAmt);
+        remainingToAllocate -= unpaidPortion;
+
+        const ageDays = Math.max(
+          0,
+          Math.floor((now.getTime() - new Date(sale.soldAt).getTime()) / (1000 * 60 * 60 * 24))
+        );
+        oldestUnpaidDays = Math.max(oldestUnpaidDays, ageDays);
+        unpaidInvoicesCount += 1;
+
+        if (ageDays <= 30) {
+          rowBuckets.current += unpaidPortion;
+        } else if (ageDays <= 60) {
+          rowBuckets.days31To60 += unpaidPortion;
+        } else if (ageDays <= 90) {
+          rowBuckets.days61To90 += unpaidPortion;
+        } else {
+          rowBuckets.over90 += unpaidPortion;
+        }
+      }
+
+      // If balance remains after walking all sales, attribute remainder to >90 days
+      if (remainingToAllocate > 0.001) {
+        rowBuckets.over90 += remainingToAllocate;
+      }
+    }
+
+    // Round bucket amounts to 2 decimals
+    rowBuckets.current = Math.round(rowBuckets.current * 100) / 100;
+    rowBuckets.days31To60 = Math.round(rowBuckets.days31To60 * 100) / 100;
+    rowBuckets.days61To90 = Math.round(rowBuckets.days61To90 * 100) / 100;
+    rowBuckets.over90 = Math.round(rowBuckets.over90 * 100) / 100;
+
+    summaryBuckets.current += rowBuckets.current;
+    summaryBuckets.days31To60 += rowBuckets.days31To60;
+    summaryBuckets.days61To90 += rowBuckets.days61To90;
+    summaryBuckets.over90 += rowBuckets.over90;
+    summaryBuckets.total += rowBuckets.total;
+
+    calculatedRows.push({
+      customerId: customer.id,
+      customerName: customer.name,
+      phone: customer.phone,
+      priceTier: customer.priceTier,
+      creditAllowed: customer.creditAllowed,
+      totalBilled: Math.round(totalBilled * 100) / 100,
+      totalPaid: Math.round(totalPaid * 100) / 100,
+      outstandingBalance,
+      buckets: rowBuckets,
+      oldestUnpaidDays,
+      unpaidInvoicesCount,
+    });
+  }
+
+  // Sort by highest outstanding balance first
+  calculatedRows.sort((a, b) => b.outstandingBalance - a.outstandingBalance);
+
+  summaryBuckets.current = Math.round(summaryBuckets.current * 100) / 100;
+  summaryBuckets.days31To60 = Math.round(summaryBuckets.days31To60 * 100) / 100;
+  summaryBuckets.days61To90 = Math.round(summaryBuckets.days61To90 * 100) / 100;
+  summaryBuckets.over90 = Math.round(summaryBuckets.over90 * 100) / 100;
+  summaryBuckets.total = Math.round(summaryBuckets.total * 100) / 100;
+
+  const totalRows = calculatedRows.length;
+  const totalPages = Math.ceil(totalRows / limit) || 1;
+  const paginatedRows = calculatedRows.slice((page - 1) * limit, page * limit);
+
+  return {
+    summary: {
+      totalCustomersWithBalance: calculatedRows.filter((r) => r.outstandingBalance > 0).length,
+      totalOutstanding: summaryBuckets.total,
+      buckets: summaryBuckets,
+    },
+    rows: paginatedRows,
+    pagination: {
+      page,
+      limit,
+      totalRows,
+      totalPages,
+    },
+  };
+}
+
+// ==========================================
+// 11. CASH & PAYMENT SUMMARY REPORT
+// ==========================================
+
+export type PaymentReportParams = {
+  startDate?: string;
+  endDate?: string;
+  paymentMethod?: PaymentMethod;
+  customerId?: string;
+  receivedById?: string;
+  type?: "all" | "counter" | "account";
+  page?: number;
+  limit?: number;
+};
+
+export type PaymentReportRow = {
+  id: string;
+  paidAt: Date;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  referenceNumber: string | null;
+  saleId: string | null;
+  invoiceNumber: string | null;
+  customerId: string | null;
+  customerName: string | null;
+  receivedById: string;
+  receivedByName: string;
+  type: "COUNTER_SALE" | "ACCOUNT_PAYMENT";
+};
+
+export type PaymentReportResult = {
+  summary: {
+    totalAmount: number;
+    count: number;
+    byMethod: Record<PaymentMethod, { amount: number; count: number }>;
+    counterAmount: number;
+    counterCount: number;
+    accountAmount: number;
+    accountCount: number;
+  };
+  rows: PaymentReportRow[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalRows: number;
+    totalPages: number;
+  };
+};
+
+export async function getPaymentReport(
+  params: PaymentReportParams
+): Promise<PaymentReportResult> {
+  const { start, end } = parseDateFilter(params.startDate, params.endDate);
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.max(10, Math.min(100, params.limit || 50));
+
+  const whereClause: Prisma.PaymentWhereInput = {
+    paidAt: { gte: start, lte: end },
+    // Exclude payments attached to cancelled sales
+    OR: [{ saleId: null }, { sale: { status: SaleStatus.COMPLETED } }],
+  };
+
+  if (params.paymentMethod) {
+    whereClause.paymentMethod = params.paymentMethod;
+  }
+  if (params.customerId) {
+    whereClause.customerId = params.customerId;
+  }
+  if (params.receivedById) {
+    whereClause.receivedById = params.receivedById;
+  }
+  if (params.type === "counter") {
+    whereClause.saleId = { not: null };
+  } else if (params.type === "account") {
+    whereClause.saleId = null;
+  }
+
+  const allPayments = await prisma.payment.findMany({
+    where: whereClause,
+    include: {
+      customer: { select: { name: true } },
+      sale: { select: { invoiceNumber: true } },
+      receivedBy: { select: { name: true } },
+    },
+    orderBy: { paidAt: "desc" },
+  });
+
+  const byMethod: Record<PaymentMethod, { amount: number; count: number }> = {
+    CASH: { amount: 0, count: 0 },
+    EASYPAISA: { amount: 0, count: 0 },
+    JAZZCASH: { amount: 0, count: 0 },
+    MPESA: { amount: 0, count: 0 },
+    QR: { amount: 0, count: 0 },
+  };
+
+  let totalAmount = 0;
+  let counterAmount = 0;
+  let counterCount = 0;
+  let accountAmount = 0;
+  let accountCount = 0;
+
+  const rows: PaymentReportRow[] = allPayments.map((p) => {
+    const amt = Number(p.amount);
+    totalAmount += amt;
+
+    const method = p.paymentMethod;
+    if (byMethod[method]) {
+      byMethod[method].amount = Math.round((byMethod[method].amount + amt) * 100) / 100;
+      byMethod[method].count += 1;
+    }
+
+    const isCounter = Boolean(p.saleId);
+    if (isCounter) {
+      counterAmount += amt;
+      counterCount += 1;
+    } else {
+      accountAmount += amt;
+      accountCount += 1;
+    }
+
+    return {
+      id: p.id,
+      paidAt: p.paidAt,
+      amount: amt,
+      paymentMethod: p.paymentMethod,
+      referenceNumber: p.referenceNumber,
+      saleId: p.saleId,
+      invoiceNumber: p.sale?.invoiceNumber || null,
+      customerId: p.customerId,
+      customerName: p.customer?.name || null,
+      receivedById: p.receivedById,
+      receivedByName: p.receivedBy?.name || "Unknown",
+      type: isCounter ? "COUNTER_SALE" : "ACCOUNT_PAYMENT",
+    };
+  });
+
+  totalAmount = Math.round(totalAmount * 100) / 100;
+  counterAmount = Math.round(counterAmount * 100) / 100;
+  accountAmount = Math.round(accountAmount * 100) / 100;
+
+  const totalRows = rows.length;
+  const totalPages = Math.ceil(totalRows / limit) || 1;
+  const paginatedRows = rows.slice((page - 1) * limit, page * limit);
+
+  return {
+    summary: {
+      totalAmount,
+      count: totalRows,
+      byMethod,
+      counterAmount,
+      counterCount,
+      accountAmount,
+      accountCount,
+    },
+    rows: paginatedRows,
+    pagination: {
+      page,
+      limit,
+      totalRows,
+      totalPages,
+    },
+  };
+}
+
 function escapeCsvField(val: unknown): string {
   if (val === null || val === undefined) return "";
   const str = String(val);
@@ -2108,6 +2504,76 @@ export async function generateReportCsv(
         );
       }
       return { filename: `fast_slow_moving_${timestamp}.csv`, csv: lines.join("\n") };
+    }
+
+    case "aging": {
+      const data = await getAgingReport({ ...params, limit: 10000 });
+      const headers = [
+        "Customer",
+        "Phone",
+        "Price Tier",
+        "Total Billed",
+        "Total Paid",
+        "Outstanding Balance",
+        "Current (0-30d)",
+        "31-60 Days",
+        "61-90 Days",
+        "90+ Days",
+        "Oldest Unpaid (Days)",
+      ];
+      const lines = [headers.join(",")];
+      for (const r of data.rows) {
+        lines.push(
+          [
+            escapeCsvField(r.customerName),
+            escapeCsvField(r.phone || ""),
+            escapeCsvField(r.priceTier),
+            escapeCsvField(r.totalBilled.toFixed(2)),
+            escapeCsvField(r.totalPaid.toFixed(2)),
+            escapeCsvField(r.outstandingBalance.toFixed(2)),
+            escapeCsvField(r.buckets.current.toFixed(2)),
+            escapeCsvField(r.buckets.days31To60.toFixed(2)),
+            escapeCsvField(r.buckets.days61To90.toFixed(2)),
+            escapeCsvField(r.buckets.over90.toFixed(2)),
+            escapeCsvField(r.oldestUnpaidDays),
+          ].join(",")
+        );
+      }
+      return { filename: `customer_aging_report_${timestamp}.csv`, csv: lines.join("\n") };
+    }
+
+    case "payments": {
+      const data = await getPaymentReport({
+        ...params,
+        paymentMethod: params.paymentMethod as PaymentMethod | undefined,
+        limit: 10000,
+      });
+      const headers = [
+        "Date & Time",
+        "Type",
+        "Method",
+        "Amount",
+        "Reference #",
+        "Customer",
+        "Invoice #",
+        "Received By",
+      ];
+      const lines = [headers.join(",")];
+      for (const r of data.rows) {
+        lines.push(
+          [
+            escapeCsvField(new Date(r.paidAt).toISOString()),
+            escapeCsvField(r.type),
+            escapeCsvField(r.paymentMethod),
+            escapeCsvField(r.amount.toFixed(2)),
+            escapeCsvField(r.referenceNumber || ""),
+            escapeCsvField(r.customerName || ""),
+            escapeCsvField(r.invoiceNumber || ""),
+            escapeCsvField(r.receivedByName),
+          ].join(",")
+        );
+      }
+      return { filename: `cash_payment_summary_${timestamp}.csv`, csv: lines.join("\n") };
     }
 
     default:

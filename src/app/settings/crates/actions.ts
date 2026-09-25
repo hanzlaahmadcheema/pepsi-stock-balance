@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 import {
   updateContainerSettings,
@@ -20,6 +21,7 @@ export async function updateContainerTypesAction(
   formData: FormData
 ): Promise<CrateActionState> {
   try {
+    assertNotCloudPortal("Update Container Settings");
     const user = await requireDbUser();
     if (user.role !== Role.OWNER) {
       return { error: "Unauthorized: Only an Owner can modify system crate settings." };
@@ -74,6 +76,7 @@ export async function updateBulkProductCratesAction(
   formData: FormData
 ): Promise<CrateActionState> {
   try {
+    assertNotCloudPortal("Update Product Crates");
     const user = await requireDbUser();
     if (user.role !== Role.OWNER) {
       return { error: "Unauthorized: Only an Owner can modify product crate configurations." };

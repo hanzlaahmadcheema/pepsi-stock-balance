@@ -5,6 +5,7 @@ import { InspectionResult } from "@prisma/client";
 import { inspectReturnAction } from "../actions";
 import type { ReturnDetails } from "@/lib/returns/service";
 import { IconShield, IconCheck } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export function InspectionPanel({
   returnRecord,
@@ -14,6 +15,7 @@ export function InspectionPanel({
   isOwner: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(inspectReturnAction, null);
+  const isCloud = isCloudPortal();
 
   const [decisions, setDecisions] = useState<
     Record<
@@ -98,15 +100,16 @@ export function InspectionPanel({
   }
 
   // If still quarantined, show role-appropriate interface:
-  if (!isOwner) {
+  if (!isOwner || isCloud) {
     return (
       <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl p-6 text-sm text-amber-900 dark:text-amber-200 space-y-2">
         <h3 className="font-bold flex items-center gap-2">
-          <span>⏳ Awaiting Owner Inspection</span>
+          <IconShield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <span>{isCloud ? "Awaiting Depot Inspection (Read-Only)" : "Awaiting Owner Inspection"}</span>
         </h3>
         <p className="text-xs text-amber-800 dark:text-amber-300">
           This return is currently placed in <b>QUARANTINE</b>. Returned crates have not been
-          restocked to saleable inventory. An Owner must log in to inspect and approve or reject the returned goods.
+          restocked to saleable inventory. {isCloud ? "Physical quality inspection and restocking authorizations are performed on the Windows Depot terminal." : "An Owner must log in to inspect and approve or reject the returned goods."}
         </p>
       </div>
     );

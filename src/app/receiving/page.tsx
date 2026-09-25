@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconTruck } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export const metadata = {
 export default async function ReceivingPage() {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
 
   const receivings = await listReceivings(isOwner);
 
@@ -35,15 +37,25 @@ export default async function ReceivingPage() {
               </p>
             </div>
 
-            <Link
-              href="/receiving/new"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New Receiving
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/reports/receiving"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
+              >
+                Receiving Report
+              </Link>
+              {!isCloud && (
+                <Link
+                  href="/receiving/new"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  New Receiving
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Receivings Table */}

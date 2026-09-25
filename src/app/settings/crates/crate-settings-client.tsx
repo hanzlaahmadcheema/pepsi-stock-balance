@@ -18,6 +18,7 @@ import {
   IconDollarSign,
   IconSettings,
 } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 interface ProductWithCrate {
   id: string;
@@ -35,6 +36,7 @@ export function CrateSettingsClient({
   settings: ContainerSettings;
   initialProducts: ProductWithCrate[];
 }) {
+  const isCloud = isCloudPortal();
   const [typesState, typesAction, isTypesPending] = useActionState(
     updateContainerTypesAction,
     null
@@ -74,6 +76,7 @@ export function CrateSettingsClient({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const handleToggleRate = (tier: "retail" | "wholesale" | "key") => {
+    if (isCloud) return;
     setRateWarning(null);
     let nextRetail = retailRate;
     let nextWholesale = wholesaleRate;
@@ -95,6 +98,7 @@ export function CrateSettingsClient({
   };
 
   const handleToggleGlassCrate = (productId: string) => {
+    if (isCloud) return;
     setProductConfigs((prev) => {
       const cur = prev[productId] || { hasGlassCrate: true, bottlesPerCrate: defaultBottles };
       const next = {
@@ -111,6 +115,7 @@ export function CrateSettingsClient({
   };
 
   const handleBulkSetAll = (hasGlass: boolean) => {
+    if (isCloud) return;
     setProductConfigs((prev) => {
       const next = { ...prev };
       for (const p of filteredProducts) {
@@ -149,6 +154,11 @@ export function CrateSettingsClient({
             <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">
               Owner Management
             </span>
+            {isCloud && (
+              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                Read-Only
+              </span>
+            )}
             <span className="text-xs text-zinc-500">
               Core Operation: <strong className="text-zinc-700 dark:text-zinc-300">Glass &amp; Returnable Depot</strong>
             </span>
@@ -158,7 +168,9 @@ export function CrateSettingsClient({
             <span>Settings</span>
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Manage application display rates (&quot;Retail, Wholesale, Key&quot;), standard crate bottle capacity, and returnable container policies.
+            {isCloud
+              ? "View active application display rates, standard crate bottle capacity, and returnable container configurations."
+              : "Manage application display rates (\"Retail, Wholesale, Key\"), standard crate bottle capacity, and returnable container policies."}
           </p>
         </div>
 
@@ -171,6 +183,15 @@ export function CrateSettingsClient({
           </Link>
         </div>
       </div>
+
+      {isCloud && (
+        <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 text-xs font-semibold flex items-center gap-2">
+          <IconSettings className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <span>
+            Application display rates, standard bottle capacities, and returnable crate flags are configured on the local Windows Depot terminal. This portal view is strictly read-only.
+          </span>
+        </div>
+      )}
 
       {/* Notifications */}
       {(typesState?.success || bulkState?.success) && (
@@ -465,20 +486,23 @@ export function CrateSettingsClient({
                   type="number"
                   min="1"
                   max="99"
+                  disabled={isCloud}
                   value={defaultBottles}
                   onChange={(e) => setDefaultBottles(Math.max(1, parseInt(e.target.value, 10) || 24))}
-                  className="w-16 text-sm font-bold text-center bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-hidden"
+                  className="w-16 text-sm font-bold text-center bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-hidden disabled:opacity-75"
                 />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">bottles / crate</span>
               </div>
 
-              <button
-                type="submit"
-                disabled={isTypesPending}
-                className="px-6 py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-              >
-                {isTypesPending ? "Saving..." : "Save Settings"}
-              </button>
+              {!isCloud && (
+                <button
+                  type="submit"
+                  disabled={isTypesPending}
+                  className="px-6 py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isTypesPending ? "Saving..." : "Save Settings"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -504,22 +528,24 @@ export function CrateSettingsClient({
           </div>
 
           {/* Quick Bulk Actions */}
-          <div className="flex items-center gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleBulkSetAll(true)}
-              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
-            >
-              Set All to Returnable
-            </button>
-            <button
-              type="button"
-              onClick={() => handleBulkSetAll(false)}
-              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
-            >
-              Set All to One-Way (PET/Can)
-            </button>
-          </div>
+          {!isCloud && (
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => handleBulkSetAll(true)}
+                className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
+              >
+                Set All to Returnable
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkSetAll(false)}
+                className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium cursor-pointer"
+              >
+                Set All to One-Way (PET/Can)
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Search & Filter Toolbar */}
@@ -547,7 +573,7 @@ export function CrateSettingsClient({
               ))}
             </select>
 
-            {hasUnsavedChanges && (
+            {!isCloud && hasUnsavedChanges && (
               <form action={bulkAction}>
                 <input
                   type="hidden"
@@ -605,8 +631,11 @@ export function CrateSettingsClient({
                       <td className="px-5 py-3.5 text-center">
                         <button
                           type="button"
+                          disabled={isCloud}
                           onClick={() => handleToggleGlassCrate(p.id)}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                            isCloud ? "cursor-default opacity-80" : "cursor-pointer"
+                          } ${
                             cfg.hasGlassCrate
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs"
                               : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"

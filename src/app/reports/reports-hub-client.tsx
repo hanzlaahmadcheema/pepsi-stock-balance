@@ -12,6 +12,8 @@ import {
   IconReceipt,
   IconDollarSign,
   IconBox,
+  IconBanknotes,
+  IconHistory,
 } from "@/components/ui/icons";
 
 interface ReportsHubClientProps {
@@ -345,6 +347,48 @@ export function ReportsHubClient({ summary, isOwner }: ReportsHubClientProps) {
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Classify products as Fast, Slow, or Average movers based on crates sold vs. period average.
+            </p>
+          </Link>
+
+          {/* Customer Aging Report */}
+          <Link
+            href="/reports/aging"
+            className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-500 transition-colors shadow-xs group space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                <IconHistory className="w-4 h-4" />
+              </div>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-bold group-hover:underline">
+                View Report →
+              </span>
+            </div>
+            <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+              Accounts Receivable Aging
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Customer aging brackets (0-30d, 31-60d, 61-90d, 90+d), overdue balances, and credit exposure.
+            </p>
+          </Link>
+
+          {/* Cash & Payment Summary Report */}
+          <Link
+            href="/reports/payments"
+            className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-500 transition-colors shadow-xs group space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <IconBanknotes className="w-4 h-4" />
+              </div>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-bold group-hover:underline">
+                View Report →
+              </span>
+            </div>
+            <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+              Cash &amp; Payment Collections
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Daily collections breakdown by payment method (Cash, EasyPaisa, JazzCash, QR) and staff receipts.
             </p>
           </Link>
         </div>

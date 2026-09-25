@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import type { CustomerDetailData } from "@/lib/customers/service";
 import { CustomerModal } from "../customer-modal";
 import { CustomerStatusButton } from "../customer-status-button";
@@ -14,6 +15,29 @@ export function CustomerDetailActions({
   isOwner: boolean;
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const isCloud = isCloudPortal();
+
+  if (isCloud) {
+    return (
+      <div className="flex flex-wrap items-center gap-2.5">
+        <Link
+          href="/reports/aging"
+          className="px-3.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-colors shadow-2xs"
+        >
+          AR Aging Report →
+        </Link>
+        <Link
+          href="/reports/customers"
+          className="px-3.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-colors shadow-2xs"
+        >
+          Outstanding Balances →
+        </Link>
+        <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 text-xs font-medium border border-zinc-200 dark:border-zinc-700">
+          Read-Only Portal
+        </span>
+      </div>
+    );
+  }
 
   return (
     <>

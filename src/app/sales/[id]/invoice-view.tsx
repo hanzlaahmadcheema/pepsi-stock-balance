@@ -16,6 +16,7 @@ import {
   IconAlertTriangle,
 } from "@/components/ui/icons";
 import type { SaleDetails } from "@/lib/sales/service";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export function InvoiceView({
   sale,
@@ -93,8 +94,8 @@ export function InvoiceView({
             <span>Print 80mm Receipt</span>
           </button>
 
-          {/* OWNER ONLY: Edit and Cancel Actions */}
-          {!isCancelled && isOwner && (
+          {/* OWNER ONLY: Edit and Cancel Actions (Depot mode only) */}
+          {!isCancelled && isOwner && !isCloudPortal() && (
             <>
               <Link
                 href={`/sales/${sale.id}/edit`}

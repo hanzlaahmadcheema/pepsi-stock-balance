@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser, requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 import {
   submitStockCountTransaction,
@@ -21,6 +22,7 @@ export async function submitStockCountAction(
   formData: FormData
 ): Promise<StockCountActionState> {
   try {
+    assertNotCloudPortal("Submit Stock Count");
     const user = await requireDbUser();
 
     const businessDate = formData.get("businessDate") as string;
@@ -72,6 +74,7 @@ export async function resolveAdjustmentAction(
   formData: FormData
 ): Promise<StockCountActionState> {
   try {
+    assertNotCloudPortal("Resolve Stock Adjustment");
     // Strictly enforce OWNER role server-side
     const ownerUser = await requireRole(Role.OWNER);
 

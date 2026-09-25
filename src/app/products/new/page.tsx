@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
 import { getContainerSettings } from "@/lib/containers/settings-service";
 import { CreateProductForm } from "./create-product-form";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,10 @@ export const metadata = {
 };
 
 export default async function NewProductPage() {
+  if (isCloudPortal()) {
+    redirect("/products");
+  }
+
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
   const settings = getContainerSettings();

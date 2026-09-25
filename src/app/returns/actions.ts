@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser, requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 import {
   createReturnTransaction,
@@ -21,6 +22,7 @@ export async function createReturnAction(
   formData: FormData
 ): Promise<ReturnActionState> {
   try {
+    assertNotCloudPortal("Create Return");
     const user = await requireDbUser(); // Both STAFF and OWNER can create returns
 
     const saleId = formData.get("saleId") as string;
@@ -89,6 +91,7 @@ export async function inspectReturnAction(
   formData: FormData
 ): Promise<ReturnActionState> {
   try {
+    assertNotCloudPortal("Inspect Return");
     // Strictly enforce OWNER role server-side
     const ownerUser = await requireRole(Role.OWNER);
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireDbUser } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import {
   createReceivingTransaction,
   postReceivingTransaction,
@@ -25,6 +26,7 @@ export async function createReceivingAction(
   _prevState: ReceivingActionState | null,
   formData: FormData
 ): Promise<ReceivingActionState> {
+  assertNotCloudPortal("Create Receiving");
   let user;
   try {
     user = await requireDbUser();
@@ -124,6 +126,7 @@ export async function createReceivingAction(
 export async function postReceivingAction(
   receivingId: string
 ): Promise<{ error?: string; success?: boolean }> {
+  assertNotCloudPortal("Post Receiving");
   let user;
   try {
     user = await requireDbUser();
@@ -151,6 +154,7 @@ export async function postReceivingAction(
 export async function deleteReceivingAction(
   receivingId: string
 ): Promise<{ error?: string; success?: boolean }> {
+  assertNotCloudPortal("Delete Receiving");
   try {
     await requireDbUser();
   } catch {

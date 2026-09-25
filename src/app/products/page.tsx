@@ -8,6 +8,7 @@ import { ProductSearch } from "./product-search";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconPackage } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ interface ProductsPageProps {
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
 
   const params = await searchParams;
   const searchQuery = params.q || "";
@@ -52,17 +54,27 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
             <div className="flex items-center gap-3">
               <Link
-                href="/receiving/new"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                + Receive Stock
-              </Link>
-              <Link
-                href="/products/new"
+                href="/reports/stock"
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
               >
-                + Add Product
+                Stock Valuation Report
               </Link>
+              {!isCloud && (
+                <>
+                  <Link
+                    href="/receiving/new"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+                  >
+                    + Receive Stock
+                  </Link>
+                  <Link
+                    href="/products/new"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    + Add Product
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -85,8 +97,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     ? `We couldn't find any products matching "${searchQuery}". Try adjusting your search query.`
                     : "Get started by adding beverage products, bottle configurations, and price tiers."
                 }
-                actionLabel={searchQuery ? undefined : "+ Add Product"}
-                actionHref={searchQuery ? undefined : "/products/new"}
+                actionLabel={searchQuery || isCloud ? undefined : "+ Add Product"}
+                actionHref={searchQuery || isCloud ? undefined : "/products/new"}
               />
             </div>
           ) : (

@@ -23,6 +23,7 @@ import {
   IconAlertTriangle,
   IconZap,
 } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 interface DailyClosingDetailsClientProps {
   summary: DailyClosingSummary;
@@ -34,6 +35,7 @@ export function DailyClosingDetailsClient({
   summary,
   isOwner,
 }: DailyClosingDetailsClientProps) {
+  const isCloud = isCloudPortal();
   const closing = summary.closing;
   const status = closing?.status || DailyClosingStatus.OPEN;
   const isOpen = status === DailyClosingStatus.OPEN;
@@ -104,7 +106,7 @@ export function DailyClosingDetailsClient({
             >
               Back to Dashboard
             </Link>
-            {isOwner && (
+            {isOwner && !isCloud && (
               <button
                 type="button"
                 onClick={() => setShowReopenModal(true)}
@@ -187,7 +189,7 @@ export function DailyClosingDetailsClient({
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-900 dark:text-emerald-200 font-semibold flex items-center gap-2">
               <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Official closing finalized.</span>
-              {isOwner && (
+              {isOwner && !isCloud && (
                 <button
                   type="button"
                   onClick={() => setShowReopenModal(true)}
@@ -500,94 +502,50 @@ export function DailyClosingDetailsClient({
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <IconClipboardList className="w-5 h-5 text-zinc-700 dark:text-zinc-300 inline-block" />
-            <span>End-of-Day Balancing Workflow</span>
+            <span>{isCloud ? "Reconciliation Overview (Read-Only)" : "End-of-Day Balancing Workflow"}</span>
           </h2>
 
-          {/* If Session is OPEN: Staff or Owner prepares and submits */}
-          {isOpen && (
-            <form action={submitAction} className="space-y-4">
-              <input type="hidden" name="closingId" value={closing.id} />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    Physical Cash Drawer Count (Rs.) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    name="physicalCash"
-                    value={physicalCashInput}
-                    onChange={(e) => setPhysicalCashInput(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="text-[11px] text-zinc-500">
-                    Expected: {formatCurrency(summary.cashDrawer.totalCashExpected)} | Variance:{" "}
-                    <span className={currentDifference === 0 ? "text-emerald-600 font-bold" : "text-red-600 font-bold"}>
-                      {formatCurrency(currentDifference)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    Closing Notes / Shift Remarks (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="notes"
-                    placeholder="e.g. Evening shift balanced, cash reconciled."
-                    defaultValue={closing.notes || ""}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+          {isCloud ? (
+            <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 space-y-2">
+              <div className="font-bold text-sm">
+                {isClosed
+                  ? "Business Day Closed & Audited"
+                  : isInReview
+                  ? "Closing In Review at Depot"
+                  : "Session Active on Depot"}
               </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Closing for Owner Review →"}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* If Session is IN_REVIEW: Owner Final Close Action */}
-          {isInReview && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between">
-                <div>
-                  <span className="font-bold">Awaiting Owner Final Review.</span> Staff has prepared the numbers.
-                  Physical cash recorded: <b>{formatCurrency(closing.physicalCash)}</b>.
+              <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                Physical drawer counts, cash reconciliations, and closing sign-offs are submitted and authorized on the local Windows Depot terminal. This executive sheet provides synchronized, read-only visibility into operational closing metrics.
+              </p>
+              {closing.physicalCash !== null && (
+                <div className="pt-2 border-t border-blue-200 dark:border-blue-900 flex flex-wrap items-center gap-4 text-xs">
+                  <span>Physical Cash Counted: <strong>{formatCurrency(closing.physicalCash)}</strong></span>
+                  <span>Expected Drawer Cash: <strong>{formatCurrency(summary.cashDrawer.totalCashExpected)}</strong></span>
+                  <span>
+                    Variance:{" "}
+                    <strong className={closing.cashDifference === 0 ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}>
+                      {closing.cashDifference ? formatCurrency(closing.cashDifference) : formatCurrency(0)}
+                    </strong>
+                  </span>
                 </div>
-                <div>
-                  {summary.readiness.isReadyToClose ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-bold">
-                      <IconCheck className="w-3.5 h-3.5" />
-                      <span>All checks passed</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 font-bold">
-                      <IconAlertTriangle className="w-3.5 h-3.5" />
-                      <span>Blocked: {summary.readiness.blockingReasons[0]}</span>
-                    </span>
-                  )}
+              )}
+              {closing.notes && (
+                <div className="pt-1 text-zinc-600 dark:text-zinc-400">
+                  <strong>Shift Remarks:</strong> &ldquo;{closing.notes}&rdquo;
                 </div>
-              </div>
-
-              {isOwner ? (
-                <form action={finalizeAction} className="space-y-4 pt-2">
+              )}
+            </div>
+          ) : (
+            <>
+              {/* If Session is OPEN: Staff or Owner prepares and submits */}
+              {isOpen && (
+                <form action={submitAction} className="space-y-4">
                   <input type="hidden" name="closingId" value={closing.id} />
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                        Verify Physical Cash Count (Rs.)
+                        Physical Cash Drawer Count (Rs.) *
                       </label>
                       <input
                         type="number"
@@ -596,20 +554,27 @@ export function DailyClosingDetailsClient({
                         name="physicalCash"
                         value={physicalCashInput}
                         onChange={(e) => setPhysicalCashInput(e.target.value)}
-                        className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                        required
+                        className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
                       />
+                      <div className="text-[11px] text-zinc-500">
+                        Expected: {formatCurrency(summary.cashDrawer.totalCashExpected)} | Variance:{" "}
+                        <span className={currentDifference === 0 ? "text-emerald-600 font-bold" : "text-red-600 font-bold"}>
+                          {formatCurrency(currentDifference)}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                        Owner Final Remarks (Optional)
+                        Closing Notes / Shift Remarks (Optional)
                       </label>
                       <input
                         type="text"
                         name="notes"
-                        placeholder="e.g. Reviewed and verified by Owner."
+                        placeholder="e.g. Evening shift balanced, cash reconciled."
                         defaultValue={closing.notes || ""}
-                        className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                        className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -617,47 +582,118 @@ export function DailyClosingDetailsClient({
                   <div className="flex items-center justify-end gap-3 pt-2">
                     <button
                       type="submit"
-                      disabled={isFinalizing || !summary.readiness.isReadyToClose}
-                      className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                      disabled={isSubmitting}
+                      className="px-5 py-2.5 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer"
                     >
-                      {isFinalizing ? (
-                        "Finalizing Day..."
-                      ) : (
-                        <>
-                          <IconCheck className="w-4 h-4" />
-                          <span>Finalize &amp; Close Business Day</span>
-                        </>
-                      )}
+                      {isSubmitting ? "Submitting..." : "Submit Closing for Owner Review →"}
                     </button>
                   </div>
                 </form>
-              ) : (
-                <div className="text-xs text-zinc-500 italic">
-                  Only the Owner can execute the final close action. Please notify the Owner to complete the end-of-day signoff.
+              )}
+
+              {/* If Session is IN_REVIEW: Owner Final Close Action */}
+              {isInReview && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold">Awaiting Owner Final Review.</span> Staff has prepared the numbers.
+                      Physical cash recorded: <b>{formatCurrency(closing.physicalCash)}</b>.
+                    </div>
+                    <div>
+                      {summary.readiness.isReadyToClose ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-bold">
+                          <IconCheck className="w-3.5 h-3.5" />
+                          <span>All checks passed</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 font-bold">
+                          <IconAlertTriangle className="w-3.5 h-3.5" />
+                          <span>Blocked: {summary.readiness.blockingReasons[0]}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {isOwner ? (
+                    <form action={finalizeAction} className="space-y-4 pt-2">
+                      <input type="hidden" name="closingId" value={closing.id} />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                            Verify Physical Cash Count (Rs.)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="physicalCash"
+                            value={physicalCashInput}
+                            onChange={(e) => setPhysicalCashInput(e.target.value)}
+                            className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                            Owner Final Remarks (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            name="notes"
+                            placeholder="e.g. Reviewed and verified by Owner."
+                            defaultValue={closing.notes || ""}
+                            className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-3 pt-2">
+                        <button
+                          type="submit"
+                          disabled={isFinalizing || !summary.readiness.isReadyToClose}
+                          className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          {isFinalizing ? (
+                            "Finalizing Day..."
+                          ) : (
+                            <>
+                              <IconCheck className="w-4 h-4" />
+                              <span>Finalize &amp; Close Business Day</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="text-xs text-zinc-500 italic">
+                      Only the Owner can execute the final close action. Please notify the Owner to complete the end-of-day signoff.
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* If Session is CLOSED */}
-          {isClosed && (
-            <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <span className="font-bold">Business Day is Closed:</span> Officially reconciled and verified on{" "}
-                <b>{new Date(closing.closedAt!).toLocaleString()}</b> by <b>{closing.closedByName}</b>.
-                {closing.notes && <div className="mt-1 italic">&ldquo;{closing.notes}&rdquo;</div>}
-              </div>
+              {/* If Session is CLOSED */}
+              {isClosed && (
+                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <span className="font-bold">Business Day is Closed:</span> Officially reconciled and verified on{" "}
+                    <b>{new Date(closing.closedAt!).toLocaleString()}</b> by <b>{closing.closedByName}</b>.
+                    {closing.notes && <div className="mt-1 italic">&ldquo;{closing.notes}&rdquo;</div>}
+                  </div>
 
-              {isOwner && (
-                <button
-                  type="button"
-                  onClick={() => setShowReopenModal(true)}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  Reopen Session
-                </button>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setShowReopenModal(true)}
+                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      Reopen Session
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -905,8 +941,8 @@ export function DailyClosingDetailsClient({
         )}
       </div>
 
-      {/* Reopen Session Modal (Owner only) */}
-      {showReopenModal && (
+      {/* Reopen Session Modal (Owner only, Depot only) */}
+      {!isCloud && showReopenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">

@@ -10,6 +10,7 @@ import { ProductStatusButton } from "./product-status-button";
 import { EditProductForm } from "./edit-product-form";
 import { UpdatePriceForm } from "./update-price-form";
 import { IconAlertTriangle, IconCheck, IconBottle, IconPackage } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   // 1. Authenticated user assertion
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
 
   // 2. Query product with strict role projection
   const product = await getProductDetails(id, isOwner);
@@ -97,9 +99,11 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <ProductStatusButton productId={product.id} isActive={product.isActive} />
-            </div>
+            {!isCloud && (
+              <div className="flex items-center gap-3">
+                <ProductStatusButton productId={product.id} isActive={product.isActive} />
+              </div>
+            )}
           </div>
 
           {/* Quick Metrics Cards */}
@@ -252,32 +256,35 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
             </div>
           </div>
 
-          {/* Product Management Sections (Staff & Owner) */}
-          <div className="space-y-8">
-            {/* Update Selling Price Form */}
-            <UpdatePriceForm
-              productId={product.id}
-              activePrices={product.activePrices.map((p) => ({
-                tier: p.tier,
-                amount: p.amount,
-              }))}
-              enabledRates={enabledRates}
-            />
+          {/* Product Management Sections (Staff & Owner) - Depot Mode Only */}
+          {!isCloud && (
+            <div className="space-y-8">
+              {/* Update Selling Price Form */}
+              <UpdatePriceForm
+                productId={product.id}
+                activePrices={product.activePrices.map((p) => ({
+                  tier: p.tier,
+                  amount: p.amount,
+                }))}
+                enabledRates={enabledRates}
+              />
 
-            {/* Edit Product Information Form */}
-            <EditProductForm
-              productId={product.id}
-              isOwner={isOwner}
-              initialData={{
-                name: product.name,
-                brand: product.brand,
-                sku: product.sku,
-                minimumStockLevel: product.minimumStockLevel,
-                latestPurchasePrice: product.latestPurchasePrice,
-                hasGlassCrate: crateConfig.hasGlassCrate,
-                bottlesPerCrate: crateConfig.bottlesPerCrate,
-              }}
-            />
+              {/* Edit Product Information Form */}
+              <EditProductForm
+                productId={product.id}
+                isOwner={isOwner}
+                initialData={{
+                  name: product.name,
+                  brand: product.brand,
+                  sku: product.sku,
+                  minimumStockLevel: product.minimumStockLevel,
+                  latestPurchasePrice: product.latestPurchasePrice,
+                  hasGlassCrate: crateConfig.hasGlassCrate,
+                  bottlesPerCrate: crateConfig.bottlesPerCrate,
+                }}
+              />
+            </div>
+          )}
 
               {/* Complete Historical Prices Ledger */}
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xs border border-zinc-200 dark:border-zinc-800 overflow-hidden">
@@ -362,7 +369,6 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 </div>
               </div>
             </div>
-        </div>
       </main>
     </div>
   );

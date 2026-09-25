@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconCalendar, IconCheck, IconZap, IconAlertTriangle } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 interface DailyClosingClientProps {
   todaySummary: DailyClosingSummary;
@@ -37,6 +38,7 @@ export function DailyClosingClient({
   const [customDate, setCustomDate] = useState(todayDateStr);
   const [isOpeningCustomDate, setIsOpeningCustomDate] = useState(false);
   const [openingError, setOpeningError] = useState<string | null>(null);
+  const isCloud = isCloudPortal();
 
   const todayClosing = todaySummary.closing;
   const todayStatus = todayClosing?.status || "NOT_INITIALIZED";
@@ -61,11 +63,20 @@ export function DailyClosingClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Daily Closing & Operational Reconciliation
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
+              Daily Closing &amp; Operational Reconciliation
+            </h1>
+            {isCloud && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
+                Read-Only
+              </span>
+            )}
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            End-of-day cash drawer balancing, sales reconciliation, and physical stock count signoff.
+            {isCloud
+              ? "View synchronized end-of-day closings, cash drawer balances, and physical stock signoffs."
+              : "End-of-day cash drawer balancing, sales reconciliation, and physical stock count signoff."}
           </p>
         </div>
 
@@ -77,14 +88,36 @@ export function DailyClosingClient({
             onChange={(e) => setCustomDate(e.target.value)}
             className="text-xs px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono"
           />
-          <button
-            type="button"
-            onClick={() => handleOpenDate(customDate)}
-            disabled={isOpeningCustomDate || !customDate}
-            className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium transition-colors cursor-pointer whitespace-nowrap"
-          >
-            {isOpeningCustomDate ? "Opening..." : "Reconcile Date →"}
-          </button>
+          {isCloud ? (
+            (() => {
+              const matched = recentClosings.find((c) => c.businessDate === customDate);
+              return matched ? (
+                <Link
+                  href={`/daily-closing/${matched.id}`}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors whitespace-nowrap"
+                >
+                  View Closing →
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="text-xs px-3 py-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-400 font-medium whitespace-nowrap cursor-not-allowed"
+                >
+                  No Record
+                </button>
+              );
+            })()
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleOpenDate(customDate)}
+              disabled={isOpeningCustomDate || !customDate}
+              className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium transition-colors cursor-pointer whitespace-nowrap"
+            >
+              {isOpeningCustomDate ? "Opening..." : "Reconcile Date →"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -119,6 +152,10 @@ export function DailyClosingClient({
               >
                 <span>Go to {unclosedPrevious.dateStr} Closing Sheet →</span>
               </Link>
+            ) : isCloud ? (
+              <span className="text-xs text-amber-800 dark:text-amber-200 font-semibold px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                Pending Depot Session
+              </span>
             ) : (
               <button
                 type="button"
@@ -185,6 +222,10 @@ export function DailyClosingClient({
               >
                 View Closing Sheet →
               </Link>
+            ) : isCloud ? (
+              <span className="text-xs px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium border border-zinc-200 dark:border-zinc-700">
+                Depot Session Not Started
+              </span>
             ) : (
               <button
                 type="button"
@@ -410,7 +451,7 @@ export function DailyClosingClient({
                             })}
                           </div>
                           <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 lg:hidden inline-block mt-0.5">
-                            Reconcile &rarr;
+                            {isCloud ? "View Sheet →" : "Reconcile →"}
                           </span>
                         </Link>
                       </td>
@@ -509,7 +550,7 @@ export function DailyClosingClient({
                           href={`/daily-closing/${c.id}`}
                           className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
                         >
-                          Reconcile →
+                          {isCloud ? "View Sheet →" : "Reconcile →"}
                         </Link>
                       </td>
                     </tr>

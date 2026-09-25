@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireDbUser } from "@/lib/auth";
 import { ReturnStatus } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { listReturns } from "@/lib/returns/service";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconRotateCcw } from "@/components/ui/icons";
@@ -23,6 +24,7 @@ interface ReturnsPageProps {
 
 export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
   const user = await requireDbUser();
+  const isCloud = isCloudPortal();
   const { search, status } = await searchParams;
 
   const validStatus =
@@ -48,19 +50,30 @@ export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
       <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              Returns & Quarantine Inspection
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                Returns &amp; Quarantine Inspection
+              </h1>
+              {isCloud && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
+                  Read-Only
+                </span>
+              )}
+            </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Track customer returns, quarantine incoming crates, and conduct owner quality inspections.
+              {isCloud
+                ? "View synchronized customer returns, quarantine statuses, and quality inspection history."
+                : "Track customer returns, quarantine incoming crates, and conduct owner quality inspections."}
             </p>
           </div>
-          <Link
-            href="/returns/new"
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
-          >
-            + New Return
-          </Link>
+          {!isCloud && (
+            <Link
+              href="/returns/new"
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-xs"
+            >
+              + New Return
+            </Link>
+          )}
         </div>
 
         {/* Filters */}
@@ -123,8 +136,8 @@ export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
                         icon={<IconRotateCcw className="w-8 h-8 text-zinc-400" />}
                         title="No customer returns recorded"
                         description="Record customer returns to initiate quarantine inspection, restock returnable crates, and balance container credit."
-                        actionLabel="+ New Return"
-                        actionHref="/returns/new"
+                        actionLabel={isCloud ? undefined : "+ New Return"}
+                        actionHref={isCloud ? undefined : "/returns/new"}
                       />
                     </td>
                   </tr>
@@ -198,7 +211,7 @@ export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
                             href={`/returns/${r.id}`}
                             className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                           >
-                            {isQuarantined ? "Inspect / Details" : "View Details"}
+                            {isQuarantined && !isCloud ? "Inspect / Details" : "View Details"}
                           </Link>
                         </td>
                       </tr>

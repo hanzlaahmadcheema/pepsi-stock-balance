@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 
 export type SupplierActionState = {
@@ -19,6 +20,7 @@ export async function createSupplierAction(
   _prevState: SupplierActionState | null,
   formData: FormData
 ): Promise<SupplierActionState> {
+  assertNotCloudPortal("Create Supplier");
   try {
     await requireRole(Role.OWNER);
   } catch {
@@ -62,6 +64,7 @@ export async function updateSupplierAction(
   _prevState: SupplierActionState | null,
   formData: FormData
 ): Promise<SupplierActionState> {
+  assertNotCloudPortal("Update Supplier");
   try {
     await requireRole(Role.OWNER);
   } catch {
@@ -109,6 +112,7 @@ export async function updateSupplierAction(
 export async function toggleSupplierStatusAction(
   id: string
 ): Promise<{ error?: string; success?: boolean }> {
+  assertNotCloudPortal("Toggle Supplier Status");
   try {
     await requireRole(Role.OWNER);
   } catch {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireDbUser } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { DamageType } from "@prisma/client";
 import { recordDamage } from "@/lib/damage/service";
 
@@ -16,6 +17,7 @@ export async function recordDamageAction(
   formData: FormData
 ): Promise<DamageActionState> {
   try {
+    assertNotCloudPortal("Record Damage");
     const user = await requireDbUser();
 
     const productId = formData.get("productId") as string;

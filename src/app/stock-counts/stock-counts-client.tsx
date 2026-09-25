@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { IconClipboardList, IconAlertTriangle, IconCheck } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import type {
   StockCountSessionSummary,
   PendingAdjustmentSummary,
@@ -24,24 +25,45 @@ export function StockCountsClient({
 }) {
   const [selectedAdjustment, setSelectedAdjustment] =
     useState<PendingAdjustmentSummary | null>(null);
+  const isCloud = isCloudPortal();
 
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            Stock Counts & Adjustments
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              Stock Counts &amp; Adjustments
+            </h1>
+            {isCloud && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
+                Read-Only
+              </span>
+            )}
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Conduct physical inventory audits, track discrepancies, and process owner approvals.
+            {isCloud
+              ? "View synchronized physical inventory audits, discrepancy history, and adjustment sign-offs."
+              : "Conduct physical inventory audits, track discrepancies, and process owner approvals."}
           </p>
         </div>
-        <Link
-          href="/stock-counts/new"
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
-        >
-          + New Stock Count
-        </Link>
+        <div className="flex items-center gap-2">
+          {isCloud ? (
+            <Link
+              href="/reports/stock"
+              className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
+            >
+              Stock Valuation Report →
+            </Link>
+          ) : (
+            <Link
+              href="/stock-counts/new"
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-xs"
+            >
+              + New Stock Count
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Pending Owner Approvals Banner & Table */}
@@ -91,7 +113,7 @@ export function StockCountsClient({
                             {adj.productName}
                           </div>
                           <div className="text-zinc-500">{adj.productBrand}</div>
-                          {isOwner && (
+                          {isOwner && !isCloud && (
                             <div className="mt-2 lg:hidden">
                               <button
                                 type="button"
@@ -121,7 +143,9 @@ export function StockCountsClient({
                         </td>
                         <td className="px-4 py-3 text-zinc-500">{adj.requestedByName}</td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          {isOwner ? (
+                          {isCloud ? (
+                            <span className="text-zinc-500 text-xs italic">Awaiting Depot Action</span>
+                          ) : isOwner ? (
                             <button
                               type="button"
                               onClick={() => setSelectedAdjustment(adj)}
@@ -173,8 +197,8 @@ export function StockCountsClient({
                       icon={<IconClipboardList className="w-8 h-8 text-zinc-400" />}
                       title="No stock count sessions recorded"
                       description="Conduct physical inventory counts by product and crate to detect discrepancies and request adjustments."
-                      actionLabel="+ New Stock Count"
-                      actionHref="/stock-counts/new"
+                      actionLabel={isCloud ? undefined : "+ New Stock Count"}
+                      actionHref={isCloud ? undefined : "/stock-counts/new"}
                     />
                   </td>
                 </tr>
@@ -248,7 +272,7 @@ export function StockCountsClient({
         </ScrollableTable>
       </div>
 
-      {selectedAdjustment && (
+      {!isCloud && selectedAdjustment && (
         <AdjustmentModal
           adjustment={selectedAdjustment}
           onClose={() => setSelectedAdjustment(null)}

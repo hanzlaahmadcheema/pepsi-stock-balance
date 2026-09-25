@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role } from "@prisma/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/auth/password";
@@ -21,6 +22,7 @@ export async function createStaffUserAction(
   _prevState: CreateStaffState | null,
   formData: FormData
 ): Promise<CreateStaffState> {
+  assertNotCloudPortal("Create Staff User");
   let ownerUser;
   try {
     // 1. Enforce OWNER role server-side
@@ -119,6 +121,7 @@ export async function createStaffUserAction(
  * Owners cannot deactivate themselves.
  */
 export async function toggleUserStatusAction(userId: string): Promise<{ error?: string; success?: boolean }> {
+  assertNotCloudPortal("Toggle User Status");
   let ownerUser;
   try {
     // 1. Enforce OWNER role server-side
@@ -190,6 +193,7 @@ export async function updateStaffUserAction(
   _prevState: EditStaffState | null,
   formData: FormData
 ): Promise<EditStaffState> {
+  assertNotCloudPortal("Update Staff User");
   let ownerUser;
   try {
     ownerUser = await requireRole(Role.OWNER);

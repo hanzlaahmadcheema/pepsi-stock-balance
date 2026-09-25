@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { Role } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { getReceivingDetails } from "@/lib/receiving/service";
 import { ReceivingActionsBar } from "./receiving-actions-bar";
 
@@ -27,6 +28,7 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
   // 1. Authenticated user assertion
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
 
   // 2. Fetch receiving details
   const receiving = await getReceivingDetails(id, isOwner);
@@ -71,17 +73,25 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  href="/receiving/new"
-                  className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
-                >
-                  + Receive More Stock
-                </Link>
+                {!isCloud && (
+                  <Link
+                    href="/receiving/new"
+                    className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
+                  >
+                    + Receive More Stock
+                  </Link>
+                )}
                 <Link
                   href="/products"
                   className="px-3 py-2 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-semibold text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
                 >
                   View Current Stock
+                </Link>
+                <Link
+                  href="/receiving"
+                  className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  Receiving History
                 </Link>
               </div>
             </div>
@@ -114,7 +124,16 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
               </p>
             </div>
 
-            <ReceivingActionsBar receivingId={receiving.id} isPosted={receiving.isPosted} />
+            {isCloud ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-semibold">
+                <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {receiving.isPosted ? "Posted (Read-Only)" : "Draft (Depot Managed)"}
+              </div>
+            ) : (
+              <ReceivingActionsBar receivingId={receiving.id} isPosted={receiving.isPosted} />
+            )}
           </div>
 
           {/* Delivery Meta Grid */}

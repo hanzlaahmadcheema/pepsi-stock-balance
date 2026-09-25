@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { requireDbUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
@@ -13,6 +15,9 @@ export const metadata = {
 };
 
 export default async function NewReceivingPage() {
+  if (isCloudPortal()) {
+    redirect("/receiving");
+  }
   const user = await requireDbUser();
   const isOwner = user.role === "OWNER";
 

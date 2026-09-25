@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SaleStatus } from "@prisma/client";
 import { AppHeader } from "@/components/app-header";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { getSaleForReturn } from "@/lib/returns/service";
 import { CreateReturnForm } from "./create-return-form";
 
@@ -20,6 +22,9 @@ interface NewReturnPageProps {
 }
 
 export default async function NewReturnPage({ searchParams }: NewReturnPageProps) {
+  if (isCloudPortal()) {
+    redirect("/returns");
+  }
   const user = await requireDbUser();
   const { invoiceNumber, saleId } = await searchParams;
 

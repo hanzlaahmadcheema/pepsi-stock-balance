@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 import { listProducts, type StaffProductListItem } from "@/lib/products/service";
 import { StockCountForm, type ProductStockItem } from "./stock-count-form";
 
@@ -11,6 +13,9 @@ export const metadata = {
 };
 
 export default async function NewStockCountPage() {
+  if (isCloudPortal()) {
+    redirect("/stock-counts");
+  }
   const user = await requireDbUser();
 
   // Fetch active products with current system stock

@@ -8,6 +8,7 @@ import { listProducts, type StaffProductListItem } from "@/lib/products/service"
 import { listCustomers } from "@/lib/customers/service";
 import { getContainerSettings } from "@/lib/containers/settings-service";
 import { EditSaleForm } from "./edit-sale-form";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,10 @@ export default async function EditSalePage({ params }: EditSalePageProps) {
   const { id } = await params;
   if (!id || !UUID_REGEX.test(id)) {
     notFound();
+  }
+
+  if (isCloudPortal()) {
+    redirect(`/sales/${id}`);
   }
 
   const user = await requireDbUser();

@@ -20,7 +20,10 @@ import {
   IconPlus,
   IconCheck,
   IconZap,
+  IconServer,
+  IconHistory,
 } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +67,7 @@ function getStatusBadge(status: string) {
 export default async function HomePage() {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
   const data: DashboardData = await getDashboardData(user.role);
 
   return (
@@ -77,8 +81,20 @@ export default async function HomePage() {
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xs border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
-                {isOwner ? "Owner Executive Control" : "Staff Operations Desk"}
+              <span
+                className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
+                  isCloud
+                    ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
+                    : "bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300"
+                }`}
+              >
+                {isCloud
+                  ? isOwner
+                    ? "Cloud Executive Portal (Read-Only)"
+                    : "Cloud Management Portal (Read-Only)"
+                  : isOwner
+                  ? "Owner Executive Control"
+                  : "Staff Operations Desk"}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
                 Business Date: <strong className="text-zinc-700 dark:text-zinc-300">{data.businessDate}</strong> (Asia/Karachi)
@@ -88,36 +104,68 @@ export default async function HomePage() {
               Welcome back, {user.name}
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              {isOwner
+              {isCloud
+                ? "Synchronized operational pulse, real-time warehouse inventory, customer credit balances, and gross margins."
+                : isOwner
                 ? "Here is your full business pulse, real-time inventory balance, cash collection, and gross profitability for today."
                 : "Here is your daily operational control center for dispatch, crate stock, cash collection, and end-of-day tasks."}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {!isOwner && (
-              <Link
-                href="/sales/new"
-                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-              >
-                + New Sale / Invoice
-              </Link>
+            {isCloud ? (
+              <>
+                <Link
+                  href="/reports"
+                  className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
+                >
+                  <IconClipboardList className="w-4 h-4" />
+                  <span>Business Reports</span>
+                </Link>
+                {isOwner && (
+                  <Link
+                    href="/reports/profit"
+                    className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
+                  >
+                    <IconChartBar className="w-4 h-4" />
+                    <span>Profit &amp; Margins</span>
+                  </Link>
+                )}
+                <Link
+                  href="/sync"
+                  className="inline-flex items-center gap-1.5 justify-center px-3.5 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium text-sm transition-colors"
+                >
+                  <IconServer className="w-4 h-4" />
+                  <span>Sync Status</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                {!isOwner && (
+                  <Link
+                    href="/sales/new"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
+                  >
+                    + New Sale / Invoice
+                  </Link>
+                )}
+                {isOwner && (
+                  <Link
+                    href="/reports/profit"
+                    className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
+                  >
+                    <IconChartBar className="w-4 h-4" />
+                    <span>Profit Report</span>
+                  </Link>
+                )}
+                <Link
+                  href="/daily-closing"
+                  className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium text-sm transition-colors"
+                >
+                  Daily Closing
+                </Link>
+              </>
             )}
-            {isOwner && (
-              <Link
-                href="/reports/profit"
-                className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-              >
-                <IconChartBar className="w-4 h-4" />
-                <span>Profit Report</span>
-              </Link>
-            )}
-            <Link
-              href="/daily-closing"
-              className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium text-sm transition-colors"
-            >
-              Daily Closing
-            </Link>
           </div>
         </div>
 
@@ -127,119 +175,231 @@ export default async function HomePage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Quick Actions
+              {isCloud ? "Management Navigation" : "Quick Actions"}
             </h2>
             <span className="text-xs text-zinc-400">
-              What would you like to do?
+              {isCloud ? "Explore synchronized depot records" : "What would you like to do?"}
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* 1. New Sale */}
-            <Link
-              href="/sales/new"
-              className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform">
-                <IconPlus className="w-5 h-5 stroke-[2.5]" />
-              </div>
-              <div>
-                <span className="text-sm font-bold block">New Sale</span>
-                <span className="text-[11px] text-blue-100/90 block mt-0.5">
-                  Counter invoice
-                </span>
-              </div>
-            </Link>
+            {isCloud ? (
+              <>
+                {/* 1. Sales History */}
+                <Link
+                  href="/sales"
+                  className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform">
+                    <IconReceipt className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold block">Sales History</span>
+                    <span className="text-[11px] text-blue-100/90 block mt-0.5">
+                      Invoices &amp; totals
+                    </span>
+                  </div>
+                </Link>
 
-            {/* 2. Receive Stock */}
-            <Link
-              href="/receiving/new"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <IconTruck className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                  Receive Stock
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                  Supplier deliveries
-                </span>
-              </div>
-            </Link>
+                {/* 2. Stock Ledger */}
+                <Link
+                  href="/products"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconPackage className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Current Stock
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Inventory &amp; valuation
+                    </span>
+                  </div>
+                </Link>
 
-            {/* 3. Customers */}
-            <Link
-              href="/customers"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <IconUsers className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                  Customers
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                  Accounts & credit
-                </span>
-              </div>
-            </Link>
+                {/* 3. Customers & Balances */}
+                <Link
+                  href="/customers"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconUsers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Customers &amp; Debt
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Credit balances
+                    </span>
+                  </div>
+                </Link>
 
-            {/* 4. Record Payment */}
-            <Link
-              href="/customers"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500 dark:hover:border-amber-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <IconReceipt className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                  Record Payment
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                  Collect balance due
-                </span>
-              </div>
-            </Link>
+                {/* 4. AR Aging */}
+                <Link
+                  href="/reports/aging"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500 dark:hover:border-amber-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconHistory className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      AR Aging
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Aging risk brackets
+                    </span>
+                  </div>
+                </Link>
 
-            {/* 5. Stock */}
-            <Link
-              href="/products"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <IconPackage className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                  Current Stock
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                  Warehouse levels
-                </span>
-              </div>
-            </Link>
+                {/* 5. Depot Sync */}
+                <Link
+                  href="/sync"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconServer className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Depot Sync
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Replication health
+                    </span>
+                  </div>
+                </Link>
 
-            {/* 6. Daily Closing */}
-            <Link
-              href="/daily-closing"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-500 dark:hover:border-zinc-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <IconScale className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                  Daily Closing
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                  Register balance
-                </span>
-              </div>
-            </Link>
+                {/* 6. Reports Hub */}
+                <Link
+                  href="/reports"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-500 dark:hover:border-zinc-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconChartBar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Reports Hub
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Analytics &amp; audits
+                    </span>
+                  </div>
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* 1. New Sale */}
+                <Link
+                  href="/sales/new"
+                  className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform">
+                    <IconPlus className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold block">New Sale</span>
+                    <span className="text-[11px] text-blue-100/90 block mt-0.5">
+                      Counter invoice
+                    </span>
+                  </div>
+                </Link>
+
+                {/* 2. Receive Stock */}
+                <Link
+                  href="/receiving/new"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconTruck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Receive Stock
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Supplier deliveries
+                    </span>
+                  </div>
+                </Link>
+
+                {/* 3. Customers */}
+                <Link
+                  href="/customers"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconUsers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Customers
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Accounts & credit
+                    </span>
+                  </div>
+                </Link>
+
+                {/* 4. Record Payment */}
+                <Link
+                  href="/customers"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500 dark:hover:border-amber-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconReceipt className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Record Payment
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Collect balance due
+                    </span>
+                  </div>
+                </Link>
+
+                {/* 5. Stock */}
+                <Link
+                  href="/products"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconPackage className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Current Stock
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Warehouse levels
+                    </span>
+                  </div>
+                </Link>
+
+                {/* 6. Daily Closing */}
+                <Link
+                  href="/daily-closing"
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-500 dark:hover:border-zinc-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <IconScale className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
+                      Daily Closing
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                      Register balance
+                    </span>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

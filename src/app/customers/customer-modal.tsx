@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconUsers, IconClose } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export function CustomerModal({
   customerToEdit,
@@ -200,6 +201,7 @@ export function CustomerListWrapper({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<CustomerSummary | null>(null);
+  const isCloud = isCloudPortal();
 
   const handleCreate = () => {
     setEditingCustomer(null);
@@ -213,22 +215,42 @@ export function CustomerListWrapper({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            Customers & Credit
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              Customers & Credit
+            </h1>
+            {isCloud && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
+                Read-Only
+              </span>
+            )}
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Manage customer accounts, track credit balances, and process lump-sum payments.
+            {isCloud
+              ? "View customer accounts, debt aging, and payment history synchronized from depot."
+              : "Manage customer accounts, track credit balances, and process lump-sum payments."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors cursor-pointer"
-        >
-          + Add Customer
-        </button>
+        <div className="flex items-center gap-2">
+          {isCloud ? (
+            <Link
+              href="/reports/aging"
+              className="px-3.5 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-colors shadow-2xs"
+            >
+              AR Aging Report →
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors cursor-pointer shadow-xs"
+            >
+              + Add Customer
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
@@ -313,35 +335,46 @@ export function CustomerListWrapper({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                      <Link
-                        href={`/customers/${c.id}`}
-                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Ledger
-                      </Link>
-                      {c.outstandingBalance > 0 && (
+                      {isCloud ? (
+                        <Link
+                          href={`/customers/${c.id}`}
+                          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          View Ledger
+                        </Link>
+                      ) : (
                         <>
-                          <span className="text-zinc-300 dark:text-zinc-700">|</span>
                           <Link
-                            href={`/customers/${c.id}/payments`}
-                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                            href={`/customers/${c.id}`}
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                           >
-                            Pay
+                            Ledger
                           </Link>
-                        </>
-                      )}
-                      {isOwner && (
-                        <>
-                          <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(c)}
-                            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:underline cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                          <CustomerStatusButton customerId={c.id} isActive={c.isActive} />
+                          {c.outstandingBalance > 0 && (
+                            <>
+                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                              <Link
+                                href={`/customers/${c.id}/payments`}
+                                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                              >
+                                Pay
+                              </Link>
+                            </>
+                          )}
+                          {isOwner && (
+                            <>
+                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(c)}
+                                className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                              <CustomerStatusButton customerId={c.id} isActive={c.isActive} />
+                            </>
+                          )}
                         </>
                       )}
                     </td>

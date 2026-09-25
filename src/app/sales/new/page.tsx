@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
 import { listProducts, type StaffProductListItem } from "@/lib/products/service";
@@ -7,6 +8,7 @@ import { getContainerSettings, getProductCrateConfig } from "@/lib/containers/se
 import { getTodayBusinessDateString, getUnclosedPreviousDay } from "@/lib/daily-closing/service";
 import { IconAlertTriangle } from "@/components/ui/icons";
 import { CreateSaleForm } from "./create-sale-form";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,10 @@ interface NewSalePageProps {
 }
 
 export default async function NewSalePage({ searchParams }: NewSalePageProps) {
+  if (isCloudPortal()) {
+    redirect("/sales");
+  }
+
   const user = await requireDbUser();
   const { customerId } = await searchParams;
 

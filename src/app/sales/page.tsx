@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { IconShoppingCart } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 
+import { isCloudPortal } from "@/lib/config/portal-mode";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -27,6 +29,7 @@ interface SalesPageProps {
 export default async function SalesPage({ searchParams }: SalesPageProps) {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
   const { search, status, startDate, endDate } = await searchParams;
 
   const validStatus =
@@ -62,17 +65,25 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href="/reports/sales"
+              className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold transition-colors"
+            >
+              Sales Report
+            </Link>
+            <Link
               href="/customers"
               className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold transition-colors"
             >
               Customers & Balances
             </Link>
-            <Link
-              href="/sales/new"
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
-            >
-              + New Sale
-            </Link>
+            {!isCloud && (
+              <Link
+                href="/sales/new"
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+              >
+                + New Sale
+              </Link>
+            )}
           </div>
         </div>
 

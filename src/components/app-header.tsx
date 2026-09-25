@@ -33,9 +33,12 @@ import {
   IconServer,
   IconKeyboard,
   IconSettings,
+  IconHistory,
+  IconBanknotes,
 } from "@/components/ui/icons";
 import { DbStatusIndicator } from "@/components/db-status-indicator";
 import { SystemVersionPill } from "@/components/system-version-pill";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 interface NavItem {
   name: string;
@@ -50,55 +53,115 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    id: "home",
-    title: "Home",
-    items: [
-      { name: "Dashboard", href: "/", icon: IconChartBar },
-    ],
-  },
-  {
-    id: "sales",
-    title: "Sales",
-    items: [
-      { name: "New Sale", href: "/sales/new", icon: IconPlus },
-      { name: "Sales History", href: "/sales", icon: IconReceipt },
-    ],
-  },
-  {
-    id: "stock",
-    title: "Stock & Warehouse",
-    items: [
-      { name: "Current Stock", href: "/products", icon: IconPackage },
-      { name: "Receive Stock", href: "/receiving", icon: IconTruck },
-      { name: "Returns", href: "/returns", icon: IconRotateCcw },
-      { name: "Damaged / Expired", href: "/damage", icon: IconAlertTriangle },
-      { name: "Stock Adjustments", href: "/stock-counts", icon: IconClipboardList },
-    ],
-  },
-  {
-    id: "customers",
-    title: "Customers",
-    items: [
-      { name: "Customers & Accounts", href: "/customers", icon: IconUsers },
-    ],
-  },
-  {
-    id: "management",
-    title: "Management & Day",
-    items: [
-      { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
-      { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
-      { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
-      { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
-      { name: "Settings", href: "/settings", icon: IconSettings, ownerOnly: true },
-      { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
-      { name: "System Updates", href: "/settings/system-update", icon: IconServer, ownerOnly: true },
-      { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
-    ],
-  },
-];
+function getNavGroups(isCloud: boolean): NavGroup[] {
+  if (!isCloud) {
+    return [
+      {
+        id: "home",
+        title: "Home",
+        items: [
+          { name: "Dashboard", href: "/", icon: IconChartBar },
+        ],
+      },
+      {
+        id: "sales",
+        title: "Sales",
+        items: [
+          { name: "New Sale", href: "/sales/new", icon: IconPlus },
+          { name: "Sales History", href: "/sales", icon: IconReceipt },
+        ],
+      },
+      {
+        id: "stock",
+        title: "Stock & Warehouse",
+        items: [
+          { name: "Current Stock", href: "/products", icon: IconPackage },
+          { name: "Receive Stock", href: "/receiving", icon: IconTruck },
+          { name: "Returns", href: "/returns", icon: IconRotateCcw },
+          { name: "Damaged / Expired", href: "/damage", icon: IconAlertTriangle },
+          { name: "Stock Adjustments", href: "/stock-counts", icon: IconClipboardList },
+        ],
+      },
+      {
+        id: "customers",
+        title: "Customers",
+        items: [
+          { name: "Customers & Accounts", href: "/customers", icon: IconUsers },
+        ],
+      },
+      {
+        id: "management",
+        title: "Management & Day",
+        items: [
+          { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
+          { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
+          { name: "Pending Approvals", href: "/approvals", icon: IconShield, ownerOnly: true },
+          { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+          { name: "Settings", href: "/settings", icon: IconSettings, ownerOnly: true },
+          { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
+          { name: "System Updates", href: "/settings/system-update", icon: IconServer, ownerOnly: true },
+          { name: "Technical Services", href: "/technical-services", icon: IconLifebuoy, ownerOnly: true },
+        ],
+      },
+    ];
+  }
+
+  // Cloud Read-Only Portal Navigation
+  return [
+    {
+      id: "home",
+      title: "Overview",
+      items: [
+        { name: "Dashboard", href: "/", icon: IconChartBar },
+      ],
+    },
+    {
+      id: "sales",
+      title: "Sales & Invoicing",
+      items: [
+        { name: "Sales History", href: "/sales", icon: IconReceipt },
+      ],
+    },
+    {
+      id: "stock",
+      title: "Stock & Inventory",
+      items: [
+        { name: "Current Stock", href: "/products", icon: IconPackage },
+        { name: "Receiving History", href: "/receiving", icon: IconTruck },
+        { name: "Returns History", href: "/returns", icon: IconRotateCcw },
+        { name: "Damaged / Expired", href: "/damage", icon: IconAlertTriangle },
+        { name: "Stock Adjustments", href: "/stock-counts", icon: IconClipboardList },
+      ],
+    },
+    {
+      id: "customers",
+      title: "Customers & Credit",
+      items: [
+        { name: "Customers & Balances", href: "/customers", icon: IconUsers },
+        { name: "Customer Aging", href: "/reports/aging", icon: IconHistory },
+      ],
+    },
+    {
+      id: "reports",
+      title: "Business Intelligence",
+      items: [
+        { name: "Reports Hub", href: "/reports", icon: IconFileSpreadsheet },
+        { name: "Profit & Margins", href: "/reports/profit", icon: IconChartBar, ownerOnly: true },
+        { name: "Aging Report", href: "/reports/aging", icon: IconHistory },
+        { name: "Payment Collections", href: "/reports/payments", icon: IconBanknotes },
+      ],
+    },
+    {
+      id: "operations",
+      title: "Operations & Sync",
+      items: [
+        { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
+        { name: "Depot Sync Status", href: "/sync", icon: IconServer },
+        { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+      ],
+    },
+  ];
+}
 
 interface BreadcrumbItem {
   label: string;
@@ -287,6 +350,8 @@ export function AppHeader({ user }: { user: DbUser }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const isOwner = user.role === Role.OWNER;
+  const isCloud = isCloudPortal();
+  const navGroups = getNavGroups(isCloud);
 
   // Global Keyboard Shortcuts (Alt + N, Alt + H, Alt + P, Alt + C, Alt + R, ?)
   useEffect(() => {
@@ -297,8 +362,8 @@ export function AppHeader({ user }: { user: DbUser }) {
         target?.tagName === "TEXTAREA" ||
         target?.tagName === "SELECT";
 
-      // Alt + N: New Sale
-      if (e.altKey && (e.key === "n" || e.key === "N")) {
+      // Alt + N: New Sale (Local depot mode only)
+      if (!isCloud && e.altKey && (e.key === "n" || e.key === "N")) {
         e.preventDefault();
         router.push("/sales/new");
         return;
@@ -461,7 +526,7 @@ export function AppHeader({ user }: { user: DbUser }) {
 
         {/* Operational Navigation Groups */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {NAV_GROUPS.map((group) => {
+          {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
             if (visibleItems.length === 0) return null;
 
@@ -675,14 +740,20 @@ export function AppHeader({ user }: { user: DbUser }) {
               <kbd className="hidden sm:inline-block px-1 py-0.2 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">?</kbd>
             </button>
 
-            {/* Quick Register Action */}
-            <Link
-              href="/sales/new"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
-            >
-              <IconPlus className="w-3.5 h-3.5" />
-              <span>New Sale</span>
-            </Link>
+            {/* Quick Register Action or Cloud Portal Badge */}
+            {isCloud ? (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                Cloud Portal (Read-Only)
+              </span>
+            ) : (
+              <Link
+                href="/sales/new"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
+              >
+                <IconPlus className="w-3.5 h-3.5" />
+                <span>New Sale</span>
+              </Link>
+            )}
 
             {/* Role Badge (Visible on mobile/tablet too) */}
             <span
@@ -762,7 +833,7 @@ export function AppHeader({ user }: { user: DbUser }) {
 
             {/* Categorized Navigation Links */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-              {NAV_GROUPS.map((group) => {
+              {navGroups.map((group) => {
                 const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
                 if (visibleItems.length === 0) return null;
 
@@ -863,19 +934,34 @@ export function AppHeader({ user }: { user: DbUser }) {
           <span>Stock</span>
         </Link>
 
-        {/* Center Primary Action: + New Sale */}
-        <Link
-          href="/sales/new"
-          className="flex flex-col items-center justify-center -mt-5 mx-1"
-          aria-label="New Sale"
-        >
-          <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
-            <IconPlus className="w-6 h-6 stroke-[2.5]" />
-          </div>
-          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-            New Sale
-          </span>
-        </Link>
+        {/* Center Primary Action: + New Sale or Business Reports */}
+        {isCloud ? (
+          <Link
+            href="/reports"
+            className="flex flex-col items-center justify-center -mt-5 mx-1"
+            aria-label="Reports"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
+              <IconFileSpreadsheet className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+              Reports
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="/sales/new"
+            className="flex flex-col items-center justify-center -mt-5 mx-1"
+            aria-label="New Sale"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
+              <IconPlus className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+              New Sale
+            </span>
+          </Link>
+        )}
 
         <Link
           href="/customers"

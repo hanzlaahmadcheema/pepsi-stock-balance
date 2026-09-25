@@ -15,13 +15,12 @@ if %errorLevel% neq 0 (
 )
 
 :: 2. Resolve Application Directory
-set "APP_DIR=C:\PepsiDepot\app"
-if not exist "%APP_DIR%" (
-    set "APP_DIR=%~dp0..\.."
-    pushd "%APP_DIR%"
-    set "APP_DIR=%CD%"
-    popd
-)
+set "APP_DIR=%~1"
+if "%APP_DIR%"=="" set "APP_DIR=%~dp0..\.."
+if not exist "%APP_DIR%" set "APP_DIR=C:\PepsiDepot\app"
+pushd "%APP_DIR%"
+set "APP_DIR=%CD%"
+popd
 cd /d "%APP_DIR%"
 echo [OK] Application directory: %APP_DIR%
 

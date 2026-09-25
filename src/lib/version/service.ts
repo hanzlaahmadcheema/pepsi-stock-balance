@@ -36,8 +36,8 @@ let updateInProgress = false;
 
 function detectEnvironment(): "WINDOWS_DEPOT" | "LINUX" | "CLOUD" | "DEVELOPMENT" {
   if (process.env.VERCEL) return "CLOUD";
-  if (process.platform === "win32") return "WINDOWS_DEPOT";
   if (process.env.NODE_ENV === "development") return "DEVELOPMENT";
+  if (process.platform === "win32") return "WINDOWS_DEPOT";
   return "LINUX";
 }
 
@@ -291,13 +291,50 @@ export async function triggerSystemUpdate(): Promise<{
         };
       }
 
-      // Spawn detached background process
-      const child = spawn("cmd.exe", ["/c", batPath], {
-        detached: true,
-        stdio: "ignore",
-        windowsHide: true,
-      });
-      child.unref();
+      const targetDir = process.cwd();
+      let spawned = false;
+
+      // 1. Primary: Launch via WMI Win32_Process.Create
+      // WMI process is hosted by WmiPrvSE.exe, which breaks out of the NSSM service Job Object.
+      // When NSSM stops the web service, the updater process is NOT terminated!
+      try {
+        const escapedBat = batPath.replace(/'/g, "''");
+        const escapedTarget = targetDir.replace(/'/g, "''");
+        const cmdLine = `cmd.exe /c ""${escapedBat}"" ""${escapedTarget}""`;
+        const psScript = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${cmdLine}' }; if ($r.ReturnValue -ne 0) { exit $r.ReturnValue }`;
+        execSync(`powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "${psScript}"`, {
+          timeout: 10000,
+          stdio: "ignore",
+        });
+        spawned = true;
+      } catch (wmiErr) {
+        console.warn("WMI process creation fallback triggered:", wmiErr);
+      }
+
+      // 2. Secondary: Task Scheduler fallback
+      if (!spawned) {
+        try {
+          const taskName = "PepsiDepotUpdateOnce";
+          const taskCmd = `cmd.exe /c "${batPath}" "${targetDir}"`;
+          execSync(`schtasks /create /tn "${taskName}" /tr "${taskCmd}" /sc once /st 00:00 /f >nul 2>&1 && schtasks /run /tn "${taskName}" >nul 2>&1`, {
+            timeout: 8000,
+            stdio: "ignore",
+          });
+          spawned = true;
+        } catch (taskErr) {
+          console.warn("Task scheduler fallback triggered:", taskErr);
+        }
+      }
+
+      // 3. Tertiary: Direct detached spawn
+      if (!spawned) {
+        const child = spawn("cmd.exe", ["/c", batPath, targetDir], {
+          detached: true,
+          stdio: "ignore",
+          windowsHide: true,
+        });
+        child.unref();
+      }
 
       // Reset in-memory flag after 2 minutes in case server wasn't killed
       setTimeout(() => {
@@ -306,7 +343,7 @@ export async function triggerSystemUpdate(): Promise<{
 
       return {
         success: true,
-        message: "Automated update initiated. NSSM services are rebuilding and restarting. Reconnecting...",
+        message: "Automated update initiated. Background services are rebuilding and restarting. Reconnecting...",
         status: "INITIATED",
       };
     } else {

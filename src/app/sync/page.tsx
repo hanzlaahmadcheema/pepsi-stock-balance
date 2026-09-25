@@ -6,13 +6,48 @@ import { SyncStatusClient } from "./sync-status-client";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Depot Synchronization Status - Pepsi Stock Balance",
+  title: "Depot Synchronization & Operations - Pepsi Stock Balance",
 };
 
 export default async function SyncStatusPage() {
   const user = await requireDbUser();
 
-  // 1. Fetch Registered Sync Devices (Depot Terminals)
+  // 1. Fetch Local Sync Outbox (Operations generated locally to push to Cloud)
+  const rawOutbox = await prisma.syncOutbox.findMany({
+    take: 200,
+    orderBy: { clientSequence: "desc" },
+  });
+
+  const outboxOperations = rawOutbox.map((op) => ({
+    id: op.id,
+    operationId: op.operationId,
+    clientSequence: op.clientSequence.toString(),
+    operationType: op.operationType,
+    entityId: op.entityId,
+    payload: op.payload as Record<string, unknown>,
+    status: op.status,
+    retryCount: op.retryCount,
+    lastError: op.lastError,
+    createdAt: op.createdAt.toISOString(),
+    syncedAt: op.syncedAt ? op.syncedAt.toISOString() : null,
+  }));
+
+  // 2. Fetch Outbox Metrics
+  const totalOutbox = await prisma.syncOutbox.count();
+  const unsyncedCount = await prisma.syncOutbox.count({
+    where: { status: { in: ["PENDING", "IN_FLIGHT", "FAILED"] } },
+  });
+  const syncedCount = await prisma.syncOutbox.count({
+    where: { status: "SYNCED" },
+  });
+  const failedCount = await prisma.syncOutbox.count({
+    where: { status: "FAILED" },
+  });
+  const pendingCount = await prisma.syncOutbox.count({
+    where: { status: "PENDING" },
+  });
+
+  // 3. Fetch Registered Sync Devices (Depot Terminals)
   const rawDevices = await prisma.syncDevice.findMany({
     orderBy: { lastSeenAt: "desc" },
   });
@@ -26,7 +61,7 @@ export default async function SyncStatusPage() {
     createdAt: d.createdAt.toISOString(),
   }));
 
-  // 2. Fetch Sync Cursor
+  // 4. Fetch Sync Cursor
   const rawCursor = await prisma.syncCursor.findFirst();
   const cursor = rawCursor
     ? {
@@ -36,7 +71,7 @@ export default async function SyncStatusPage() {
       }
     : null;
 
-  // 3. Quarantine Metrics
+  // 5. Quarantine Metrics
   const quarantineCount = await prisma.localSyncQuarantine.count({
     where: { status: "QUARANTINED" },
   });
@@ -58,7 +93,7 @@ export default async function SyncStatusPage() {
     sourceDeviceId: q.sourceDeviceId,
   }));
 
-  // 4. Change Log & Processed Operations
+  // 6. Change Log & Processed Operations
   const totalChanges = await prisma.syncChangeLog.count();
 
   const rawRecentOperations = await prisma.processedSyncOperation.findMany({
@@ -78,7 +113,7 @@ export default async function SyncStatusPage() {
     processedAt: op.processedAt.toISOString(),
   }));
 
-  // 5. Calculate Health State
+  // 7. Calculate Health State
   const now = new Date().getTime();
   let onlineDevicesCount = 0;
   let activeWithin24hCount = 0;
@@ -95,11 +130,24 @@ export default async function SyncStatusPage() {
   }
 
   let overallHealth: "HEALTHY" | "ATTENTION" | "DEGRADED" = "HEALTHY";
-  if (quarantineCount > 0) {
+  if (quarantineCount > 0 || failedCount > 0) {
     overallHealth = "ATTENTION";
   } else if (onlineDevicesCount === 0 && rawDevices.length > 0) {
     overallHealth = "DEGRADED";
   }
+
+  // 8. Terminal / Environment metadata
+  const terminalInfo = {
+    deviceId: process.env.SYNC_DEVICE_ID || "Not configured",
+    cloudBaseUrl: (
+      process.env.CLOUD_SYNC_BASE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.CLOUD_URL ||
+      "http://localhost:3000"
+    ).trim(),
+    isConfigured: Boolean(process.env.SYNC_DEVICE_ID && process.env.SYNC_DEVICE_TOKEN),
+    appEnv: process.env.APP_ENV || process.env.NODE_ENV || "LOCAL",
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
@@ -107,6 +155,15 @@ export default async function SyncStatusPage() {
 
       <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8">
         <SyncStatusClient
+          outboxOperations={outboxOperations}
+          outboxCounts={{
+            total: totalOutbox,
+            unsynced: unsyncedCount,
+            synced: syncedCount,
+            failed: failedCount,
+            pending: pendingCount,
+          }}
+          terminalInfo={terminalInfo}
           devices={devices}
           cursor={cursor}
           quarantineCount={quarantineCount}

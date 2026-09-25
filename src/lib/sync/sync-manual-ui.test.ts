@@ -210,6 +210,10 @@ describe("Manual Sync & Local Operations Outbox Ledger Actions", () => {
     });
     assert.equal(record.status, "SYNCED");
     assert.ok(record.syncedAt !== null);
+
+    // Clean up test operation
+    await prisma.syncOutbox.deleteMany({ where: { operationId: opId } });
+    createdOperationIds.delete(opId);
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -247,6 +251,10 @@ describe("Manual Sync & Local Operations Outbox Ledger Actions", () => {
     assert.equal(updated.status, "PENDING");
     assert.equal(updated.lastError, null);
     assert.equal(updated.retryCount, 0);
+
+    // Clean up test operation
+    await prisma.syncOutbox.deleteMany({ where: { operationId: opId } });
+    createdOperationIds.delete(opId);
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -290,5 +298,166 @@ describe("Manual Sync & Local Operations Outbox Ledger Actions", () => {
     const checkB = await prisma.syncOutbox.findUniqueOrThrow({ where: { operationId: opIdB } });
     assert.equal(checkA.status, "PENDING");
     assert.equal(checkB.status, "PENDING");
+
+    // Clean up test operations
+    await prisma.syncOutbox.deleteMany({ where: { operationId: { in: [opIdA, opIdB] } } });
+    createdOperationIds.delete(opIdA);
+    createdOperationIds.delete(opIdB);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Test 6: Sequence gap auto-compaction before push
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test 6: Outbox sequences starting at 28 are auto-compacted to contiguous sequence before push", async () => {
+    const opId1 = crypto.randomUUID();
+    const opId2 = crypto.randomUUID();
+    createdOperationIds.add(opId1);
+    createdOperationIds.add(opId2);
+
+    // Insert records with high sequences (28, 29) simulating a sequence generator jump
+    await prisma.syncOutbox.createMany({
+      data: [
+        {
+          operationId: opId1,
+          clientSequence: BigInt(28),
+          operationType: "CREATE_SALE",
+          entityId: crypto.randomUUID(),
+          payload: { invoiceNumber: "INV-GAP-1", totalAmount: 1000 },
+          status: "PENDING",
+        },
+        {
+          operationId: opId2,
+          clientSequence: BigInt(29),
+          operationType: "CREATE_SALE",
+          entityId: crypto.randomUUID(),
+          payload: { invoiceNumber: "INV-GAP-2", totalAmount: 2000 },
+          status: "PENDING",
+        },
+      ],
+    });
+
+    let receivedSequences: string[] = [];
+    const mockPushFetch = async (url: string, init?: RequestInit) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/sync/push")) {
+        const body = JSON.parse(String(init?.body));
+        receivedSequences = body.operations.map((o: any) => o.clientSequence);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            batchId: "test-batch",
+            acknowledgedOperationIds: [opId1, opId2],
+            rejectedOperations: [],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(JSON.stringify({ success: true, changes: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    };
+
+    const res = await triggerManualSyncAction(
+      { id: staffUser.id, role: Role.STAFF },
+      {
+        cloudBaseUrl: "http://mock-cloud.test",
+        deviceId: testDevice.deviceId,
+        deviceToken: rawDeviceToken,
+        fetchFn: mockPushFetch as any,
+      }
+    );
+
+    assert.equal(res.success, true);
+    // Sequences sent to Cloud were compacted so every sequence is strictly contiguous (no gaps!)
+    assert.ok(receivedSequences.length >= 2);
+    for (let i = 1; i < receivedSequences.length; i++) {
+      assert.equal(
+        BigInt(receivedSequences[i]),
+        BigInt(receivedSequences[i - 1]) + BigInt(1),
+        `Sequences must be contiguous: got ${receivedSequences[i - 1]} followed by ${receivedSequences[i]}`
+      );
+    }
+
+    const op1 = await prisma.syncOutbox.findUniqueOrThrow({ where: { operationId: opId1 } });
+    const op2 = await prisma.syncOutbox.findUniqueOrThrow({ where: { operationId: opId2 } });
+    // Sequence 28 and 29 were compacted down!
+    assert.ok(op1.clientSequence < BigInt(28));
+    assert.equal(op2.clientSequence, op1.clientSequence + BigInt(1));
+    assert.equal(op1.status, "SYNCED");
+    assert.equal(op2.status, "SYNCED");
+
+    // Clean up test operations
+    await prisma.syncOutbox.deleteMany({ where: { operationId: { in: [opId1, opId2] } } });
+    createdOperationIds.delete(opId1);
+    createdOperationIds.delete(opId2);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Test 7: Initial pull aligns baseline when server changelog starts at seq 21
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test 7: Initial pull aligns baseline when server changelog starts at seq 21", async () => {
+    // Reset cursor to 0 and clean any prior changeSequence 21 record
+    await prisma.syncCursor.upsert({
+      where: { id: "cloud_cursor" },
+      update: { lastSequence: BigInt(0) },
+      create: { id: "cloud_cursor", lastSequence: BigInt(0) },
+    });
+    await prisma.localProcessedChange.deleteMany({ where: { changeSequence: BigInt(21) } });
+
+    const testProdId = crypto.randomUUID();
+    const mockPullFetch = async (url: string) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/sync/pull")) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            fromSequence: "0",
+            toSequence: "22",
+            hasMore: false,
+            serverTimestamp: new Date().toISOString(),
+            changes: [
+              {
+                changeSequence: "21",
+                operationId: crypto.randomUUID(),
+                operationType: "UPSERT_PRODUCT",
+                entityId: testProdId,
+                action: "UPSERT",
+                payload: { name: `Test Coke ${testRunId}`, brand: "Pepsi" },
+                sourceDeviceId: "cloud-hq",
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(JSON.stringify({ success: true, acknowledgedOperationIds: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    };
+
+    const res = await triggerManualSyncAction(
+      { id: staffUser.id, role: Role.STAFF },
+      {
+        cloudBaseUrl: "http://mock-cloud.test",
+        deviceId: testDevice.deviceId,
+        deviceToken: rawDeviceToken,
+        fetchFn: mockPullFetch as any,
+      }
+    );
+
+    assert.equal(res.success, true);
+    assert.equal(res.pulledCount, 1);
+
+    // Verify cursor advanced to 21
+    const cursor = await prisma.syncCursor.findUniqueOrThrow({ where: { id: "cloud_cursor" } });
+    assert.equal(cursor.lastSequence, BigInt(21));
+
+    // Cleanup test product and processed record
+    await prisma.product.deleteMany({ where: { id: testProdId } });
+    await prisma.localProcessedChange.deleteMany({ where: { changeSequence: BigInt(21) } });
   });
 });
+

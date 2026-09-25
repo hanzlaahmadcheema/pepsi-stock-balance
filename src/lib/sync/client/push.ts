@@ -110,6 +110,64 @@ async function recoverOrphanedInFlightOps(
   });
 }
 
+// ─── Outbox Sequence Compaction ───────────────────────────────────────────────
+
+/**
+ * Automatically compacts and normalizes clientSequence values for all unapplied outbox records
+ * (PENDING, IN_FLIGHT, FAILED) to guarantee they are strictly contiguous starting from (lastSyncedSeq + 1).
+ *
+ * This prevents SEQUENCE_GAP rejections caused by:
+ * 1. Database restarts, resets, or transaction rollbacks that burn PostgreSQL sequence IDs.
+ * 2. Unsynced local operations starting at a sequence > 1 on initial terminal push.
+ */
+async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
+  const lastSynced = await tx.syncOutbox.findFirst({
+    where: { status: "SYNCED" },
+    orderBy: { clientSequence: "desc" },
+    select: { clientSequence: true },
+  });
+
+  const baseSeq = lastSynced ? lastSynced.clientSequence : BigInt(0);
+
+  const unappliedRows = await tx.syncOutbox.findMany({
+    where: { status: { in: ["PENDING", "IN_FLIGHT", "FAILED"] } },
+    orderBy: { clientSequence: "asc" },
+    select: { id: true, clientSequence: true },
+  });
+
+  if (unappliedRows.length === 0) return;
+
+  let expected = baseSeq + BigInt(1);
+  let needsCompaction = false;
+  for (const row of unappliedRows) {
+    if (row.clientSequence !== expected) {
+      needsCompaction = true;
+      break;
+    }
+    expected += BigInt(1);
+  }
+
+  if (!needsCompaction) return;
+
+  // Use a temporary high offset to avoid unique constraint collisions during renumbering
+  const tempOffset = BigInt("9000000000000000000");
+  for (let i = 0; i < unappliedRows.length; i++) {
+    await tx.syncOutbox.update({
+      where: { id: unappliedRows[i].id },
+      data: { clientSequence: tempOffset + BigInt(i) },
+    });
+  }
+
+  let nextSeq = baseSeq + BigInt(1);
+  for (let i = 0; i < unappliedRows.length; i++) {
+    await tx.syncOutbox.update({
+      where: { id: unappliedRows[i].id },
+      data: { clientSequence: nextSeq },
+    });
+    nextSeq += BigInt(1);
+  }
+}
+
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -169,6 +227,9 @@ export async function pushPendingOperations(
 
       // 2. Recover orphaned IN_FLIGHT operations from a prior crash.
       await recoverOrphanedInFlightOps(tx);
+
+      // 2b. Auto-compact sequences of un-synced operations to guarantee contiguous ordering.
+      await compactOutboxSequences(tx);
 
       // 3. Check if any FAILED operations exist in the outbox.
       // Under strict sequence ordering, no operation at or after a FAILED operation
@@ -313,6 +374,40 @@ export async function pushPendingOperations(
           syncedCount++;
         } else if (rejectedMap.has(row.operationId)) {
           const rejection = rejectedMap.get(row.operationId)!;
+
+          if (rejection.errorCode === "SEQUENCE_GAP" && rejection.expectedSequence) {
+            // Self-healing sequence alignment:
+            // Cloud indicates what sequence it expects next from this device.
+            // Re-align unapplied operations to start at expectedSequence and keep as PENDING.
+            const expSeq = BigInt(rejection.expectedSequence);
+            const tempOffset = BigInt("9000000000000000000");
+            const remaining = await tx.syncOutbox.findMany({
+              where: { status: { in: ["IN_FLIGHT", "PENDING"] } },
+              orderBy: { clientSequence: "asc" },
+              select: { id: true },
+            });
+            for (let i = 0; i < remaining.length; i++) {
+              await tx.syncOutbox.update({
+                where: { id: remaining[i].id },
+                data: { clientSequence: tempOffset + BigInt(i) },
+              });
+            }
+            let s = expSeq;
+            for (let i = 0; i < remaining.length; i++) {
+              await tx.syncOutbox.update({
+                where: { id: remaining[i].id },
+                data: {
+                  clientSequence: s,
+                  status: "PENDING",
+                  lastError: `Sequence aligned to ${s} (server requested ${rejection.expectedSequence}).`,
+                },
+              });
+              s += BigInt(1);
+            }
+            retryCount += remaining.length;
+            break;
+          }
+
           const isDeterministic =
             rejection.errorCode !== "TRANSIENT_ERROR" &&
             rejection.errorCode !== undefined;

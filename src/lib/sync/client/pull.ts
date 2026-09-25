@@ -237,12 +237,20 @@ export async function applyLocalPullBatch(
         const changeSeq = BigInt(change.changeSequence);
 
         // A. If changeSequence is at or below cursor, it was already committed in a previous batch.
-        const existingProcessed = await tx.localProcessedChange.findUnique({
-          where: { operationId: change.operationId },
+        const existingProcessed = await tx.localProcessedChange.findFirst({
+          where: {
+            OR: [
+              { operationId: change.operationId },
+              { changeSequence: changeSeq },
+            ],
+          },
         });
 
         if (existingProcessed || changeSeq <= currentCursor) {
           // Already applied locally — skip mutation safely (idempotent replay)
+          if (changeSeq > lastAppliedSeq) {
+            lastAppliedSeq = changeSeq;
+          }
           continue;
         }
 
@@ -282,8 +290,15 @@ export async function applyLocalPullBatch(
           // SELF-ORIGINATED CHANGE RECONCILIATION:
           // The local depot already executed this mutation locally before pushing it to Cloud.
           // Reconcile safely: do NOT overwrite or re-execute local data.
-          await tx.localProcessedChange.create({
-            data: {
+          await tx.localProcessedChange.upsert({
+            where: { changeSequence: changeSeq },
+            update: {
+              operationId: change.operationId,
+              operationType: change.operationType,
+              entityId: change.entityId,
+              sourceDeviceId: change.sourceDeviceId,
+            },
+            create: {
               operationId: change.operationId,
               changeSequence: changeSeq,
               operationType: change.operationType,
@@ -342,8 +357,15 @@ export async function applyLocalPullBatch(
           await applyCloudAuthoritativeMutation(tx, change);
 
           // Record in LocalProcessedChange for replay protection
-          await tx.localProcessedChange.create({
-            data: {
+          await tx.localProcessedChange.upsert({
+            where: { changeSequence: changeSeq },
+            update: {
+              operationId: change.operationId,
+              operationType: change.operationType,
+              entityId: change.entityId,
+              sourceDeviceId: change.sourceDeviceId,
+            },
+            create: {
               operationId: change.operationId,
               changeSequence: changeSeq,
               operationType: change.operationType,
@@ -1107,5 +1129,21 @@ export async function executePullCycle(params: {
   }
 
   const batchResponse: SyncBatchPullResponse = await res.json();
+
+  // If local cursor is 0 (initial sync), and Cloud's changelog begins at a sequence > 1,
+  // align local cursor to (firstChangeSeq - 1) before applying so continuity check succeeds.
+  if (currentCursor === BigInt(0) && batchResponse.changes && batchResponse.changes.length > 0) {
+    const firstSeq = BigInt(batchResponse.changes[0].changeSequence);
+    if (firstSeq > BigInt(1)) {
+      const db = params.dbClient ?? prisma;
+      const initialBaseline = firstSeq - BigInt(1);
+      await db.syncCursor.upsert({
+        where: { id: "cloud_cursor" },
+        update: { lastSequence: initialBaseline },
+        create: { id: "cloud_cursor", lastSequence: initialBaseline },
+      });
+    }
+  }
+
   return await applyLocalPullBatch(params.localDeviceId, batchResponse, params.dbClient);
 }

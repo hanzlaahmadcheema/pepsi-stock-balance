@@ -89,6 +89,7 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
         title: "Management & Day",
         items: [
           { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
+          { name: "Depot Sync", href: "/sync", icon: IconServer },
           { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
           { name: "Pending Approvals", href: "/approvals", icon: IconShield },
           { name: "Suppliers", href: "/suppliers", icon: IconBox },

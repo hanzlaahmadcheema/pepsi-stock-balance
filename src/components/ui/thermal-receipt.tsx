@@ -49,17 +49,17 @@ function amt(n: number): string {
   return n.toLocaleString("en-PK", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-/** Dashed divider — renders the same on screen and paper */
+/** Dashed divider — renders boldly on screen and thermal paper */
 function Divider({ double = false }: { double?: boolean }) {
   return (
     <div
-      className={`my-1 ${double ? "border-t-2 border-b-2 border-black py-px" : "border-t border-dashed border-black"}`}
+      className={`my-1.5 ${double ? "border-t-2 border-b-2 border-black py-0.5" : "border-t-2 border-dashed border-black"}`}
       aria-hidden="true"
     />
   );
 }
 
-/** One row with left label and right value, both plain text */
+/** One row with left label and right value, high contrast for thermal printing */
 function Row({
   label,
   value,
@@ -72,9 +72,9 @@ function Row({
   className?: string;
 }) {
   return (
-    <div className={`flex justify-between leading-tight ${bold ? "font-bold" : ""} ${className}`}>
+    <div className={`flex justify-between leading-snug text-[13px] ${bold ? "font-bold" : "font-medium"} ${className}`}>
       <span>{label}</span>
-      <span className="text-right ml-2 tabular-nums">{value}</span>
+      <span className="text-right ml-2 tabular-nums font-bold">{value}</span>
     </div>
   );
 }
@@ -101,28 +101,31 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
   return (
     /*
      * .pos-receipt-80mm is the CSS hook for print rules defined in globals.css.
-     * On screen: fixed 80mm width centered, white bg, monospace font.
-     * On print:  72mm printable width, no border/shadow, 2mm top pad.
+     * On screen: fixed 80mm width centered, white bg.
+     * On print:  76mm printable width, strong font contrast, sharp dark text for thermal head.
      */
     <div
-      className="pos-receipt-80mm bg-white text-black font-mono text-[10.5px] leading-snug
+      className="pos-receipt-80mm bg-white text-black text-[13px] leading-snug
                  w-[80mm] max-w-[80mm] mx-auto
-                 border border-zinc-300 rounded-lg shadow-md
-                 px-[3mm] py-[3mm]
-                 print:border-none print:shadow-none print:rounded-none
-                 print:px-[1mm] print:py-[2mm] print:m-0"
+                 border border-zinc-400 rounded-lg shadow-md
+                 px-[3mm] py-[3.5mm]
+                 print:w-[76mm] print:max-w-[76mm] print:border-none print:shadow-none print:rounded-none
+                 print:px-[1.5mm] print:py-[2mm] print:m-0"
+      style={{
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+      }}
       aria-label={`Receipt for ${sale.invoiceNumber}`}
       role="document"
     >
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="text-center leading-tight space-y-[1px] pb-[2mm]">
-        <div className="text-xs font-black tracking-tight uppercase">
+      <div className="text-center leading-tight space-y-0.5 pb-1">
+        <div className="text-[17px] font-black tracking-tight uppercase">
           {DEPOT_NAME}
         </div>
-        <div className="text-xs uppercase tracking-wide font-semibold">
+        <div className="text-[12px] uppercase tracking-wide font-bold">
           {DEPOT_TAGLINE}
         </div>
-        <div className="text-xs">SALES RECEIPT</div>
+        <div className="text-[13px] font-extrabold tracking-wider mt-0.5">SALES RECEIPT</div>
       </div>
 
       <Divider />
@@ -132,7 +135,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
         <div className="my-[2mm] border-2 border-black text-center font-black text-xs py-[1mm]">
           <div>*** INVOICE CANCELLED ***</div>
           {sale.cancellationReason && (
-            <div className="text-xs font-normal mt-[1px]">
+            <div className="text-xs font-bold mt-[1px]">
               Reason: {sale.cancellationReason}
             </div>
           )}
@@ -140,8 +143,8 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
       )}
 
       {/* ── Invoice Meta ───────────────────────────────────────────── */}
-      <div className="space-y-[1px]">
-        <Row label="Invoice:" value={sale.invoiceNumber} bold />
+      <div className="space-y-0.5 text-[13px]">
+        <Row label="Invoice:" value={sale.invoiceNumber} bold className="text-[14px]" />
         <Row label="Date:" value={formatReceiptDate(sale.soldAt)} />
         <Row label="Cashier:" value={sale.createdByName} />
         <Row label="Type:" value={sale.saleType.replace(/_/g, " ")} />
@@ -150,15 +153,15 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
       <Divider />
 
       {/* ── Customer ───────────────────────────────────────────────── */}
-      <div className="space-y-[1px]">
-        <div className="font-bold">
+      <div className="space-y-0.5 text-[13px]">
+        <div className="font-black text-[14px] uppercase">
           {sale.customer ? sale.customer.name : "WALK-IN / CASH"}
         </div>
         {sale.customer?.phone && (
-          <div className="text-xs">Ph: {sale.customer.phone}</div>
+          <div className="text-[12px] font-bold">Ph: {sale.customer.phone}</div>
         )}
         {sale.customer?.address && (
-          <div className="text-xs break-words">{sale.customer.address}</div>
+          <div className="text-[12px] font-medium break-words">{sale.customer.address}</div>
         )}
       </div>
 
@@ -169,29 +172,29 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
        * 4-column layout matching SpeedX 80mm thermal receipt standard:
        *   Item (left, wraps cleanly) | Qty (right) | Rate (right) | Amount (right)
        */}
-      <div className="space-y-[1px]">
-        <table className="w-full text-[10px] leading-tight border-collapse">
+      <div className="space-y-1">
+        <table className="w-full text-[13px] leading-tight border-collapse">
           <thead>
-            <tr className="border-b border-black text-[9px] uppercase font-bold">
-              <th className="text-left pb-[2px] font-bold">Item</th>
-              <th className="text-right pb-[2px] font-bold pl-1">Qty</th>
-              <th className="text-right pb-[2px] font-bold pl-1">Rate</th>
-              <th className="text-right pb-[2px] font-bold pl-1">Amount</th>
+            <tr className="border-b-2 border-black text-[12px] uppercase font-black">
+              <th className="text-left pb-1 font-black">Item</th>
+              <th className="text-right pb-1 font-black pl-1">Qty</th>
+              <th className="text-right pb-1 font-black pl-1">Rate</th>
+              <th className="text-right pb-1 font-black pl-1">Amount</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-dashed divide-zinc-300 print:divide-zinc-400">
+          <tbody className="divide-y divide-dashed divide-zinc-400 print:divide-black">
             {sale.items.map((item) => (
               <tr key={item.id} className="align-top">
-                <td className="text-left py-[2px] pr-1 font-semibold break-words leading-tight">
+                <td className="text-left py-1 pr-1 font-bold break-words leading-tight text-[12.5px]">
                   {item.productName}
                 </td>
-                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap text-[9.5px]">
+                <td className="text-right py-1 pl-1 tabular-nums whitespace-nowrap font-bold text-[13px]">
                   {formatCrates(item.quantity)}
                 </td>
-                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap text-[9.5px]">
+                <td className="text-right py-1 pl-1 tabular-nums whitespace-nowrap font-medium text-[13px]">
                   {amt(item.unitPrice)}
                 </td>
-                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap font-bold text-[9.5px]">
+                <td className="text-right py-1 pl-1 tabular-nums whitespace-nowrap font-black text-[13px]">
                   {amt(item.totalAmount)}
                 </td>
               </tr>
@@ -202,7 +205,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
 
       {/* ── Financial Totals ───────────────────────────────────────── */}
       <Divider />
-      <div className="space-y-[1.5px]">
+      <div className="space-y-1 text-[13px]">
         {hasDiscount && (
           <>
             <Row
@@ -217,7 +220,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
         )}
 
         {/* Prominent Total Line */}
-        <div className="flex justify-between font-black text-xs leading-tight border-t-2 border-b-2 border-black py-[2px] my-[1mm]">
+        <div className="flex justify-between font-black text-[17px] leading-tight border-t-2 border-b-2 border-black py-1 my-1">
           <span className="uppercase">TOTAL</span>
           <span className="tabular-nums font-black">{amt(sale.totalAmount)}</span>
         </div>
@@ -226,6 +229,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
           label="PAID"
           value={amt(sale.paidAmount)}
           bold
+          className="text-[14px]"
         />
 
         {hasCredit && (
@@ -233,7 +237,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
             label="CREDIT"
             value={amt(sale.creditAmount)}
             bold
-            className="font-black"
+            className="text-[14px] font-black"
           />
         )}
 
@@ -252,6 +256,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
             label="Customer Ledger:"
             value={amt(sale.customer.outstandingBalance)}
             bold
+            className="text-[14px] font-black"
           />
         </>
       )}
@@ -260,20 +265,22 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
       {hasContainers && (
         <>
           <Divider />
-          <div className="space-y-[1px]">
-            <div className="text-xs font-bold uppercase tracking-wide">
+          <div className="space-y-0.5 text-[13px]">
+            <div className="text-[12.5px] font-black uppercase tracking-wide">
               Returnable Containers:
             </div>
             {sale.containers!.plasticCrates > 0 && (
               <Row
                 label="  Plastic Crates:"
                 value={String(sale.containers!.plasticCrates)}
+                bold
               />
             )}
             {sale.containers!.glassBottles > 0 && (
               <Row
                 label="  Glass Bottles:"
                 value={String(sale.containers!.glassBottles)}
+                bold
               />
             )}
           </div>
@@ -282,11 +289,11 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
       <Divider />
-      <div className="text-center text-xs space-y-[1px] pb-[3mm] print:pb-[4mm]">
-        <div className="font-bold uppercase">{DEPOT_FOOTER_THANK}</div>
-        <div>{DEPOT_FOOTER_LINE}</div>
+      <div className="text-center text-[12px] space-y-0.5 pb-2 print:pb-3">
+        <div className="font-black uppercase text-[13px]">{DEPOT_FOOTER_THANK}</div>
+        <div className="font-medium text-[11.5px]">{DEPOT_FOOTER_LINE}</div>
         {/* Barcode-style invoice number reference */}
-        <div className="font-mono text-xs tracking-widest pt-[1mm] opacity-70">
+        <div className="font-mono text-[12px] font-bold tracking-widest pt-1">
           * {sale.invoiceNumber} *
         </div>
       </div>

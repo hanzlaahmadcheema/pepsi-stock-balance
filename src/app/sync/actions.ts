@@ -137,7 +137,23 @@ export async function triggerManualSyncAction(
     };
   }
 
-  // 8. Handle Network / Connection Offline
+  // 8. Handle Device Authentication / Registration Errors
+  if (
+    pushResult.networkError?.includes("DEVICE_NOT_FOUND") ||
+    pullError?.includes("DEVICE_NOT_FOUND") ||
+    pushResult.networkError?.includes("is not registered")
+  ) {
+    return {
+      success: false,
+      message: `Device Registration Required: Terminal '${deviceId}' is not registered on Cloud (${cloudBaseUrl}). Operations remain safely queued locally.`,
+      pushedCount: 0,
+      pulledCount: 0,
+      failedCount: 0,
+      errorCode: "DEVICE_NOT_FOUND",
+    };
+  }
+
+  // 9. Handle Network / Connection Offline
   if (pushResult.networkError || (pullError && !pullResult)) {
     const errorDetails = pushResult.networkError || pullError;
     return {

@@ -123,21 +123,21 @@ export function CustomersReportClient({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Active Accounts</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Active Accounts</span>
           <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalActiveCustomers} customers
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Receivables</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Receivables</span>
           <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
             {formatCurrency(data.summary.totalCreditOutstanding)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Accounts with Balance</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Accounts with Balance</span>
           <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.customersWithBalanceCount} accounts
           </div>
@@ -178,7 +178,7 @@ export function CustomersReportClient({
                     </td>
                     <td className="px-5 py-3 text-zinc-500 font-mono">{c.phone || "—"}</td>
                     <td className="px-5 py-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs">
                         {c.priceTier}
                       </span>
                     </td>

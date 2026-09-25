@@ -147,7 +147,7 @@ export function EditUserModal({ isOpen, onClose, user, currentUserId }: EditUser
               <option value="OWNER">Owner (Admin)</option>
             </select>
             {isSelf && (
-              <p className="text-[11px] text-zinc-500 mt-1">
+              <p className="text-xs text-zinc-500 mt-1">
                 You cannot change your own role.
               </p>
             )}
@@ -168,7 +168,7 @@ export function EditUserModal({ isOpen, onClose, user, currentUserId }: EditUser
               placeholder="Leave blank to keep unchanged (min 8 chars)"
               className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-[11px] text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1">
               Only fill this if you want to reset this user&apos;s login password.
             </p>
           </div>

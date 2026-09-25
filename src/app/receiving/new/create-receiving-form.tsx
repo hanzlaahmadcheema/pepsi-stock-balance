@@ -271,7 +271,7 @@ export function CreateReceivingForm({
 
                   {/* Product Dropdown */}
                   <div className="flex-1 min-w-[200px]">
-                    <label className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                    <label className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                       Product
                     </label>
                     <select
@@ -289,7 +289,7 @@ export function CreateReceivingForm({
 
                   {/* Quantity Stepper */}
                   <div className="w-44">
-                    <label className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                    <label className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                       Quantity (Crates)
                     </label>
                     <CrateStepper
@@ -302,7 +302,7 @@ export function CreateReceivingForm({
 
                   {/* Purchase Cost */}
                   <div className="w-36">
-                    <label className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                    <label className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                       Cost / Crate (Rs.)
                     </label>
                     <input
@@ -317,7 +317,7 @@ export function CreateReceivingForm({
 
                   {/* Line Total */}
                   <div className="w-36 text-right">
-                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                    <span className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                       Line Total
                     </span>
                     <span className="text-base font-black text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -344,7 +344,7 @@ export function CreateReceivingForm({
         <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="p-3 px-5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-750">
-              <span className="text-[11px] uppercase tracking-wider font-bold text-zinc-400 block">
+              <span className="text-xs uppercase tracking-wider font-bold text-zinc-400 block">
                 Total Crates
               </span>
               <span className="text-xl font-black text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -353,7 +353,7 @@ export function CreateReceivingForm({
             </div>
 
             <div className="p-3 px-5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50">
-              <span className="text-[11px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400 block">
+              <span className="text-xs uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400 block">
                 Total Purchase Cost
               </span>
               <span className="text-xl font-black text-blue-800 dark:text-blue-300 tabular-nums">

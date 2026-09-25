@@ -233,7 +233,7 @@ export function PricesReportClient({
                       {h.productName}
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs">
                         {h.tier}
                       </span>
                     </td>
@@ -248,7 +248,7 @@ export function PricesReportClient({
                     </td>
                     <td className="px-5 py-3 text-center">
                       <span
-                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                        className={`px-2 py-0.5 rounded-full font-bold text-xs ${
                           h.effectiveTo === null
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                             : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"

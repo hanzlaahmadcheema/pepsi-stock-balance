@@ -161,7 +161,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
                   Plastic Crate Balance
                 </span>
                 {!containerSettings.enabledTypes.plastic && (
-                  <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded font-medium">
+                  <span className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded font-medium">
                     Inactive Type
                   </span>
                 )}
@@ -184,7 +184,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
               <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                 Glass Bottle &amp; Crate Balance
               </span>
-              <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
+              <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                 Standard {bpc} b/crate
               </span>
             </div>
@@ -281,7 +281,7 @@ export default async function CustomerDetailsPage({ params }: CustomerDetailsPag
                             </Link>
                             <Link
                               href={`/sales/${entry.saleId}`}
-                              className="block text-[11px] font-sans font-medium text-blue-600 dark:text-blue-400 hover:underline mt-0.5"
+                              className="block text-xs font-sans font-medium text-blue-600 dark:text-blue-400 hover:underline mt-0.5"
                             >
                               View Invoice &rarr;
                             </Link>

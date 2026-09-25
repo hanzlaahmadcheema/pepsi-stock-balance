@@ -47,37 +47,31 @@ export default async function NewSalePage({ searchParams }: NewSalePageProps) {
   const unclosedPrevious = await getUnclosedPreviousDay(todayDateStr);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
+    <div className="min-h-screen bg-canvas text-ink">
       <AppHeader user={user} />
 
       <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mb-1">
-              <Link href="/sales" className="hover:underline">
-                ← Back to Sales
-              </Link>
-            </div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              New Sale / POS Invoice
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Record crate sales, validate on-hand inventory, and issue customer invoices.
-            </p>
-          </div>
+        <div>
+          <Link href="/sales" className="link-btn">
+            ← Back to Sales
+          </Link>
+          <h1 className="text-3xl font-black text-ink mt-2">
+            New Sale / POS Invoice
+          </h1>
+          <p className="text-[1.0625rem] text-ink-2 mt-1">
+            Record crate sales, validate on-hand inventory, and issue customer invoices.
+          </p>
         </div>
 
         {unclosedPrevious && (
-          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs font-semibold text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <IconAlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>
-                Attention: Previous day ({unclosedPrevious.dateStr}) daily closing is still {unclosedPrevious.status.replace("_", " ")}. Ensure previous operations are finalized.
-              </span>
-            </div>
+          <div className="notice notice-warn">
+            <IconAlertTriangle className="w-5 h-5 shrink-0 text-warn" />
+            <span className="flex-1">
+              Attention: Previous day ({unclosedPrevious.dateStr}) daily closing is still {unclosedPrevious.status.replace("_", " ")}. Ensure previous operations are finalized.
+            </span>
             <Link
               href={unclosedPrevious.id ? `/daily-closing/${unclosedPrevious.id}` : "/daily-closing"}
-              className="text-amber-700 dark:text-amber-300 underline font-bold hover:opacity-80 shrink-0"
+              className="btn btn-warn btn-sm shrink-0"
             >
               Go to Closing →
             </Link>

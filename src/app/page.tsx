@@ -15,14 +15,23 @@ import {
   IconScale,
   IconBanknotes,
   IconDeviceMobile,
-  IconCreditCard,
   IconQrCode,
   IconPlus,
   IconCheck,
-  IconZap,
   IconServer,
   IconHistory,
+  IconZap,
 } from "@/components/ui/icons";
+import {
+  ActionTile,
+  EmptyState,
+  FigureBox,
+  SectionTitle,
+  StatCard,
+  StatusBadge,
+  statusLabel,
+  statusTone,
+} from "@/components/ui/classic";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
@@ -31,907 +40,530 @@ function formatMoney(amount: number): string {
   return "Rs. " + Math.round(amount).toLocaleString("en-PK");
 }
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "CLOSED":
-    case "ready":
-    case "completed":
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-          ● {status.replace("_", " ").toUpperCase()}
-        </span>
-      );
-    case "IN_REVIEW":
-    case "pending_adjustments":
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-          ▲ {status.replace("_", " ").toUpperCase()}
-        </span>
-      );
-    case "OPEN":
-    case "in_progress":
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
-          ○ {status.replace("_", " ").toUpperCase()}
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
-          NOT STARTED
-        </span>
-      );
-  }
-}
-
 export default async function HomePage() {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
   const isCloud = isCloudPortal();
   const data: DashboardData = await getDashboardData(user.role);
+  const ownerData = isOwner ? (data as OwnerDashboardData) : null;
+
+  const modeLabel = isCloud
+    ? isOwner
+      ? "Cloud Executive Portal (read-only)"
+      : "Cloud Management Portal (read-only)"
+    : isOwner
+    ? "Owner Control Desk"
+    : "Staff Operations Desk";
+
+  const welcomeNote = isCloud
+    ? "Read-only view of depot records: sales, stock, customer credit and margins."
+    : isOwner
+    ? "Today's sales, stock value, money owed to you and profit."
+    : "Today's sales, money collected, stock levels and the closing steps.";
+
+  const quickActions = isCloud
+    ? [
+        { href: "/sales", title: "Sales History", hint: "Invoices and totals", icon: <IconReceipt className="h-5 w-5" /> },
+        { href: "/products", title: "Current Stock", hint: "Crates and value", icon: <IconPackage className="h-5 w-5" /> },
+        { href: "/customers", title: "Customers & Debt", hint: "Who owes what", icon: <IconUsers className="h-5 w-5" /> },
+        { href: "/reports/aging", title: "Debt Aging", hint: "Oldest dues first", icon: <IconHistory className="h-5 w-5" /> },
+        { href: "/sync", title: "Depot Sync", hint: "Copy health", icon: <IconServer className="h-5 w-5" /> },
+        { href: "/reports", title: "All Reports", hint: "Records and audits", icon: <IconChartBar className="h-5 w-5" /> },
+      ]
+    : [
+        { href: "/sales/new", title: "New Sale", hint: "Write a new invoice", icon: <IconPlus className="h-5 w-5" />, emphasis: true },
+        { href: "/receiving/new", title: "Receive Stock", hint: "Add a delivery", icon: <IconTruck className="h-5 w-5" /> },
+        { href: "/customers", title: "Customers", hint: "Accounts and credit", icon: <IconUsers className="h-5 w-5" /> },
+        { href: "/customers", title: "Take a Payment", hint: "Collect money due", icon: <IconReceipt className="h-5 w-5" /> },
+        { href: "/products", title: "Current Stock", hint: "Crates on hand", icon: <IconPackage className="h-5 w-5" /> },
+        { href: "/daily-closing", title: "Daily Closing", hint: "Balance the cash", icon: <IconScale className="h-5 w-5" /> },
+      ];
+
+  const launcherLinks = [
+    { href: "/sales", title: "Sales & Invoices", hint: "Find invoices, print receipts, check payments.", icon: <IconReceipt className="h-5 w-5" /> },
+    { href: "/receiving", title: "Receiving / Purchase", hint: "Record supplier crate deliveries.", icon: <IconTruck className="h-5 w-5" /> },
+    { href: "/stock-counts", title: "Stock Counts", hint: "Physical count sheets and corrections.", icon: <IconClipboardList className="h-5 w-5" /> },
+    { href: "/daily-closing", title: "Daily Closing", hint: "Cash drawer balancing at end of day.", icon: <IconScale className="h-5 w-5" /> },
+    { href: "/customers", title: "Customers & Credit", hint: "Balances, credit limits, payments.", icon: <IconUsers className="h-5 w-5" /> },
+    { href: "/products", title: "Products & Prices", hint: "Catalog, stock levels, price tiers.", icon: <IconPackage className="h-5 w-5" /> },
+    { href: "/returns", title: "Returns & Quarantine", hint: "Returned crates and inspection.", icon: <IconRotateCcw className="h-5 w-5" /> },
+  ];
+
+  const ownerLinks = [
+    { href: "/reports", title: "Reports", hint: "Sales, stock, dispatch and customer ledgers.", icon: <IconChartBar className="h-5 w-5" /> },
+    { href: "/reports/profit", title: "Profit & Margins", hint: "Owner-only profit per product and invoice.", icon: <IconDollarSign className="h-5 w-5" /> },
+    { href: "/settings/users", title: "Staff Accounts", hint: "Add staff, set roles, switch people on or off.", icon: <IconUsers className="h-5 w-5" /> },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen bg-paper text-ink">
       <AppHeader user={user} />
 
-      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8">
-        {/* ========================================================= */}
-        {/* 1. TOP HEADER & OPERATIONAL HEALTH BANNER                 */}
-        {/* ========================================================= */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xs border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
-                  isCloud
-                    ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
-                    : "bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300"
-                }`}
-              >
-                {isCloud
-                  ? isOwner
-                    ? "Cloud Executive Portal (Read-Only)"
-                    : "Cloud Management Portal (Read-Only)"
-                  : isOwner
-                  ? "Owner Executive Control"
-                  : "Staff Operations Desk"}
-              </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                Business Date: <strong className="text-zinc-700 dark:text-zinc-300">{data.businessDate}</strong> (Asia/Karachi)
-              </span>
+      <main className="mx-auto w-full max-w-[1720px] space-y-8 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+        {/* ---------------- Page heading + primary actions ---------------- */}
+        <div className="panel">
+          <div className="flex flex-col gap-4 border-b-2 border-rule bg-surface-alt px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="badge badge-info">{modeLabel}</span>
+                <span className="text-sm text-ink-2">
+                  Business date <strong className="num">{data.businessDate}</strong> (Asia/Karachi)
+                </span>
+              </div>
+              <h1 className="mt-2 text-3xl font-bold">Welcome back, {user.name}</h1>
+              <p className="mt-1 text-base text-ink-2">{welcomeNote}</p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5">
-              Welcome back, {user.name}
-            </h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              {isCloud
-                ? "Synchronized operational pulse, real-time warehouse inventory, customer credit balances, and gross margins."
-                : isOwner
-                ? "Here is your full business pulse, real-time inventory balance, cash collection, and gross profitability for today."
-                : "Here is your daily operational control center for dispatch, crate stock, cash collection, and end-of-day tasks."}
-            </p>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {isCloud ? (
-              <>
-                <Link
-                  href="/reports"
-                  className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-                >
-                  <IconClipboardList className="w-4 h-4" />
-                  <span>Business Reports</span>
-                </Link>
-                {isOwner && (
-                  <Link
-                    href="/reports/profit"
-                    className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-                  >
-                    <IconChartBar className="w-4 h-4" />
-                    <span>Profit &amp; Margins</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {isCloud ? (
+                <>
+                  <Link href="/reports" className="btn btn-primary">
+                    <IconClipboardList className="h-5 w-5" />
+                    All Reports
                   </Link>
-                )}
-                <Link
-                  href="/sync"
-                  className="inline-flex items-center gap-1.5 justify-center px-3.5 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium text-sm transition-colors"
-                >
-                  <IconServer className="w-4 h-4" />
-                  <span>Sync Status</span>
-                </Link>
-              </>
-            ) : (
-              <>
-                {!isOwner && (
-                  <Link
-                    href="/sales/new"
-                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-                  >
-                    + New Sale / Invoice
+                  {isOwner ? (
+                    <Link href="/reports/profit" className="btn">
+                      <IconChartBar className="h-5 w-5" />
+                      Profit &amp; Margins
+                    </Link>
+                  ) : null}
+                  <Link href="/sync" className="btn">
+                    <IconServer className="h-5 w-5" />
+                    Sync Status
                   </Link>
-                )}
-                {isOwner && (
-                  <Link
-                    href="/reports/profit"
-                    className="inline-flex items-center gap-1.5 justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xs transition-all hover:shadow-md"
-                  >
-                    <IconChartBar className="w-4 h-4" />
-                    <span>Profit Report</span>
+                </>
+              ) : (
+                <>
+                  {!isOwner ? (
+                    <Link href="/sales/new" className="btn btn-primary btn-lg">
+                      <IconPlus className="h-5 w-5" />
+                      New Sale / Invoice
+                    </Link>
+                  ) : null}
+                  {isOwner ? (
+                    <Link href="/reports/profit" className="btn btn-primary">
+                      <IconChartBar className="h-5 w-5" />
+                      Profit Report
+                    </Link>
+                  ) : null}
+                  <Link href="/daily-closing" className="btn">
+                    <IconScale className="h-5 w-5" />
+                    Daily Closing
                   </Link>
-                )}
-                <Link
-                  href="/daily-closing"
-                  className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium text-sm transition-colors"
-                >
-                  Daily Closing
-                </Link>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* QUICK OPERATIONAL SHORTCUTS                               */}
-        {/* ========================================================= */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              {isCloud ? "Management Navigation" : "Quick Actions"}
-            </h2>
-            <span className="text-xs text-zinc-400">
-              {isCloud ? "Explore synchronized depot records" : "What would you like to do?"}
-            </span>
+        {/* ---------------- Quick actions ---------------- */}
+        <section>
+          <SectionTitle aside={isCloud ? "Browse depot records" : "Pick one to begin"}>
+            {isCloud ? "Go to a Record" : "What do you want to do?"}
+          </SectionTitle>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {quickActions.map((action) => (
+              <ActionTile
+                key={`${action.title}-${action.href}`}
+                href={action.href}
+                title={action.title}
+                hint={action.hint}
+                icon={action.icon}
+                emphasis={"emphasis" in action && action.emphasis === true}
+              />
+            ))}
           </div>
+        </section>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {isCloud ? (
-              <>
-                {/* 1. Sales History */}
-                <Link
-                  href="/sales"
-                  className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform">
-                    <IconReceipt className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold block">Sales History</span>
-                    <span className="text-[11px] text-blue-100/90 block mt-0.5">
-                      Invoices &amp; totals
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 2. Stock Ledger */}
-                <Link
-                  href="/products"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconPackage className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Current Stock
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Inventory &amp; valuation
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 3. Customers & Balances */}
-                <Link
-                  href="/customers"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconUsers className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Customers &amp; Debt
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Credit balances
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 4. AR Aging */}
-                <Link
-                  href="/reports/aging"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500 dark:hover:border-amber-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconHistory className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      AR Aging
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Aging risk brackets
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 5. Depot Sync */}
-                <Link
-                  href="/sync"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconServer className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Depot Sync
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Replication health
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 6. Reports Hub */}
-                <Link
-                  href="/reports"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-500 dark:hover:border-zinc-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconChartBar className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Reports Hub
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Analytics &amp; audits
-                    </span>
-                  </div>
-                </Link>
-              </>
-            ) : (
-              <>
-                {/* 1. New Sale */}
-                <Link
-                  href="/sales/new"
-                  className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform">
-                    <IconPlus className="w-5 h-5 stroke-[2.5]" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold block">New Sale</span>
-                    <span className="text-[11px] text-blue-100/90 block mt-0.5">
-                      Counter invoice
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 2. Receive Stock */}
-                <Link
-                  href="/receiving/new"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconTruck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Receive Stock
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Supplier deliveries
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 3. Customers */}
-                <Link
-                  href="/customers"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconUsers className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Customers
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Accounts & credit
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 4. Record Payment */}
-                <Link
-                  href="/customers"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500 dark:hover:border-amber-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconReceipt className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Record Payment
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Collect balance due
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 5. Stock */}
-                <Link
-                  href="/products"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-500 dark:hover:border-purple-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconPackage className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Current Stock
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Warehouse levels
-                    </span>
-                  </div>
-                </Link>
-
-                {/* 6. Daily Closing */}
-                <Link
-                  href="/daily-closing"
-                  className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-500 dark:hover:border-zinc-500 active:scale-[0.98] transition-all shadow-xs flex flex-col justify-between group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <IconScale className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-                      Daily Closing
-                    </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
-                      Register balance
-                    </span>
-                  </div>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ========================================================= */}
-        {/* 2. ACTIONABLE PENDING ITEMS BANNER                        */}
-        {/* ========================================================= */}
-        {data.pendingTasks.length > 0 ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Action Items Requiring Attention ({data.pendingTasks.length})
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* ---------------- Things needing attention ---------------- */}
+        <section>
+          <SectionTitle>Things To Do Next</SectionTitle>
+          {data.pendingTasks.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {data.pendingTasks.map((task) => (
                 <div
                   key={task.id}
-                  className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
-                    task.priority === "high"
-                      ? "bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60 shadow-xs"
-                      : "bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50"
+                  className={`panel flex flex-col justify-between ${
+                    task.priority === "high" ? "border-l-8 border-l-warn" : ""
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          task.priority === "high"
-                            ? "bg-amber-200/80 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200"
-                            : "bg-blue-200/80 dark:bg-blue-900/80 text-blue-900 dark:text-blue-200"
-                        }`}
-                      >
-                        {task.badge}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                      {task.title}
-                    </h3>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
-                      {task.description}
-                    </p>
+                  <div className="px-4 py-3.5">
+                    <StatusBadge tone={task.priority === "high" ? "warn" : "info"}>{task.badge}</StatusBadge>
+                    <h3 className="mt-2 text-lg font-bold leading-snug text-ink">{task.title}</h3>
+                    <p className="mt-1 text-sm leading-snug text-ink-2">{task.description}</p>
                   </div>
-                  <div className="pt-3 mt-3 border-t border-zinc-200/60 dark:border-zinc-800">
-                    <Link
-                      href={task.href}
-                      className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1"
-                    >
-                      Resolve Task &rarr;
+                  <div className="border-t-2 border-rule px-4 py-3">
+                    <Link href={task.href} className="btn btn-sm">
+                      Open This Task
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        ) : (
-          <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-between text-xs">
-            <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800 dark:text-emerald-300">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>All daily operational checkpoints are currently up to date.</span>
-            </span>
-            <span className="text-zinc-500 dark:text-zinc-400">
-              Stock Count: {data.stockCount.status.toUpperCase()} · Closing: {data.dailyClosing.status}
-            </span>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 3. MAIN KPI SUMMARY CARDS                                 */}
-        {/* ========================================================= */}
-        {isOwner ? (
-          /* OWNER KPI GRID */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Today's Sales Revenue */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Today&apos;s Revenue
-                </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                  Completed
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400 mt-2">
-                {formatMoney((data as OwnerDashboardData).sales.revenue)}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
-                <span><strong>{(data as OwnerDashboardData).sales.invoicesCount}</strong> invoices</span>
-                <span>•</span>
-                <span><strong>{(data as OwnerDashboardData).sales.cratesSold}</strong> crates sold</span>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <span>Immediate Paid: {formatMoney((data as OwnerDashboardData).sales.immediatePaidAmount)}</span>
-                <Link href="/reports/sales" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Sales Report &rarr;
-                </Link>
-              </div>
+          ) : (
+            <div className="notice notice-good">
+              <IconCheck className="h-5 w-5 shrink-0 text-good" />
+              <span>
+                <strong>Nothing is waiting on you.</strong> Stock count is {statusLabel(data.stockCount.status).toLowerCase()} and
+                daily closing is {statusLabel(data.dailyClosing.status).toLowerCase()}.
+              </span>
             </div>
+          )}
+        </section>
 
-            {/* OWNER ONLY: Today's Gross Profit */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-900/60 shadow-xs relative overflow-hidden">
-              <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2 w-16 h-16 bg-emerald-100 dark:bg-emerald-950/40 rounded-full blur-xl pointer-events-none" />
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-emerald-800 dark:text-emerald-400">
-                  Today&apos;s Gross Profit
-                </span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Owner Only
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-                {formatMoney((data as OwnerDashboardData).profit.todayGrossProfit)}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
-                <span>Gross Margin: <strong className="text-emerald-600 dark:text-emerald-400">{(data as OwnerDashboardData).profit.todayGrossMarginPercent.toFixed(1)}%</strong></span>
-                <span>•</span>
-                <span>COGS: {formatMoney((data as OwnerDashboardData).profit.todayCostOfGoodsSold)}</span>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <span>Cost basis at sale</span>
-                <Link href="/reports/profit" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
-                  Profit Details &rarr;
-                </Link>
-              </div>
-            </div>
+        {/* ---------------- Key numbers ---------------- */}
+        <section>
+          <SectionTitle aside={data.businessDate}>Today&apos;s Key Numbers</SectionTitle>
+          {isOwner && ownerData ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                label="Sales Today"
+                value={formatMoney(ownerData.sales.revenue)}
+                tone="info"
+                badge={<StatusBadge tone="good">Completed</StatusBadge>}
+                note={
+                  <>
+                    <strong>{ownerData.sales.invoicesCount}</strong> invoices ·{" "}
+                    <strong>{ownerData.sales.cratesSold}</strong> crates sold
+                    {ownerData.sales.cancelledInvoicesCount > 0
+                      ? ` · ${ownerData.sales.cancelledInvoicesCount} cancelled`
+                      : ""}
+                  </>
+                }
+                actions={
+                  <>
+                    <span className="text-ink-3">Paid at counter {formatMoney(ownerData.sales.immediatePaidAmount)}</span>
+                    <Link href="/reports/sales" className="link-btn ml-auto">
+                      Sales Report
+                    </Link>
+                  </>
+                }
+              />
 
-            {/* Total Physical Stock */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Physical Stock on Hand
-                </span>
-                {data.inventory.lowStockCount > 0 ? (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
-                    {data.inventory.lowStockCount} Low
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                    Healthy
-                  </span>
-                )}
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 mt-2">
-                {data.inventory.totalStockCrates} <span className="text-base font-normal text-zinc-500">crates</span>
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-                <span>Valuation: <strong className="text-zinc-800 dark:text-zinc-200">{formatMoney((data as OwnerDashboardData).inventory.totalValuation)}</strong></span>
-                <span>{data.inventory.outOfStockCount > 0 ? `${data.inventory.outOfStockCount} out of stock` : "0 out"}</span>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/products" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Product Catalog &rarr;
-                </Link>
-                <Link href="/reports/stock" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Stock Ledger &rarr;
-                </Link>
-              </div>
-            </div>
+              <StatCard
+                label="Gross Profit Today"
+                value={formatMoney(ownerData.profit.todayGrossProfit)}
+                tone="good"
+                badge={<StatusBadge tone="info">Owner only</StatusBadge>}
+                note={
+                  <>
+                    Margin <strong>{ownerData.profit.todayGrossMarginPercent.toFixed(1)}%</strong> · goods cost{" "}
+                    {formatMoney(ownerData.profit.todayCostOfGoodsSold)}
+                  </>
+                }
+                actions={
+                  <Link href="/reports/profit" className="link-btn ml-auto">
+                    Profit Details
+                  </Link>
+                }
+              />
 
-            {/* Customer Receivables */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Customer Receivables
-                </span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                  {(data as OwnerDashboardData).customers.totalActive} Customers
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-2">
-                {formatMoney((data as OwnerDashboardData).customers.totalCreditOutstanding)}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Outstanding balance across customer credit accounts
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/customers" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Manage Customers &rarr;
-                </Link>
-                <Link href="/reports/customers" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Credit Ledger &rarr;
-                </Link>
-              </div>
-            </div>
+              <StatCard
+                label="Money Owed To You"
+                value={formatMoney(ownerData.customers.totalCreditOutstanding)}
+                tone="warn"
+                badge={<StatusBadge tone="neutral">{ownerData.customers.totalActive} customers</StatusBadge>}
+                note="Balance still to be collected from customer credit accounts."
+                actions={
+                  <>
+                    <Link href="/customers" className="link-btn">
+                      Customer Accounts
+                    </Link>
+                    <Link href="/reports/customers" className="link-btn ml-auto">
+                      Credit Ledger
+                    </Link>
+                  </>
+                }
+              />
 
-            {/* Today's Stock Count Status */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Today&apos;s Stock Count
-                </span>
-                {getStatusBadge(data.stockCount.status)}
-              </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-3">
-                {data.stockCount.totalProductsCounted > 0
-                  ? `${data.stockCount.totalProductsCounted} Products Counted`
-                  : "Not Started Yet"}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Discrepancies: <strong className={data.stockCount.discrepanciesCount > 0 ? "text-amber-600 dark:text-amber-400" : ""}>{data.stockCount.discrepanciesCount}</strong> · Pending Adjustments: <strong className={data.stockCount.pendingAdjustmentsCount > 0 ? "text-amber-600 dark:text-amber-400" : ""}>{data.stockCount.pendingAdjustmentsCount}</strong>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/stock-counts" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  View Count Sessions &rarr;
-                </Link>
-              </div>
-            </div>
+              <StatCard
+                label="Stock On Hand"
+                value={ownerData.inventory.totalStockCrates}
+                unit="crates"
+                tone={ownerData.inventory.lowStockCount > 0 ? "warn" : "neutral"}
+                badge={
+                  ownerData.inventory.lowStockCount > 0 ? (
+                    <StatusBadge tone="warn">{ownerData.inventory.lowStockCount} low</StatusBadge>
+                  ) : (
+                    <StatusBadge tone="good">Enough stock</StatusBadge>
+                  )
+                }
+                note={
+                  <>
+                    Worth {formatMoney(ownerData.inventory.totalValuation)} ·{" "}
+                    {ownerData.inventory.outOfStockCount} items at zero
+                  </>
+                }
+                actions={
+                  <>
+                    <Link href="/products" className="link-btn">
+                      Product List
+                    </Link>
+                    <Link href="/reports/stock" className="link-btn ml-auto">
+                      Stock Ledger
+                    </Link>
+                  </>
+                }
+              />
 
-            {/* Daily Closing Status */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Daily Closing
-                </span>
-                {getStatusBadge(data.dailyClosing.status)}
-              </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-3">
-                {data.dailyClosing.status === "CLOSED"
-                  ? "Reconciled & Closed"
-                  : data.dailyClosing.status === "IN_REVIEW"
-                  ? "Submitted for Review"
-                  : data.dailyClosing.status === "OPEN"
-                  ? "Currently Open"
-                  : "Not Initialized"}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                {data.dailyClosing.status === "CLOSED" || data.dailyClosing.status === "IN_REVIEW"
-                  ? `Physical Cash: ${formatMoney((data as OwnerDashboardData).dailyClosing.physicalCash)} · Diff: ${formatMoney((data as OwnerDashboardData).dailyClosing.cashDifference)}`
-                  : `Expected Cash: ${formatMoney(data.payments.totalCashCollected)}`}
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/daily-closing" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Closing Reconciliation &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* STAFF OPERATIONAL KPI GRID */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Completed Invoices */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Today&apos;s Sales Activity
-                </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                  Completed
-                </span>
-              </div>
-              <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-2">
-                {data.sales.invoicesCount} <span className="text-base font-normal text-zinc-500">invoices</span>
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Total Crates Dispatched Today: <strong className="text-zinc-800 dark:text-zinc-200">{data.sales.cratesSold} crates</strong>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/sales" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  View Sales Invoices &rarr;
-                </Link>
-                <Link href="/sales/new" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-                  + New Sale
-                </Link>
-              </div>
-            </div>
+              <StatCard
+                label="Stock Count Today"
+                value={
+                  data.stockCount.totalProductsCounted > 0
+                    ? data.stockCount.totalProductsCounted
+                    : "Not started"
+                }
+                unit={data.stockCount.totalProductsCounted > 0 ? "products counted" : undefined}
+                tone={data.stockCount.discrepanciesCount > 0 ? "warn" : "neutral"}
+                badge={<StatusBadge tone={statusTone(data.stockCount.status)}>{statusLabel(data.stockCount.status)}</StatusBadge>}
+                note={
+                  <>
+                    {data.stockCount.discrepanciesCount} differences found ·{" "}
+                    {data.stockCount.pendingAdjustmentsCount} corrections to approve
+                  </>
+                }
+                actions={
+                  <Link href="/stock-counts" className="link-btn ml-auto">
+                    Count Sheets
+                  </Link>
+                }
+              />
 
-            {/* Total Payments Collected */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Total Payments Collected
-                </span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Cash + Digital
-                </span>
-              </div>
-              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-                {formatMoney(data.payments.totalPaymentsCollected)}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
-                <span>Cash: <strong>{formatMoney(data.payments.totalCashCollected)}</strong></span>
-                <span>•</span>
-                <span>Digital: <strong>{formatMoney(data.payments.totalDigitalPayments)}</strong></span>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <span>Checkout & Cashier Desk</span>
-                <Link href="/daily-closing" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Cash Drawer &rarr;
-                </Link>
-              </div>
+              <StatCard
+                label="Daily Closing"
+                value={
+                  data.dailyClosing.status === "CLOSED"
+                    ? "Closed"
+                    : data.dailyClosing.status === "IN_REVIEW"
+                    ? "Sent for approval"
+                    : "Still open"
+                }
+                tone={statusTone(data.dailyClosing.status)}
+                badge={<StatusBadge tone={statusTone(data.dailyClosing.status)}>{statusLabel(data.dailyClosing.status)}</StatusBadge>}
+                note={
+                  data.dailyClosing.status === "CLOSED" || data.dailyClosing.status === "IN_REVIEW"
+                    ? `Cash counted ${formatMoney(ownerData.dailyClosing.physicalCash)} · difference ${formatMoney(ownerData.dailyClosing.cashDifference)}`
+                    : `Cash expected in drawer ${formatMoney(ownerData.payments.totalCashCollected)}`
+                }
+                actions={
+                  <Link href="/daily-closing" className="link-btn ml-auto">
+                    Closing Reconciliation
+                  </Link>
+                }
+              />
             </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                label="Sales Activity"
+                value={data.sales.invoicesCount}
+                unit="invoices"
+                tone="info"
+                badge={<StatusBadge tone="good">Completed</StatusBadge>}
+                note={
+                  <>
+                    <strong>{data.sales.cratesSold}</strong> crates sent out today
+                    {data.sales.cancelledInvoicesCount > 0
+                      ? ` · ${data.sales.cancelledInvoicesCount} cancelled`
+                      : ""}
+                  </>
+                }
+                actions={
+                  <>
+                    <Link href="/sales" className="link-btn">
+                      All Invoices
+                    </Link>
+                    <Link href="/sales/new" className="link-btn ml-auto">
+                      New Sale
+                    </Link>
+                  </>
+                }
+              />
 
-            {/* Physical Stock Crates */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Current Stock on Hand
-                </span>
-                {data.inventory.lowStockCount > 0 ? (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
-                    {data.inventory.lowStockCount} Low
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                    Available
-                  </span>
-                )}
-              </div>
-              <div className="text-3xl font-black text-zinc-900 dark:text-zinc-100 mt-2">
-                {data.inventory.totalStockCrates} <span className="text-base font-normal text-zinc-500">crates</span>
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Stock balance across active catalog products
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/products" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  View Catalog &rarr;
-                </Link>
-                <Link href="/receiving" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Receiving &rarr;
-                </Link>
-              </div>
+              <StatCard
+                label="Money Collected"
+                value={formatMoney(data.payments.totalPaymentsCollected)}
+                tone="good"
+                badge={<StatusBadge tone="good">Cash + digital</StatusBadge>}
+                note={
+                  <>
+                    Cash {formatMoney(data.payments.totalCashCollected)} · digital{" "}
+                    {formatMoney(data.payments.totalDigitalPayments)}
+                  </>
+                }
+                actions={
+                  <Link href="/daily-closing" className="link-btn ml-auto">
+                    Cash Drawer
+                  </Link>
+                }
+              />
+
+              <StatCard
+                label="Stock On Hand"
+                value={data.inventory.totalStockCrates}
+                unit="crates"
+                tone={data.inventory.lowStockCount > 0 ? "warn" : "neutral"}
+                badge={
+                  data.inventory.lowStockCount > 0 ? (
+                    <StatusBadge tone="warn">{data.inventory.lowStockCount} low</StatusBadge>
+                  ) : (
+                    <StatusBadge tone="good">Enough stock</StatusBadge>
+                  )
+                }
+                note="Crates available across products in the catalog."
+                actions={
+                  <>
+                    <Link href="/products" className="link-btn">
+                      Product List
+                    </Link>
+                    <Link href="/receiving" className="link-btn ml-auto">
+                      Receiving
+                    </Link>
+                  </>
+                }
+              />
+
+              <StatCard
+                label="Items Running Low"
+                value={data.inventory.lowStockCount}
+                unit="products"
+                tone={data.inventory.lowStockCount > 0 ? "warn" : "good"}
+                badge={
+                  data.inventory.lowStockCount > 0 ? (
+                    <StatusBadge tone="warn">Needs attention</StatusBadge>
+                  ) : (
+                    <StatusBadge tone="good">All healthy</StatusBadge>
+                  )
+                }
+                note={
+                  data.inventory.outOfStockCount > 0
+                    ? `${data.inventory.outOfStockCount} products have no crates left.`
+                    : "Every product has crates available."
+                }
+                actions={
+                  <Link href="/products" className="link-btn ml-auto">
+                    Check Levels
+                  </Link>
+                }
+              />
+
+              <StatCard
+                label="Stock Count"
+                value={
+                  data.stockCount.totalProductsCounted > 0 ? data.stockCount.totalProductsCounted : "Not started"
+                }
+                unit={data.stockCount.totalProductsCounted > 0 ? "products counted" : undefined}
+                tone="neutral"
+                badge={<StatusBadge tone={statusTone(data.stockCount.status)}>{statusLabel(data.stockCount.status)}</StatusBadge>}
+                note={
+                  data.stockCount.totalProductsCounted > 0
+                    ? `${data.stockCount.discrepanciesCount} differences found · ${data.stockCount.pendingAdjustmentsCount} corrections waiting`
+                    : "Count the shelves to confirm the system matches."
+                }
+                actions={
+                  <Link
+                    href={data.stockCount.closingId ? `/stock-counts/${data.stockCount.closingId}` : "/stock-counts/new"}
+                    className="link-btn ml-auto"
+                  >
+                    {data.stockCount.totalProductsCounted > 0 ? "See Count Sheet" : "Start Physical Count"}
+                  </Link>
+                }
+              />
+
+              <StatCard
+                label="Daily Closing"
+                value={
+                  data.dailyClosing.status === "CLOSED"
+                    ? "Closed"
+                    : data.dailyClosing.status === "IN_REVIEW"
+                    ? "Sent to owner"
+                    : "Still open"
+                }
+                tone={statusTone(data.dailyClosing.status)}
+                badge={<StatusBadge tone={statusTone(data.dailyClosing.status)}>{statusLabel(data.dailyClosing.status)}</StatusBadge>}
+                note={`Cash expected in drawer ${formatMoney(data.payments.totalCashCollected)}.`}
+                actions={
+                  <Link href="/daily-closing" className="link-btn ml-auto">
+                    Reconciliation Form
+                  </Link>
+                }
+              />
             </div>
+          )}
+        </section>
 
-            {/* Low-Stock Monitor */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Low-Stock Product Alerts
-                </span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                  data.inventory.lowStockCount > 0
-                    ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
-                    : "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
-                }`}>
-                  {data.inventory.lowStockCount > 0 ? "Attention Needed" : "Optimal"}
-                </span>
-              </div>
-              <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mt-2">
-                {data.inventory.lowStockCount} <span className="text-base font-normal text-zinc-500">items</span>
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                {data.inventory.outOfStockCount > 0
-                  ? `${data.inventory.outOfStockCount} items currently at 0 crates`
-                  : "All products have crates available"}
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/products" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Check Levels &rarr;
-                </Link>
-              </div>
-            </div>
-
-            {/* Today's Stock Count */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Physical Stock Count
-                </span>
-                {getStatusBadge(data.stockCount.status)}
-              </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-3">
-                {data.stockCount.totalProductsCounted > 0
-                  ? `${data.stockCount.totalProductsCounted} Products Counted`
-                  : "Not Started"}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Status: {data.stockCount.status.replace("_", " ").toUpperCase()}
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link
-                  href={data.stockCount.closingId ? `/stock-counts/${data.stockCount.closingId}` : "/stock-counts/new"}
-                  className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
-                >
-                  {data.stockCount.totalProductsCounted > 0 ? "View Counts &rarr;" : "+ Start Physical Count"}
-                </Link>
-              </div>
-            </div>
-
-            {/* Daily Closing */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Daily Closing Status
-                </span>
-                {getStatusBadge(data.dailyClosing.status)}
-              </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-3">
-                {data.dailyClosing.status === "CLOSED"
-                  ? "Closed for the Day"
-                  : data.dailyClosing.status === "IN_REVIEW"
-                  ? "Submitted to Owner"
-                  : "Open / In Progress"}
-              </div>
-              <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Cash Expected: <strong>{formatMoney(data.payments.totalCashCollected)}</strong>
-              </div>
-              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between text-xs text-zinc-500">
-                <Link href="/daily-closing" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  Reconciliation Form &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 4. TODAY'S PAYMENT COLLECTIONS BY METHOD BREAKDOWN        */}
-        {/* ========================================================= */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xs border border-zinc-200 dark:border-zinc-800 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        {/* ---------------- Money by payment method ---------------- */}
+        <section className="panel">
+          <div className="flex flex-col gap-2 border-b-2 border-rule bg-surface-alt px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Today&apos;s Payment Collections by Channel
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Authoritative register reconciliation across counter payments and customer account settlements.
-              </p>
+              <h2 className="text-lg font-bold">Money Received Today, By Payment Method</h2>
+              <p className="text-sm text-ink-2">Counter payments and customer account settlements.</p>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Total Collected Today:</span>
-              <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-                {formatMoney(data.payments.totalPaymentsCollected)}
-              </div>
+            <div className="sm:text-right">
+              <span className="text-sm text-ink-3">Total collected</span>
+              <p className="num text-2xl font-bold text-good">{formatMoney(data.payments.totalPaymentsCollected)}</p>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-            {/* Cash */}
-            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>Cash Drawer</span>
-                <IconBanknotes className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              </div>
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                {formatMoney(data.payments.totalCashCollected)}
-              </div>
-            </div>
-
-            {/* EasyPaisa */}
-            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>EasyPaisa</span>
-                <IconDeviceMobile className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                {formatMoney(data.payments.totalEasyPaisaCollected)}
-              </div>
-            </div>
-
-            {/* JazzCash */}
-            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>JazzCash</span>
-                <IconDeviceMobile className="w-4 h-4 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                {formatMoney(data.payments.totalJazzCashCollected)}
-              </div>
-            </div>
-
-            {/* QR Code */}
-            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>QR Code</span>
-                <IconQrCode className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                {formatMoney(data.payments.totalQrCollected)}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FigureBox label="Cash Drawer" value={formatMoney(data.payments.totalCashCollected)} icon={<IconBanknotes className="h-5 w-5" />} />
+            <FigureBox label="EasyPaisa" value={formatMoney(data.payments.totalEasyPaisaCollected)} icon={<IconDeviceMobile className="h-5 w-5" />} />
+            <FigureBox label="JazzCash" value={formatMoney(data.payments.totalJazzCashCollected)} icon={<IconDeviceMobile className="h-5 w-5" />} />
+            <FigureBox label="QR Code" value={formatMoney(data.payments.totalQrCollected)} icon={<IconQrCode className="h-5 w-5" />} />
+            {data.payments.totalMpesaCollected > 0 ? (
+              <FigureBox label="M-Pesa" value={formatMoney(data.payments.totalMpesaCollected)} icon={<IconDeviceMobile className="h-5 w-5" />} />
+            ) : null}
           </div>
-        </div>
+        </section>
 
-        {/* ========================================================= */}
-        {/* 5. OWNER-ONLY: PENDING STOCK ADJUSTMENTS SECTION           */}
-        {/* ========================================================= */}
-        {isOwner && (data as OwnerDashboardData).pendingAdjustments.length > 0 && (
-          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xs border border-amber-200 dark:border-amber-900/60 space-y-4">
-            <div className="flex items-center justify-between">
+        {/* ---------------- Owner: corrections to approve ---------------- */}
+        {isOwner && ownerData && ownerData.pendingAdjustments.length > 0 ? (
+          <section className="panel">
+            <div className="flex flex-col gap-3 border-b-2 border-rule bg-surface-alt px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  Owner Action Required
-                </span>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
-                  Pending Stock Discrepancy Adjustments ({(data as OwnerDashboardData).pendingAdjustments.length})
+                <StatusBadge tone="warn">Owner action required</StatusBadge>
+                <h2 className="mt-1.5 text-lg font-bold">
+                  Stock Differences Waiting For Your Decision ({ownerData.pendingAdjustments.length})
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Submitted physical count discrepancies awaiting your one-time approval or rejection.
+                <p className="text-sm text-ink-2">
+                  The count sheet did not match the system. Approve or reject each correction once.
                 </p>
               </div>
-              <Link
-                href="/stock-counts"
-                className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors"
-              >
-                Review All &rarr;
+              <Link href="/stock-counts" className="btn">
+                Review All
               </Link>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 uppercase border-b border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-x-auto p-2">
+              <table className="ledger">
+                <thead>
                   <tr>
-                    <th className="py-2.5 px-3">Product</th>
-                    <th className="py-2.5 px-3 text-right">Count Diff</th>
-                    <th className="py-2.5 px-3">Reason</th>
-                    <th className="py-2.5 px-3">Submitted By</th>
-                    <th className="py-2.5 px-3 text-right">Action</th>
+                    <th scope="col">Product</th>
+                    <th scope="col" className="num">
+                      Count Difference
+                    </th>
+                    <th scope="col">Reason Given</th>
+                    <th scope="col">Counted By</th>
+                    <th scope="col" className="num">
+                      Action
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {(data as OwnerDashboardData).pendingAdjustments.map((adj) => (
-                    <tr key={adj.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
-                      <td className="py-2.5 px-3 font-medium text-zinc-900 dark:text-zinc-100">
-                        {adj.productName} <span className="text-zinc-400">({adj.productBrand})</span>
+                <tbody>
+                  {ownerData.pendingAdjustments.map((adj) => (
+                    <tr key={adj.id}>
+                      <td>
+                        <strong>{adj.productName}</strong> <span className="text-ink-3">({adj.productBrand})</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-bold">
-                        <span className={adj.difference > 0 ? "text-emerald-600" : "text-rose-600"}>
-                          {adj.difference > 0 ? `+${adj.difference}` : adj.difference} crates
-                        </span>
+                      <td className={`num font-bold ${adj.difference > 0 ? "text-good" : "text-stamp"}`}>
+                        {adj.difference > 0 ? `+${adj.difference}` : adj.difference} crates
                       </td>
-                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400 max-w-xs truncate">
-                        {adj.reason}
-                      </td>
-                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">
-                        {adj.requestedByName}
-                      </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="max-w-xs">{adj.reason}</td>
+                      <td>{adj.requestedByName}</td>
+                      <td className="num">
                         <Link
                           href={adj.closingId ? `/stock-counts/${adj.closingId}` : "/stock-counts"}
-                          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                          className="link-btn"
                         >
-                          Resolve &rarr;
+                          Decide
                         </Link>
                       </td>
                     </tr>
@@ -939,214 +571,88 @@ export default async function HomePage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          </section>
+        ) : null}
 
-        {/* ========================================================= */}
-        {/* 6. LOW STOCK WATCHLIST (BOTH ROLES)                       */}
-        {/* ========================================================= */}
-        {data.inventory.lowStockProducts.length > 0 && (
-          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xs border border-zinc-200 dark:border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
+        {/* ---------------- Low stock watchlist ---------------- */}
+        {data.inventory.lowStockProducts.length > 0 ? (
+          <section className="panel">
+            <div className="flex flex-col gap-3 border-b-2 border-rule bg-surface-alt px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  Low-Stock Inventory Watchlist ({data.inventory.lowStockCount} total)
+                <h2 className="text-lg font-bold">
+                  Products Running Low ({data.inventory.lowStockCount} products)
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Products currently at or below minimum threshold requiring warehouse replenishment.
-                </p>
+                <p className="text-sm text-ink-2">These have reached or passed their minimum stock level.</p>
               </div>
-              <Link
-                href={isOwner ? "/receiving/new" : "/products"}
-                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                {isOwner ? "+ Record Delivery" : "View Full Catalog"} &rarr;
+              <Link href={isOwner ? "/receiving/new" : "/products"} className="btn">
+                {isOwner ? "Record a Delivery" : "See Full Product List"}
               </Link>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-              {data.inventory.lowStockProducts.map((p) => (
-                <div
-                  key={p.id}
-                  className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-between"
-                >
-                  <div>
-                    <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                      {p.name}
+            <div className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data.inventory.lowStockProducts.map((product) => {
+                const isEmpty = product.currentStock <= 0;
+                return (
+                  <div key={product.id} className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-base font-bold leading-snug text-ink">{product.name}</p>
+                        <p className="text-sm text-ink-3">Brand: {product.brand}</p>
+                      </div>
+                      <StatusBadge tone={isEmpty ? "bad" : "warn"}>{isEmpty ? "Out of stock" : "Low stock"}</StatusBadge>
                     </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Brand: {p.brand}
-                    </div>
+                    <p className={`num mt-2 text-xl font-bold ${isEmpty ? "text-stamp" : "text-warn"}`}>
+                      {product.currentStock} of {product.minimumStockLevel} crates
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-xs font-bold ${p.currentStock <= 0 ? "text-rose-600" : "text-amber-600"}`}>
-                      {p.currentStock} / {p.minimumStockLevel} crates
-                    </div>
-                    <div className="text-[10px] text-zinc-400">
-                      {p.currentStock <= 0 ? "OUT OF STOCK" : "LOW STOCK"}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
-        )}
+          </section>
+        ) : null}
 
-        {/* ========================================================= */}
-        {/* 7. QUICK ACCESS LAUNCHER GRID                             */}
-        {/* ========================================================= */}
-        <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-            Quick Navigation Launcher
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {/* Staff Featured: New Sale */}
-            {!isOwner && (
-              <Link
+        {/* ---------------- Everything else on the register ---------------- */}
+        <section>
+          <SectionTitle aside="Every screen in this software">All Screens</SectionTitle>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {!isOwner ? (
+              <ActionTile
                 href="/sales/new"
-                className="p-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 transition-all shadow-xs hover:shadow-md flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center mb-2">
-                    <IconZap className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="font-bold text-white text-sm">+ New Sale / Invoice</div>
-                  <p className="text-xs text-blue-100 mt-1">Start a fresh retail or wholesale invoice immediately.</p>
-                </div>
-                <div className="mt-3 text-xs font-semibold text-blue-100">
-                  Open Register &rarr;
-                </div>
-              </Link>
-            )}
-
-            {/* Sales */}
-            <Link
-              href="/sales"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5">
-                <IconReceipt className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Sales & Invoicing</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Search invoices, print receipts, and track payments.</p>
-            </Link>
-
-            {/* Receiving */}
-            <Link
-              href="/receiving"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-purple-400 dark:hover:border-purple-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2.5">
-                <IconTruck className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Receiving / Purchase</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Log supplier crate deliveries and intake inventory.</p>
-            </Link>
-
-            {/* Stock Counts */}
-            <Link
-              href="/stock-counts"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-teal-400 dark:hover:border-teal-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-2.5">
-                <IconClipboardList className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Stock Counts & Audits</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Physical count sheets and discrepancy resolution.</p>
-            </Link>
-
-            {/* Daily Closing (Both can access, staff prepares, owner approves) */}
-            <Link
-              href="/daily-closing"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-400 dark:hover:border-emerald-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5">
-                <IconScale className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Daily Closing</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Cash drawer balancing and end-of-day reconciliation.</p>
-            </Link>
-
-            {/* Customers */}
-            <Link
-              href="/customers"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2.5">
-                <IconUsers className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Customers & Credit</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Accounts receivable ledgers, credit limits, and payments.</p>
-            </Link>
-
-            {/* Products */}
-            <Link
-              href="/products"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center mb-2.5">
-                <IconPackage className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Products & Prices</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Product catalog, current crate stocks, and active tiers.</p>
-            </Link>
-
-            {/* Returns */}
-            <Link
-              href="/returns"
-              className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-700 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2.5">
-                <IconRotateCcw className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Returns & Quarantine</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Customer crate returns and quarantine inspection.</p>
-            </Link>
-
-            {/* OWNER ONLY: Reports Hub */}
-            {isOwner && (
-              <Link
-                href="/reports"
-                className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-violet-400 dark:hover:border-violet-700 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-2.5">
-                  <IconChartBar className="w-4 h-4" />
-                </div>
-                <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Reports & Intelligence</div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Comprehensive sales, stock, dispatch, and customer ledgers.</p>
-              </Link>
-            )}
-
-            {/* OWNER ONLY: Profit Analytics */}
-            {isOwner && (
-              <Link
-                href="/reports/profit"
-                className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 hover:border-emerald-500 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mb-2.5">
-                  <IconDollarSign className="w-4 h-4" />
-                </div>
-                <div className="font-bold text-emerald-900 dark:text-emerald-300 text-sm">Profit & Margins</div>
-                <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mt-1">Owner-only gross return, product margins, and invoices.</p>
-              </Link>
-            )}
-
-            {/* OWNER ONLY: Users Management */}
-            {isOwner && (
-              <Link
-                href="/settings/users"
-                className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-400 dark:hover:border-blue-700 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5">
-                  <IconUsers className="w-4 h-4" />
-                </div>
-                <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Staff User Provisioning</div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Add staff members, manage roles, and toggle active status.</p>
-              </Link>
-            )}
+                title="New Sale / Invoice"
+                hint="Start a fresh retail or wholesale invoice."
+                icon={<IconZap className="h-5 w-5" />}
+                emphasis
+              />
+            ) : null}
+            {launcherLinks.map((link) => (
+              <ActionTile
+                key={`${link.title}-${link.href}`}
+                href={link.href}
+                title={link.title}
+                hint={link.hint}
+                icon={link.icon}
+              />
+            ))}
+            {isOwner
+              ? ownerLinks.map((link) => (
+                  <ActionTile
+                    key={`${link.title}-${link.href}`}
+                    href={link.href}
+                    title={link.title}
+                    hint={link.hint}
+                    icon={link.icon}
+                  />
+                ))
+              : null}
           </div>
-        </div>
+          {isCloud ? (
+            <div className="mt-4">
+              <EmptyState
+                title="This is a read-only portal"
+                hint="You can look at every record here, but only the main office can add or change them."
+              />
+            </div>
+          ) : null}
+        </section>
       </main>
     </div>
   );

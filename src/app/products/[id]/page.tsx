@@ -184,7 +184,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                   <span className="text-xs font-semibold uppercase tracking-wider text-purple-700 dark:text-purple-400">
                     Purchase Cost
                   </span>
-                  <span className="text-[10px] bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded">
+                  <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded">
                     OWNER
                   </span>
                 </div>

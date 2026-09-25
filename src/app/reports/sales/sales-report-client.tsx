@@ -105,7 +105,7 @@ export function SalesReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
       >
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">From Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">From Date</label>
           <input
             type="date"
             value={startDate}
@@ -115,7 +115,7 @@ export function SalesReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">To Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">To Date</label>
           <input
             type="date"
             value={endDate}
@@ -125,7 +125,7 @@ export function SalesReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Customer</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Customer</label>
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
@@ -141,7 +141,7 @@ export function SalesReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Sale Type</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Sale Type</label>
           <select
             value={saleType}
             onChange={(e) => setSaleType(e.target.value)}
@@ -167,35 +167,35 @@ export function SalesReportClient({
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Revenue</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Revenue</span>
           <div className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400 mt-1">
             {formatCurrency(data.summary.totalRevenue)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Collected</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Collected</span>
           <div className="text-lg font-black tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
             {formatCurrency(data.summary.totalPaid)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Credit (Unpaid)</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Credit (Unpaid)</span>
           <div className="text-lg font-black tabular-nums text-amber-600 dark:text-amber-400 mt-1">
             {formatCurrency(data.summary.totalCredit)}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Crates Sold</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Crates Sold</span>
           <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalCratesSold}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Invoices</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Invoices</span>
           <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalInvoices}
           </div>
@@ -203,19 +203,19 @@ export function SalesReportClient({
 
         {isOwner && data.summary.totalProfit !== undefined ? (
           <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 shadow-xs">
-            <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
+            <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase">
               Gross Profit
             </span>
             <div className="text-lg font-black tabular-nums text-purple-700 dark:text-purple-300 mt-1">
               {formatCurrency(data.summary.totalProfit)}
             </div>
-            <div className="text-[10px] text-purple-600 tabular-nums">
+            <div className="text-xs text-purple-600 tabular-nums">
               Margin: {data.summary.marginPercent?.toFixed(1)}%
             </div>
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-            <span className="text-[11px] font-semibold text-zinc-500 uppercase">Avg Invoice</span>
+            <span className="text-xs font-semibold text-zinc-500 uppercase">Avg Invoice</span>
             <div className="text-lg font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
               {formatCurrency(data.summary.averageInvoiceValue)}
             </div>

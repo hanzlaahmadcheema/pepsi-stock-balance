@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { IconAlertTriangle, IconClose } from "./icons";
 
 export interface ConfirmModalProps {
@@ -15,17 +15,24 @@ export interface ConfirmModalProps {
   onClose: () => void;
 }
 
+/**
+ * The one dialog every destructive action in the software asks through. It
+ * always names the action on the button, and "No, go back" is offered first so
+ * a stray tap cannot destroy anything.
+ */
 export function ConfirmModal({
   isOpen,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Keep Active",
+  confirmLabel = "Yes, do it",
+  cancelLabel = "No, go back",
   variant = "danger",
   isPending = false,
   onConfirm,
   onClose,
 }: ConfirmModalProps) {
+  const confirmRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen && !isPending) {
@@ -38,68 +45,63 @@ export function ConfirmModal({
 
   if (!isOpen) return null;
 
-  const confirmBtnStyles =
-    variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
-      : variant === "warning"
-      ? "bg-amber-600 hover:bg-amber-700 text-white"
-      : "bg-blue-600 hover:bg-blue-700 text-white";
+  const accent =
+    variant === "danger" ? "border-stamp bg-stamp-wash" : variant === "warning" ? "border-warn bg-warn-wash" : "border-navy bg-navy-wash";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center sm:p-6">
       <div
-        className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full overflow-hidden"
-        role="dialog"
+        role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
+        aria-describedby="confirm-modal-description"
+        className="panel my-auto w-full max-w-lg"
       >
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-3">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                variant === "danger"
-                  ? "bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400"
-                  : "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
-              }`}
-            >
-              <IconAlertTriangle className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 id="confirm-modal-title" className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                {title}
-              </h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1.5 leading-relaxed">
-                {description}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1 rounded-lg cursor-pointer"
-            >
-              <IconClose className="w-4 h-4" />
-            </button>
+        <div className="flex items-start gap-3 border-b-2 border-rule bg-surface-alt px-5 py-4">
+          <span
+            aria-hidden="true"
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md border-2 ${accent}`}
+          >
+            <IconAlertTriangle className="h-7 w-7 text-ink" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 id="confirm-modal-title" className="text-xl font-bold text-ink">
+              {title}
+            </h3>
+            <p id="confirm-modal-description" className="mt-1.5 text-base leading-relaxed text-ink-2">
+              {description}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isPending}
+            className="btn shrink-0 px-3"
+            aria-label="Close without doing anything"
+          >
+            <IconClose className="h-6 w-6" />
+          </button>
+        </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 text-xs font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors cursor-pointer"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              disabled={isPending}
-              className={`px-4 py-2 text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${confirmBtnStyles}`}
-            >
-              {isPending ? "Processing..." : confirmLabel}
-            </button>
-          </div>
+        <div className="flex flex-col-reverse gap-3 px-5 py-4 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isPending}
+            className="btn btn-lg"
+            autoFocus
+          >
+            {cancelLabel}
+          </button>
+          <button
+            ref={confirmRef}
+            type="button"
+            onClick={onConfirm}
+            disabled={isPending}
+            className={`btn btn-lg ${variant === "danger" ? "btn-danger" : variant === "warning" ? "btn-warn" : "btn-primary"}`}
+          >
+            {isPending ? "Working, please wait…" : confirmLabel}
+          </button>
         </div>
       </div>
     </div>

@@ -180,13 +180,13 @@ export function SyncStatusClient({
         </div>
 
         <div className="shrink-0 text-left md:text-right border-t md:border-t-0 pt-3 md:pt-0 border-zinc-200 dark:border-zinc-800">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
             Cloud Sync Cursor
           </span>
           <span className="font-mono text-sm font-bold text-zinc-800 dark:text-zinc-200 block mt-0.5">
             Sequence #{cursor?.lastSequence || "0"}
           </span>
-          <span className="text-[11px] text-zinc-500 block mt-0.5">
+          <span className="text-xs text-zinc-500 block mt-0.5">
             Last Synced: {cursor ? formatDateTime(cursor.lastSyncedAt) : "Never"}
           </span>
         </div>
@@ -287,7 +287,7 @@ export function SyncStatusClient({
         <div className="overflow-x-auto -mx-5 -mb-5">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-y border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              <tr className="border-y border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-5">Device Name</th>
                 <th className="py-3 px-5">Device ID</th>
                 <th className="py-3 px-5">Status</th>
@@ -314,23 +314,23 @@ export function SyncStatusClient({
                       <td className="py-3.5 px-5 font-bold text-zinc-900 dark:text-zinc-100">
                         {device.name}
                       </td>
-                      <td className="py-3.5 px-5 font-mono text-[11px] text-zinc-500">
+                      <td className="py-3.5 px-5 font-mono text-xs text-zinc-500">
                         {device.deviceId}
                       </td>
                       <td className="py-3.5 px-5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${status.className}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${status.className}`}
                         >
                           ● {status.label}
                         </span>
                       </td>
-                      <td className="py-3.5 px-5 font-mono text-[11px]">
+                      <td className="py-3.5 px-5 font-mono text-xs">
                         {formatDateTime(device.lastSeenAt)}
                       </td>
                       <td className="py-3.5 px-5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
                         #{device.lastSequence}
                       </td>
-                      <td className="py-3.5 px-5 text-zinc-500 text-[11px]">
+                      <td className="py-3.5 px-5 text-zinc-500 text-xs">
                         {formatDateTime(device.createdAt)}
                       </td>
                     </tr>
@@ -368,18 +368,18 @@ export function SyncStatusClient({
                     <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                       Seq #{q.changeSequence}
                     </span>
-                    <span className="px-1.5 py-0.2 rounded bg-amber-200/60 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-mono text-[10px]">
+                    <span className="px-1.5 py-0.2 rounded bg-amber-200/60 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-mono text-xs">
                       {q.operationType}
                     </span>
-                    <span className="text-[11px] text-red-600 font-semibold">
+                    <span className="text-xs text-red-600 font-semibold">
                       [{q.errorCode}]
                     </span>
                   </div>
-                  <div className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                     {q.errorMessage}
                   </div>
                 </div>
-                <div className="text-[11px] text-zinc-500 font-mono">
+                <div className="text-xs text-zinc-500 font-mono">
                   {formatDateTime(q.createdAt)}
                 </div>
               </div>
@@ -402,7 +402,7 @@ export function SyncStatusClient({
         <div className="overflow-x-auto -mx-5 -mb-5">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-y border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              <tr className="border-y border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-5">Processed At</th>
                 <th className="py-3 px-5">Device</th>
                 <th className="py-3 px-5">Operation Type</th>
@@ -424,10 +424,10 @@ export function SyncStatusClient({
                     key={op.id}
                     className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    <td className="py-3 px-5 font-mono text-[11px] whitespace-nowrap">
+                    <td className="py-3 px-5 font-mono text-xs whitespace-nowrap">
                       {formatDateTime(op.processedAt)}
                     </td>
-                    <td className="py-3 px-5 font-mono text-[11px] text-zinc-500">
+                    <td className="py-3 px-5 font-mono text-xs text-zinc-500">
                       {op.deviceId}
                     </td>
                     <td className="py-3 px-5">
@@ -435,7 +435,7 @@ export function SyncStatusClient({
                         {op.operationType}
                       </span>
                     </td>
-                    <td className="py-3 px-5 font-mono text-[11px] text-zinc-500">
+                    <td className="py-3 px-5 font-mono text-xs text-zinc-500">
                       {op.entityId.slice(0, 8)}...
                     </td>
                     <td className="py-3 px-5 text-right font-mono">
@@ -443,7 +443,7 @@ export function SyncStatusClient({
                     </td>
                     <td className="py-3 px-5 text-center">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
                           op.status === "SUCCESS"
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                             : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"

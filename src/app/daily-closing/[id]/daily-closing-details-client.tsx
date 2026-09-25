@@ -295,7 +295,7 @@ export function DailyClosingDetailsClient({
               <span>Digital Collections:</span>
               <b className="text-zinc-900 dark:text-zinc-100">{formatCurrency(summary.payments.totalDigitalPayments)}</b>
             </div>
-            <div className="flex justify-between text-[11px] text-zinc-400 pt-1">
+            <div className="flex justify-between text-xs text-zinc-400 pt-1">
               <span>From Invoices: {formatCurrency(summary.payments.invoicePaymentsTotal)}</span>
               <span>Account Ledger: {formatCurrency(summary.payments.accountPaymentsTotal)}</span>
             </div>
@@ -551,7 +551,7 @@ export function DailyClosingDetailsClient({
                         required
                         className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
                       />
-                      <div className="text-[11px] text-zinc-500">
+                      <div className="text-xs text-zinc-500">
                         Expected: {formatCurrency(summary.cashDrawer.totalCashExpected)} | Variance:{" "}
                         <span className={currentDifference === 0 ? "text-emerald-600 font-bold" : "text-red-600 font-bold"}>
                           {formatCurrency(currentDifference)}

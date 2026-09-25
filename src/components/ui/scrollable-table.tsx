@@ -38,7 +38,7 @@ export function ScrollableTable({ children }: { children: ReactNode }) {
         />
       )}
       {hasRightOverflow && (
-        <div className="lg:hidden text-[11px] font-medium text-zinc-500 dark:text-zinc-400 px-4 py-1.5 bg-zinc-50/80 dark:bg-zinc-800/40 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-end gap-1 select-none">
+        <div className="lg:hidden text-xs font-medium text-zinc-500 dark:text-zinc-400 px-4 py-1.5 bg-zinc-50/80 dark:bg-zinc-800/40 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-end gap-1 select-none">
           <span>Scroll horizontally for more</span>
           <span aria-hidden="true">&rarr;</span>
         </div>

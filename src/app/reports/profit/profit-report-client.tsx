@@ -110,7 +110,7 @@ export function ProfitReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
       >
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">From Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">From Date</label>
           <input
             type="date"
             value={startDate}
@@ -120,7 +120,7 @@ export function ProfitReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">To Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">To Date</label>
           <input
             type="date"
             value={endDate}
@@ -130,7 +130,7 @@ export function ProfitReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Product</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Product</label>
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
@@ -146,7 +146,7 @@ export function ProfitReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Customer</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Customer</label>
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
@@ -174,45 +174,45 @@ export function ProfitReportClient({
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Revenue</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Revenue</span>
           <div className="text-xl font-black tabular-nums text-blue-600 dark:text-blue-400 mt-1">
             {formatCurrency(data.summary.totalRevenue)}
           </div>
-          <div className="text-[11px] text-zinc-400 tabular-nums">{data.summary.cratesSold} crates sold</div>
+          <div className="text-xs text-zinc-400 tabular-nums">{data.summary.cratesSold} crates sold</div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Cost Basis</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Cost Basis</span>
           <div className="text-xl font-black tabular-nums text-zinc-700 dark:text-zinc-300 mt-1">
             {formatCurrency(data.summary.totalCost)}
           </div>
-          <div className="text-[11px] text-zinc-400">Snapshot cost at sale</div>
+          <div className="text-xs text-zinc-400">Snapshot cost at sale</div>
         </div>
 
         <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 shadow-xs">
-          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
+          <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase">
             Gross Profit
           </span>
           <div className="text-xl font-black tabular-nums text-purple-700 dark:text-purple-300 mt-1">
             {formatCurrency(data.summary.totalGrossProfit)}
           </div>
-          <div className="text-[11px] text-purple-600">Net revenue minus cost</div>
+          <div className="text-xs text-purple-600">Net revenue minus cost</div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Gross Margin %</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Gross Margin %</span>
           <div className="text-xl font-black tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
             {data.summary.marginPercent.toFixed(1)}%
           </div>
-          <div className="text-[11px] text-zinc-400">Overall return</div>
+          <div className="text-xs text-zinc-400">Overall return</div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Profit / Crate</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Profit / Crate</span>
           <div className="text-xl font-black tabular-nums text-zinc-900 dark:text-zinc-50 mt-1">
             {formatCurrency(data.summary.cratesSold > 0 ? (data.summary.totalGrossProfit / data.summary.cratesSold) : 0)}
           </div>
-          <div className="text-[11px] text-zinc-400">Average crate yield</div>
+          <div className="text-xs text-zinc-400">Average crate yield</div>
         </div>
       </div>
 

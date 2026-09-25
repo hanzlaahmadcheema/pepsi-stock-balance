@@ -93,7 +93,7 @@ export function StockReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-3 gap-3"
       >
         <div className="sm:col-span-2">
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Search Product / Brand</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Search Product / Brand</label>
           <input
             type="text"
             placeholder="Search by product name or brand..."
@@ -104,7 +104,7 @@ export function StockReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Stock Health Filter</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Stock Health Filter</label>
           <div className="flex items-center gap-2">
             <select
               value={statusFilter}
@@ -129,28 +129,28 @@ export function StockReportClient({
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Products</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Products</span>
           <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalProducts}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Crates</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Crates</span>
           <div className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">
             {data.summary.totalStockCrates} crates
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Low Stock Alerts</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Low Stock Alerts</span>
           <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
             {data.summary.lowStockCount}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Out of Stock</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Out of Stock</span>
           <div className="text-xl font-black text-red-600 dark:text-red-400 mt-1">
             {data.summary.outOfStockCount}
           </div>
@@ -158,7 +158,7 @@ export function StockReportClient({
 
         {isOwner && data.summary.totalValuation !== undefined && (
           <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 shadow-xs col-span-2 sm:col-span-1">
-            <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
+            <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase">
               Inventory Value
             </span>
             <div className="text-xl font-black text-purple-700 dark:text-purple-300 mt-1">

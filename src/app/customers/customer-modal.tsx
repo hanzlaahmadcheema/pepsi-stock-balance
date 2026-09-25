@@ -7,14 +7,18 @@ import { createCustomerAction, updateCustomerAction } from "./actions";
 import { CustomerStatusButton } from "./customer-status-button";
 import type { CustomerSummary } from "@/lib/customers/service";
 import { formatCurrency } from "@/lib/formatters";
-import { EmptyState } from "@/components/ui/empty-state";
-import { IconUsers, IconClose } from "@/components/ui/icons";
+import { IconClose, IconUsers, IconPlus, IconHistory } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { EmptyState, StatusBadge } from "@/components/ui/classic";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 
+/* =========================================================================
+   ADD / EDIT A CUSTOMER
+   Every label is spelled out, nothing relies on colour alone, and the two
+   buttons at the bottom say exactly what they will do.
+   ========================================================================= */
 export function CustomerModal({
   customerToEdit,
-  isOwner = false,
   enabledRates = { retail: true, wholesale: true, key: true },
   onClose,
 }: {
@@ -36,7 +40,7 @@ export function CustomerModal({
     if (state?.success) {
       const timer = setTimeout(() => {
         onClose();
-      }, 1000);
+      }, 1200);
       return () => clearTimeout(timer);
     }
   }, [state?.success, onClose]);
@@ -52,92 +56,100 @@ export function CustomerModal({
   }, [isPending, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-            {isEditing ? "Edit Customer" : "Register New Customer"}
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="customer-modal-title"
+        className="panel my-auto w-full max-w-xl"
+      >
+        <div className="flex items-center justify-between gap-3 border-b-2 border-rule bg-surface-alt px-5 py-4">
+          <h3 id="customer-modal-title" className="text-xl font-bold text-ink">
+            {isEditing ? "Change Customer Details" : "Register a New Customer"}
           </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg transition-colors cursor-pointer"
-            aria-label="Close dialog"
-          >
-            <IconClose className="w-4 h-4" />
+          <button type="button" onClick={onClose} className="btn px-3" aria-label="Close without saving">
+            <IconClose className="h-6 w-6" />
           </button>
         </div>
 
-        <form ref={formRef} action={formAction} className="p-6 space-y-4">
-          {isEditing && (
-            <input type="hidden" name="id" value={customerToEdit?.id} />
-          )}
+        <form ref={formRef} action={formAction} className="space-y-4 p-5">
+          {isEditing && <input type="hidden" name="id" value={customerToEdit?.id} />}
 
-          {state?.error && (
-            <div className="p-3 text-xs rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300">
-              {state.error}
-            </div>
-          )}
+          {state?.error ? (
+            <p className="notice notice-bad" role="alert">
+              <span>
+                <strong>Not saved.</strong> {state.error}
+              </span>
+            </p>
+          ) : null}
 
-          {state?.success && (
-            <div className="p-3 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300">
-              Customer saved successfully!
-            </div>
-          )}
+          {state?.success ? (
+            <p className="notice notice-good" role="status">
+              <span>
+                <strong>Saved.</strong> This customer is now on your list.
+              </span>
+            </p>
+          ) : null}
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-              Customer Name *
+            <label htmlFor="customer-name" className="label">
+              Shop or customer name <span className="text-stamp">*</span>
             </label>
             <input
+              id="customer-name"
               type="text"
               name="name"
               defaultValue={customerToEdit?.name || ""}
               required
-              placeholder="e.g. Al-Madina Store / John Doe"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="For example: Al-Madina Store"
+              className="field"
             />
+            <p className="field-help">The name you will recognise on an invoice.</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-              Phone Number
+            <label htmlFor="customer-phone" className="label">
+              Phone number
             </label>
             <input
+              id="customer-phone"
               type="text"
               name="phone"
               defaultValue={customerToEdit?.phone || ""}
-              placeholder="e.g. +92 300 1234567"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="For example: 0300 1234567"
+              className="field"
             />
+            <p className="field-help">Used to send balance reminders. Optional.</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-              Address / Shop Location
+            <label htmlFor="customer-address" className="label">
+              Address or market area
             </label>
             <input
+              id="customer-address"
               type="text"
               name="address"
               defaultValue={customerToEdit?.address || ""}
-              placeholder="e.g. Main Market, Shop #4"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="For example: Main Market, Shop 4"
+              className="field"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-              Price Tier
+            <label htmlFor="customer-tier" className="label">
+              Which price do they get?
             </label>
             <select
+              id="customer-tier"
               name="priceTier"
               defaultValue={customerToEdit?.priceTier || PriceTier.RETAIL}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="field"
             >
               {[
-                { tier: PriceTier.RETAIL, label: "RETAIL", enabled: enabledRates?.retail ?? true },
-                { tier: PriceTier.WHOLESALE, label: "WHOLESALE", enabled: enabledRates?.wholesale ?? true },
-                { tier: PriceTier.KEY_ACCOUNT, label: "KEY ACCOUNT", enabled: enabledRates?.key ?? true },
+                { tier: PriceTier.RETAIL, label: "Retail price (one crate at a time)", enabled: enabledRates?.retail ?? true },
+                { tier: PriceTier.WHOLESALE, label: "Wholesale price (bulk crates)", enabled: enabledRates?.wholesale ?? true },
+                { tier: PriceTier.KEY_ACCOUNT, label: "Key account price (negotiated)", enabled: enabledRates?.key ?? true },
               ]
                 .filter((t) => t.enabled || customerToEdit?.priceTier === t.tier)
                 .map((t) => (
@@ -146,44 +158,34 @@ export function CustomerModal({
                   </option>
                 ))}
             </select>
+            <p className="field-help">This decides which price is used every time you sell to them.</p>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              type="checkbox"
-              id="creditAllowed"
-              name="creditAllowed"
-              defaultChecked={customerToEdit?.creditAllowed ?? false}
-              className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
-            />
-            <label
-              htmlFor="creditAllowed"
-              className="text-sm font-medium text-zinc-900 dark:text-zinc-100 cursor-pointer"
-            >
-              Allow Credit Purchases
+          <div className="rounded-lg border-2 border-rule bg-surface-alt p-4">
+            <label htmlFor="creditAllowed" className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                id="creditAllowed"
+                name="creditAllowed"
+                defaultChecked={customerToEdit?.creditAllowed ?? false}
+                className="mt-1 h-6 w-6 shrink-0 cursor-pointer accent-navy"
+              />
+              <span>
+                <span className="block text-base font-bold text-ink">Let this customer buy on credit</span>
+                <span className="mt-0.5 block text-sm leading-snug text-ink-2">
+                  Tick this only if the shop is allowed to take goods now and pay later. Leave it off and every sale
+                  must be paid in full.
+                </span>
+              </span>
             </label>
           </div>
-          <p className="text-xs text-zinc-500">
-            If checked, this customer can make sales on credit (unpaid or partially paid balance).
-          </p>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-400 cursor-pointer"
-            >
-              Cancel
+          <div className="flex flex-col-reverse gap-3 border-t-2 border-rule pt-4 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className="btn">
+              Cancel, do not save
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:active:scale-100 transition-all cursor-pointer"
-            >
-              {isPending && (
-                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              )}
-              {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Customer"}
+            <button type="submit" disabled={isPending} className="btn btn-primary btn-lg">
+              {isPending ? "Saving, please wait…" : isEditing ? "Save These Changes" : "Add This Customer"}
             </button>
           </div>
         </form>
@@ -192,6 +194,11 @@ export function CustomerModal({
   );
 }
 
+/* =========================================================================
+   CUSTOMER LIST
+   The balance column is the reason this screen exists, so it is the largest
+   number on the row and every row says who the customer is in plain words.
+   ========================================================================= */
 export function CustomerListWrapper({
   customers,
   isOwner,
@@ -213,186 +220,182 @@ export function CustomerListWrapper({
     setModalOpen(true);
   };
 
+  const totalOwed = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
+  const totalOwing = customers.filter((c) => c.outstandingBalance > 0).length;
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              Customers & Credit
-            </h1>
-            {isCloud && (
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
-                Read-Only
-              </span>
+      {/* ---------------- Page heading ---------------- */}
+      <div className="panel">
+        <div className="flex flex-col gap-4 border-b-2 border-rule bg-surface-alt px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold">Customers &amp; Credit</h1>
+              {isCloud ? <StatusBadge tone="info">Read-only portal</StatusBadge> : null}
+            </div>
+            <p className="mt-1 text-base text-ink-2">
+              {isCloud
+                ? "Customer accounts, money owed, and payment history as recorded at the depot."
+                : "Who buys from you, who still owes money, and how to collect it."}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {isCloud ? (
+              <Link href="/reports/aging" className="btn">
+                <IconHistory className="h-5 w-5" />
+                Debt Aging Report
+              </Link>
+            ) : (
+              <button type="button" onClick={handleCreate} className="btn btn-primary btn-lg">
+                <IconPlus className="h-5 w-5" />
+                Add Customer
+              </button>
             )}
           </div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            {isCloud
-              ? "View customer accounts, debt aging, and payment history synchronized from depot."
-              : "Manage customer accounts, track credit balances, and process lump-sum payments."}
-          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {isCloud ? (
-            <Link
-              href="/reports/aging"
-              className="px-3.5 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-colors shadow-2xs"
-            >
-              AR Aging Report →
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors cursor-pointer shadow-xs"
-            >
-              + Add Customer
-            </button>
-          )}
+
+        <div className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-3">
+          <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+            <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Customers on file</p>
+            <p className="num mt-1 text-2xl font-bold">{customers.length}</p>
+          </div>
+          <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+            <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Total money owed to you</p>
+            <p className="num mt-1 text-2xl font-bold text-warn">{formatCurrency(totalOwed)}</p>
+          </div>
+          <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+            <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Customers with a balance</p>
+            <p className="num mt-1 text-2xl font-bold">{totalOwing}</p>
+            <p className="text-sm text-ink-3">of {customers.length} on file</p>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-        <ScrollableTable>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-              <tr>
-                <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Phone & Address</th>
-                <th className="px-6 py-3">Tier</th>
-                <th className="px-6 py-3">Credit</th>
-                <th className="px-6 py-3 text-right">Outstanding Balance</th>
-                <th className="px-6 py-3 text-center">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12">
-                    <EmptyState
-                      icon={<IconUsers className="w-8 h-8 text-zinc-400" />}
-                      title="No customers registered"
-                      description="Register commercial customers, shops, and restaurants to manage credit limits and returnable container balances."
-                    />
-                  </td>
-                </tr>
-              ) : (
-                customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/customers/${c.id}`}
-                        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {c.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-zinc-500">
-                      <div>{c.phone || "—"}</div>
-                      <div className="text-zinc-400">{c.address || ""}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-                        {c.priceTier}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded font-medium ${
-                          c.creditAllowed
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        }`}
-                      >
-                        {c.creditAllowed ? "Allowed" : "No Credit"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right tabular-nums">
-                      {c.outstandingBalance > 0 ? (
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
-                          {formatCurrency(c.outstandingBalance)}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">{formatCurrency(0)}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          c.isActive
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            c.isActive ? "bg-emerald-500" : "bg-zinc-400"
-                          }`}
-                        />
-                        {c.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                      {isCloud ? (
-                        <Link
-                          href={`/customers/${c.id}`}
-                          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          View Ledger
-                        </Link>
-                      ) : (
-                        <>
-                          <Link
-                            href={`/customers/${c.id}`}
-                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            Ledger
-                          </Link>
-                          {c.outstandingBalance > 0 && (
-                            <>
-                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                              <Link
-                                href={`/customers/${c.id}/payments`}
-                                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                              >
-                                Pay
-                              </Link>
-                            </>
-                          )}
-                          {isOwner && (
-                            <>
-                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                              <button
-                                type="button"
-                                onClick={() => handleEdit(c)}
-                                className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:underline cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                              <CustomerStatusButton customerId={c.id} isActive={c.isActive} />
-                            </>
-                          )}
-                        </>
-                      )}
-                    </td>
+      {/* ---------------- Customer list ---------------- */}
+      <div className="mt-6">
+        {customers.length === 0 ? (
+          <div className="panel p-6">
+            <EmptyState
+              title="No customers yet"
+              hint="Add the shops, hotels and restaurants you sell to. Once they are on the list you can send them goods on credit and record what they pay back."
+              action={
+                isCloud ? undefined : (
+                  <button type="button" onClick={handleCreate} className="btn btn-primary btn-lg">
+                    <IconPlus className="h-5 w-5" />
+                    Add the First Customer
+                  </button>
+                )
+              }
+            />
+          </div>
+        ) : (
+          <div className="panel overflow-hidden">
+            <ScrollableTable>
+              <table className="ledger">
+                <caption className="sr-only">
+                  Customers with phone number, price tier, credit permission, outstanding balance and status
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Phone &amp; Address</th>
+                    <th scope="col">Price They Pay</th>
+                    <th scope="col">Credit Allowed</th>
+                    <th scope="col" className="num">
+                      Money Owed To You
+                    </th>
+                    <th scope="col">Status</th>
+                    <th scope="col" className="num">
+                      Actions
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </ScrollableTable>
+                </thead>
+                <tbody>
+                  {customers.map((c) => (
+                    <tr key={c.id}>
+                      <td>
+                        <Link href={`/customers/${c.id}`} className="link text-base">
+                          {c.name}
+                        </Link>
+                      </td>
+                      <td>
+                        <span className="block">{c.phone || "No phone saved"}</span>
+                        {c.address ? <span className="block text-sm text-ink-3">{c.address}</span> : null}
+                      </td>
+                      <td>
+                        <span className="text-base font-semibold">
+                          {c.priceTier === PriceTier.KEY_ACCOUNT
+                            ? "Key account"
+                            : c.priceTier === PriceTier.WHOLESALE
+                            ? "Wholesale"
+                            : "Retail"}
+                        </span>
+                      </td>
+                      <td>
+                        {c.creditAllowed ? (
+                          <StatusBadge tone="good">Credit allowed</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="neutral">Pay in full</StatusBadge>
+                        )}
+                      </td>
+                      <td className={`num text-xl font-bold ${c.outstandingBalance > 0 ? "text-warn" : "text-ink-3"}`}>
+                        {formatCurrency(c.outstandingBalance)}
+                      </td>
+                      <td>
+                        {c.isActive ? <StatusBadge tone="good">Active</StatusBadge> : <StatusBadge tone="neutral">Not in use</StatusBadge>}
+                      </td>
+                      <td className="num">
+                        <span className="flex flex-wrap items-center justify-end gap-2">
+                          {isCloud ? (
+                            <Link href={`/customers/${c.id}`} className="btn btn-sm">
+                              Open Ledger
+                            </Link>
+                          ) : (
+                            <>
+                              <Link href={`/customers/${c.id}`} className="btn btn-sm">
+                                Ledger
+                              </Link>
+                              {c.outstandingBalance > 0 ? (
+                                <Link href={`/customers/${c.id}/payments`} className="btn btn-sm btn-primary">
+                                  Take Payment
+                                </Link>
+                              ) : null}
+                              {isOwner ? (
+                                <>
+                                  <button type="button" onClick={() => handleEdit(c)} className="btn btn-sm">
+                                    Change Details
+                                  </button>
+                                  <CustomerStatusButton customerId={c.id} isActive={c.isActive} />
+                                </>
+                              ) : null}
+                            </>
+                          )}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollableTable>
+          </div>
+        )}
       </div>
 
-      {modalOpen && (
+      {customers.length > 0 ? (
+        <p className="mt-4 text-sm text-ink-3">
+          <IconUsers className="mr-1 inline h-4 w-4" aria-hidden="true" />
+          Open <strong>&ldquo;Ledger&rdquo;</strong> to see every invoice and payment for one customer. Use{" "}
+          <strong>&ldquo;Take Payment&rdquo;</strong> to record money received today.
+        </p>
+      ) : null}
+
+      {modalOpen ? (
         <CustomerModal
           customerToEdit={editingCustomer}
           isOwner={isOwner}
           onClose={() => setModalOpen(false)}
         />
-      )}
+      ) : null}
     </>
   );
 }

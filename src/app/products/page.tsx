@@ -5,9 +5,9 @@ import { AppHeader } from "@/components/app-header";
 import { listProducts, PriceTier } from "@/lib/products/service";
 import { getContainerSettings } from "@/lib/containers/settings-service";
 import { ProductSearch } from "./product-search";
-import { EmptyState } from "@/components/ui/empty-state";
-import { IconPackage } from "@/components/ui/icons";
+import { IconPackage, IconTruck, IconPlus, IconChartBar } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
+import { EmptyState, StatusBadge } from "@/components/ui/classic";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,24 @@ interface ProductsPageProps {
   searchParams: Promise<{
     q?: string;
   }>;
+}
+
+/** One badge per product, using the shared status language. */
+function stockBadge(product: {
+  isActive: boolean;
+  currentStock: number;
+  isLowStock: boolean;
+}) {
+  if (!product.isActive) {
+    return <StatusBadge tone="neutral">Not in use</StatusBadge>;
+  }
+  if (product.currentStock <= 0) {
+    return <StatusBadge tone="bad">Out of stock</StatusBadge>;
+  }
+  if (product.isLowStock) {
+    return <StatusBadge tone="warn">Low stock</StatusBadge>;
+  }
+  return <StatusBadge tone="good">In stock</StatusBadge>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
@@ -37,278 +55,275 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   // Query products with strict role-based data projection
   const products = await listProducts(searchQuery, isOwner);
 
+  const totalCrates = products.reduce((sum, product) => sum + product.currentStock, 0);
+  const outOfStockCount = products.filter((product) => product.isActive && product.currentStock <= 0).length;
+  const lowStockCount = products.filter((product) => product.isActive && product.isLowStock && product.currentStock > 0).length;
+
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen bg-paper text-ink">
       <AppHeader user={user} />
 
-      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8">
-        <div className="space-y-6">
-          {/* Header & Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <main className="mx-auto w-full max-w-[1720px] space-y-6 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+        {/* ---------------- Page heading ---------------- */}
+        <div className="panel">
+          <div className="flex flex-col gap-4 border-b-2 border-rule bg-surface-alt px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Products & Pricing</h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                Catalogue of beverages, current full-crate stock on hand, and active selling prices.
+              <h1 className="text-3xl font-bold">Products &amp; Prices</h1>
+              <p className="mt-1 text-base text-ink-2">
+                Every drink you sell, how many full crates are left, and what each one sells for.
               </p>
             </div>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href="/reports/stock"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
-              >
-                Stock Valuation Report
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Link href="/reports/stock" className="btn">
+                <IconChartBar className="h-5 w-5" />
+                Stock Value Report
               </Link>
-              {!isCloud && (
+              {!isCloud ? (
                 <>
-                  <Link
-                    href="/receiving/new"
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
-                  >
-                    + Receive Stock
+                  <Link href="/receiving/new" className="btn btn-primary">
+                    <IconTruck className="h-5 w-5" />
+                    Receive Stock
                   </Link>
-                  <Link
-                    href="/products/new"
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
-                  >
-                    + Add Product
+                  <Link href="/products/new" className="btn">
+                    <IconPlus className="h-5 w-5" />
+                    Add Product
                   </Link>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
 
-          {/* Search bar */}
-          <div className="flex items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-            <ProductSearch defaultValue={searchQuery} />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              Showing {products.length} {products.length === 1 ? "item" : "items"}
-            </span>
-          </div>
-
-          {/* Product Listing: Mobile Cards + Desktop Table */}
-          {products.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-              <EmptyState
-                icon={<IconPackage className="w-8 h-8 text-zinc-400" />}
-                title={searchQuery ? "No matching products found" : "No products added yet"}
-                description={
-                  searchQuery
-                    ? `We couldn't find any products matching "${searchQuery}". Try adjusting your search query.`
-                    : "Get started by adding beverage products, bottle configurations, and price tiers."
-                }
-                actionLabel={searchQuery || isCloud ? undefined : "+ Add Product"}
-                actionHref={searchQuery || isCloud ? undefined : "/products/new"}
-              />
+          {/* Reading aid: the three numbers that matter before opening anything */}
+          <div className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-3">
+            <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+              <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Products listed</p>
+              <p className="num mt-1 text-2xl font-bold">{products.length}</p>
             </div>
-          ) : (
-            <>
-              {/* Mobile Product Cards (< sm screens) */}
-              <div className="sm:hidden space-y-3">
-                {products.map((product) => {
-                  const retailPrice = product.activePrices.find((p) => p.tier === PriceTier.RETAIL)?.amount;
-                  const isOutOfStock = product.currentStock <= 0;
+            <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+              <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Crates in stock</p>
+              <p className="num mt-1 text-2xl font-bold">{totalCrates}</p>
+            </div>
+            <div className="rounded-lg border-2 border-rule bg-surface-alt px-4 py-3">
+              <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Need attention</p>
+              <p className="num mt-1 text-2xl font-bold text-warn">{outOfStockCount + lowStockCount}</p>
+              <p className="text-sm text-ink-3">
+                {outOfStockCount} out of stock · {lowStockCount} running low
+              </p>
+            </div>
+          </div>
+        </div>
 
-                  return (
-                    <div
-                      key={product.id}
-                      className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                            {product.name}
-                          </h3>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {product.brand} {product.sku && `• SKU: ${product.sku}`}
-                          </p>
-                        </div>
-                        <div>
-                          {!product.isActive ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                              Inactive
-                            </span>
-                          ) : isOutOfStock ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 dark:bg-red-950/70 dark:text-red-300">
-                              Out of Stock
-                            </span>
-                          ) : product.isLowStock ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
-                              Low Stock
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                              In Stock
-                            </span>
-                          )}
-                        </div>
+        {/* ---------------- Search ---------------- */}
+        <div className="panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <ProductSearch defaultValue={searchQuery} />
+          <p className="text-sm text-ink-2">
+            Showing <strong className="num">{products.length}</strong>{" "}
+            {products.length === 1 ? "product" : "products"}
+            {searchQuery ? (
+              <>
+                {" "}
+                for <strong>&ldquo;{searchQuery}&rdquo;</strong>
+              </>
+            ) : null}
+          </p>
+        </div>
+
+        {/* ---------------- Product list ---------------- */}
+        {products.length === 0 ? (
+          <div className="panel p-6">
+            <EmptyState
+              title={searchQuery ? "No product matches that name" : "No products have been added yet"}
+              hint={
+                searchQuery
+                  ? `Nothing in the catalog is called “${searchQuery}”. Check the spelling, or search by brand instead.`
+                  : "Add your drinks one at a time with their crate size and selling price. Stock will start filling in as you record deliveries."
+              }
+              action={
+                !searchQuery && !isCloud ? (
+                  <Link href="/products/new" className="btn btn-primary">
+                    <IconPlus className="h-5 w-5" />
+                    Add the First Product
+                  </Link>
+                ) : searchQuery ? (
+                  <Link href="/products" className="btn">
+                    Show All Products
+                  </Link>
+                ) : undefined
+              }
+            />
+          </div>
+        ) : (
+          <>
+            {/* Phones and tablets: one readable card per product */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
+              {products.map((product) => {
+                const retailPrice = product.activePrices.find((p) => p.tier === PriceTier.RETAIL)?.amount;
+                const isOutOfStock = product.currentStock <= 0;
+
+                return (
+                  <div key={product.id} className="panel flex flex-col">
+                    <div className="flex items-start justify-between gap-2 border-b-2 border-rule px-4 py-3">
+                      <div>
+                        <h3 className="text-lg font-bold leading-snug text-ink">{product.name}</h3>
+                        <p className="text-sm text-ink-3">
+                          {product.brand}
+                          {product.sku ? ` · Code ${product.sku}` : ""}
+                        </p>
                       </div>
+                      {stockBadge(product)}
+                    </div>
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
-                        <div>
-                          <span className="text-zinc-400 block text-[10px] uppercase font-bold">Available</span>
-                          <span className={`text-base font-black tabular-nums ${isOutOfStock ? "text-red-600 dark:text-red-400" : "text-zinc-900 dark:text-zinc-100"}`}>
-                            {product.currentStock} <span className="text-xs font-normal text-zinc-500">crates</span>
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-zinc-400 block text-[10px] uppercase font-bold">Retail Price</span>
-                          <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                            {retailPrice ? `Rs. ${retailPrice}` : "—"}
-                          </span>
-                        </div>
+                    <div className="grid grid-cols-2 gap-3 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Crates available</p>
+                        <p className={`num text-2xl font-bold ${isOutOfStock ? "text-stamp" : "text-ink"}`}>
+                          {product.currentStock}
+                        </p>
                       </div>
-
-                      <div className="pt-2 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 text-xs">
-                        <Link
-                          href="/receiving/new"
-                          className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                        >
-                          + Receive More
-                        </Link>
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Manage & Prices →
-                        </Link>
+                      <div>
+                        <p className="text-sm font-bold uppercase tracking-wider text-ink-3">Retail price</p>
+                        <p className="num text-2xl font-bold text-ink">
+                          {retailPrice ? `Rs. ${retailPrice}` : "Not set"}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              {/* Desktop Table (sm+ screens) */}
-              <div className="hidden sm:block bg-white dark:bg-zinc-900 rounded-xl shadow-xs border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                <ScrollableTable>
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-200 dark:border-zinc-800">
-                      <tr>
-                        <th scope="col" className="px-6 py-3">Product / Brand</th>
-                        <th scope="col" className="px-6 py-3">Current Stock</th>
-                        <th scope="col" className="px-6 py-3">Min. Alert</th>
-                        <th scope="col" className="px-6 py-3">Active Prices (Rs.)</th>
-                        {isOwner && <th scope="col" className="px-6 py-3">Cost Price</th>}
-                        <th scope="col" className="px-6 py-3">Status</th>
-                        <th scope="col" className="px-6 py-3 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                      {products.map((product) => {
-                        const retailPrice = product.activePrices.find((p) => p.tier === PriceTier.RETAIL)?.amount;
-                        const wholesalePrice = product.activePrices.find((p) => p.tier === PriceTier.WHOLESALE)?.amount;
-                        const keyAccountPrice = product.activePrices.find((p) => p.tier === PriceTier.KEY_ACCOUNT)?.amount;
-                        const isOutOfStock = product.currentStock <= 0;
+                    <div className="mt-auto flex flex-wrap gap-2 border-t-2 border-rule px-4 py-3">
+                      <Link href={`/products/${product.id}`} className="btn btn-sm">
+                        Open Prices
+                      </Link>
+                      {!isCloud ? (
+                        <Link href="/receiving/new" className="btn btn-sm">
+                          Receive More
+                        </Link>
+                      ) : null}
+                      {isOutOfStock ? (
+                        <span className="self-center text-sm font-bold text-stamp">Receive a delivery to sell this</span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                        return (
-                          <tr
-                            key={product.id}
-                            className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                {product.name}
-                              </div>
-                              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                {product.brand} {product.sku && `• SKU: ${product.sku}`}
-                              </div>
-                            </td>
+            {/* Desktops: the ledger row, the same numbers in a scannable table */}
+            <div className="panel hidden overflow-hidden lg:block">
+              <ScrollableTable>
+                <table className="ledger">
+                  <caption className="sr-only">
+                    Products, crate stock on hand, minimum alert level, active selling prices and status
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Product</th>
+                      <th scope="col" className="num">
+                        Crates On Hand
+                      </th>
+                      <th scope="col" className="num">
+                        Alert Below
+                      </th>
+                      <th scope="col">Selling Prices</th>
+                      {isOwner ? (
+                        <th scope="col" className="num">
+                          You Paid
+                        </th>
+                      ) : null}
+                      <th scope="col">Status</th>
+                      <th scope="col" className="num">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => {
+                      const retailPrice = product.activePrices.find((p) => p.tier === PriceTier.RETAIL)?.amount;
+                      const wholesalePrice = product.activePrices.find((p) => p.tier === PriceTier.WHOLESALE)?.amount;
+                      const keyAccountPrice = product.activePrices.find((p) => p.tier === PriceTier.KEY_ACCOUNT)?.amount;
+                      const isOutOfStock = product.currentStock <= 0;
 
-                            {/* Current Stock */}
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <span className={`font-black text-base tabular-nums ${isOutOfStock ? "text-red-600 dark:text-red-400" : "text-zinc-900 dark:text-zinc-100"}`}>
-                                  {product.currentStock}
+                      return (
+                        <tr key={product.id}>
+                          <td>
+                            <strong className="text-base">{product.name}</strong>
+                            <span className="block text-sm text-ink-3">
+                              {product.brand}
+                              {product.sku ? ` · Code ${product.sku}` : ""}
+                            </span>
+                          </td>
+
+                          <td className={`num text-xl font-bold ${isOutOfStock ? "text-stamp" : "text-ink"}`}>
+                            {product.currentStock}
+                            <span className="ml-1 text-sm font-semibold text-ink-3">crates</span>
+                          </td>
+
+                          <td className="num text-ink-2">{product.minimumStockLevel}</td>
+
+                          <td>
+                            <div className="flex flex-col gap-0.5 text-sm">
+                              {enabledRates.retail ? (
+                                <span>
+                                  <span className="text-ink-3">Retail </span>
+                                  <strong className="num">{retailPrice ? `Rs. ${retailPrice}` : "not set"}</strong>
                                 </span>
-                                <span className="text-xs text-zinc-500 dark:text-zinc-400">crates</span>
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-4 whitespace-nowrap tabular-nums text-zinc-600 dark:text-zinc-400">
-                              {product.minimumStockLevel} crates
-                            </td>
-
-                            {/* Active Selling Prices */}
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col gap-0.5 text-xs">
-                                {enabledRates.retail && (
-                                  <div>
-                                    <span className="text-zinc-400">Retail:</span>{" "}
-                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                      {retailPrice ? `Rs. ${retailPrice}` : "—"}
-                                    </span>
-                                  </div>
-                                )}
-                                {enabledRates.wholesale && (
-                                  <div>
-                                    <span className="text-zinc-400">Wholesale:</span>{" "}
-                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                      {wholesalePrice ? `Rs. ${wholesalePrice}` : "—"}
-                                    </span>
-                                  </div>
-                                )}
-                                {enabledRates.key && (
-                                  <div>
-                                    <span className="text-zinc-400">Key Account:</span>{" "}
-                                    <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                                      {keyAccountPrice ? `Rs. ${keyAccountPrice}` : "—"}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Owner-only: Purchase Cost */}
-                            {isOwner && (
-                              <td className="px-6 py-4 whitespace-nowrap text-zinc-700 dark:text-zinc-300 font-medium tabular-nums">
-                                Rs. {"latestPurchasePrice" in product ? product.latestPurchasePrice : "0.00"}
-                              </td>
-                            )}
-
-                            {/* Stock Status Badge */}
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {!product.isActive ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                                  Inactive
+                              ) : null}
+                              {enabledRates.wholesale ? (
+                                <span>
+                                  <span className="text-ink-3">Wholesale </span>
+                                  <strong className="num">{wholesalePrice ? `Rs. ${wholesalePrice}` : "not set"}</strong>
                                 </span>
-                              ) : isOutOfStock ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-950/70 dark:text-red-300">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                  Out of Stock
+                              ) : null}
+                              {enabledRates.key ? (
+                                <span>
+                                  <span className="text-ink-3">Key account </span>
+                                  <strong className="num">{keyAccountPrice ? `Rs. ${keyAccountPrice}` : "not set"}</strong>
                                 </span>
-                              ) : product.isLowStock ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                  Low Stock
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  In Stock
-                                </span>
-                              )}
-                            </td>
+                              ) : null}
+                            </div>
+                          </td>
 
-                            {/* Details / Manage link */}
-                            <td className="px-6 py-4 text-right whitespace-nowrap">
-                              <Link
-                                href={`/products/${product.id}`}
-                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                Manage & Prices →
-                              </Link>
+                          {isOwner ? (
+                            <td className="num">
+                              {"latestPurchasePrice" in product
+                                ? `Rs. ${product.latestPurchasePrice}`
+                                : "Not recorded"}
                             </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </ScrollableTable>
-              </div>
-            </>
-          )}
-        </div>
+                          ) : null}
+
+                          <td>{stockBadge(product)}</td>
+
+                          <td className="num">
+                            <Link href={`/products/${product.id}`} className="link-btn">
+                              Open Prices
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </ScrollableTable>
+              {!isCloud ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-rule px-4 py-3">
+                  <Link href="/products/new" className="btn btn-sm">
+                    <IconPlus className="h-5 w-5" />
+                    Add Product
+                  </Link>
+                  <Link href="/receiving/new" className="btn btn-sm">
+                    <IconTruck className="h-5 w-5" />
+                    Receive Stock
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          </>
+        )}
+
+        {products.length === 0 && !searchQuery && !isCloud ? (
+          <p className="text-sm text-ink-3">
+            <IconPackage className="mr-1 inline h-4 w-4" aria-hidden="true" />
+            Every product you add appears in this list with its stock and prices.
+          </p>
+        ) : null}
       </main>
     </div>
   );

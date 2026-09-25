@@ -47,9 +47,9 @@ export function ExecutiveIntelligenceTerminal() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold tracking-tight text-white">PEPSI CO.</span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-blue-400 bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">OS 2.4</span>
+                <span className="text-xs font-mono uppercase tracking-widest text-blue-400 bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">OS 2.4</span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-500">DISTRIBUTION CLUSTER // LIVE</span>
+              <span className="text-xs font-mono text-zinc-500">DISTRIBUTION CLUSTER // LIVE</span>
             </div>
           </div>
 
@@ -136,7 +136,7 @@ export function ExecutiveIntelligenceTerminal() {
         
         {/* Eyebrow Pill */}
         <div className="flex items-center gap-2 mb-6">
-          <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-mono tracking-[0.2em] uppercase bg-blue-500/[0.08] text-blue-400 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+          <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-mono tracking-[0.2em] uppercase bg-blue-500/[0.08] text-blue-400 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
             ENTERPRISE LOGISTICS INTELLIGENCE
           </div>
@@ -163,7 +163,7 @@ export function ExecutiveIntelligenceTerminal() {
             <div className="bg-white/[0.02] border border-white/[0.06] p-1.5 rounded-2xl shadow-xl">
               <div className="bg-[#0D1017] border border-white/[0.04] p-4 rounded-[calc(1rem-0.125rem)] flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider">NET LIQUIDITY IN HAND</div>
+                  <div className="text-xs font-mono uppercase text-zinc-500 tracking-wider">NET LIQUIDITY IN HAND</div>
                   <div className="text-xl font-bold font-mono tracking-tight text-white">Rs. 842,500.00</div>
                 </div>
                 <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -184,7 +184,7 @@ export function ExecutiveIntelligenceTerminal() {
                 {/* Header Meta */}
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-5 mb-6">
                   <div>
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-blue-400">CORE INVENTORY VELOCITY</span>
+                    <span className="text-xs font-mono uppercase tracking-[0.2em] text-blue-400">CORE INVENTORY VELOCITY</span>
                     <h3 className="text-xl font-semibold tracking-tight text-white mt-0.5">Physical Stock & Throughput</h3>
                   </div>
                   <div className="flex items-center gap-2">
@@ -198,31 +198,31 @@ export function ExecutiveIntelligenceTerminal() {
                 {/* Big Metric Display */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                   <div className="bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
-                    <span className="text-[10px] font-mono uppercase text-zinc-500">WAREHOUSE ON-HAND</span>
+                    <span className="text-xs font-mono uppercase text-zinc-500">WAREHOUSE ON-HAND</span>
                     <div className="text-3xl font-bold font-mono text-white mt-1">
                       {reconciledCount.toLocaleString()} <span className="text-sm font-sans font-normal text-zinc-500">crates</span>
                     </div>
-                    <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 mt-1">
+                    <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 mt-1">
                       ↑ 4.2% since morning dispatch
                     </span>
                   </div>
 
                   <div className="bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
-                    <span className="text-[10px] font-mono uppercase text-zinc-500">DISPATCHED IN TRANSIT</span>
+                    <span className="text-xs font-mono uppercase text-zinc-500">DISPATCHED IN TRANSIT</span>
                     <div className="text-3xl font-bold font-mono text-white mt-1">
                       3,420 <span className="text-sm font-sans font-normal text-zinc-500">crates</span>
                     </div>
-                    <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1 mt-1">
+                    <span className="text-xs font-mono text-zinc-400 flex items-center gap-1 mt-1">
                       18 route manifests active
                     </span>
                   </div>
 
                   <div className="bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
-                    <span className="text-[10px] font-mono uppercase text-zinc-500">QUARANTINED / DAMAGED</span>
+                    <span className="text-xs font-mono uppercase text-zinc-500">QUARANTINED / DAMAGED</span>
                     <div className="text-3xl font-bold font-mono text-amber-400 mt-1">
                       42 <span className="text-sm font-sans font-normal text-zinc-500">bottles</span>
                     </div>
-                    <span className="text-[11px] font-mono text-amber-500/90 flex items-center gap-1 mt-1">
+                    <span className="text-xs font-mono text-amber-500/90 flex items-center gap-1 mt-1">
                       Owner inspection pending
                     </span>
                   </div>
@@ -269,7 +269,7 @@ export function ExecutiveIntelligenceTerminal() {
               <div>
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-5 mb-6">
                   <div>
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-400">RECONCILIATION</span>
+                    <span className="text-xs font-mono uppercase tracking-[0.2em] text-cyan-400">RECONCILIATION</span>
                     <h3 className="text-xl font-semibold tracking-tight text-white mt-0.5">Settle-Vault</h3>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
@@ -282,7 +282,7 @@ export function ExecutiveIntelligenceTerminal() {
 
                 {/* Visual Balance Gauge */}
                 <div className="bg-gradient-to-br from-blue-950/40 via-black/40 to-transparent p-5 rounded-2xl border border-white/[0.06] mb-6">
-                  <span className="text-[10px] font-mono uppercase text-zinc-400">DAILY DRAWER NET CASH</span>
+                  <span className="text-xs font-mono uppercase text-zinc-400">DAILY DRAWER NET CASH</span>
                   <div className="text-3xl font-bold font-mono text-white tracking-tight mt-1">
                     Rs. 248,350
                   </div>
@@ -308,7 +308,7 @@ export function ExecutiveIntelligenceTerminal() {
                     <span className="text-zinc-400 font-medium">Customer Credit Due</span>
                     <span className="font-mono text-amber-400 font-semibold">Rs. 112,400</span>
                   </div>
-                  <div className="text-[11px] text-zinc-500 leading-normal">
+                  <div className="text-xs text-zinc-500 leading-normal">
                     24 registered retail distributors have open accounts. Zero unauthorized balances.
                   </div>
                 </div>
@@ -332,7 +332,7 @@ export function ExecutiveIntelligenceTerminal() {
               <div>
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-5 mb-6">
                   <div>
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-indigo-400">REUSABLE ASSETS</span>
+                    <span className="text-xs font-mono uppercase tracking-[0.2em] text-indigo-400">REUSABLE ASSETS</span>
                     <h3 className="text-xl font-semibold tracking-tight text-white mt-0.5">Containers Due</h3>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
@@ -348,7 +348,7 @@ export function ExecutiveIntelligenceTerminal() {
                       <span className="text-xs font-medium text-zinc-300">Plastic Crates Owed</span>
                       <span className="text-xl font-bold font-mono text-white">4,812</span>
                     </div>
-                    <div className="text-[11px] font-mono text-zinc-500">
+                    <div className="text-xs font-mono text-zinc-500">
                       Dispatched: 6,100 | Returned: 1,288
                     </div>
                   </div>
@@ -358,7 +358,7 @@ export function ExecutiveIntelligenceTerminal() {
                       <span className="text-xs font-medium text-zinc-300">Glass Bottles Owed</span>
                       <span className="text-xl font-bold font-mono text-white">32,490</span>
                     </div>
-                    <div className="text-[11px] font-mono text-zinc-500">
+                    <div className="text-xs font-mono text-zinc-500">
                       Dispatched: 38,000 | Returned: 5,510
                     </div>
                   </div>
@@ -378,7 +378,7 @@ export function ExecutiveIntelligenceTerminal() {
               <div>
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-5 mb-6">
                   <div>
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-emerald-400">AUDIT TRAIL // REAL-TIME</span>
+                    <span className="text-xs font-mono uppercase tracking-[0.2em] text-emerald-400">AUDIT TRAIL // REAL-TIME</span>
                     <h3 className="text-xl font-semibold tracking-tight text-white mt-0.5">Live Operational Stream</h3>
                   </div>
                   <span className="text-xs font-mono text-zinc-500">FILTER: ALL TRANSACTIONS</span>
@@ -398,7 +398,7 @@ export function ExecutiveIntelligenceTerminal() {
                       </div>
                       <div className="flex items-center gap-3 self-end sm:self-auto">
                         <span className="text-zinc-500">{evt.time}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                           {evt.status}
                         </span>
                       </div>

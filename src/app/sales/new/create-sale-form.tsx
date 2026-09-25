@@ -79,8 +79,6 @@ export function CreateSaleForm({
   // Invoice confirmation modal
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
-  // Success toast after submission
-  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Filter active sale types based on settings
   const enabledRates = containerSettings?.enabledRates || { retail: true, wholesale: true, key: true };
@@ -338,22 +336,23 @@ export function CreateSaleForm({
     }, 50);
   };
 
-  // Auto-reset after successful submission
+  // After successful submission → redirect to receipt page for print
   useEffect(() => {
     if (state?.success && state.saleId && state.saleId !== lastHandledSaleId) {
       setLastHandledSaleId(state.saleId);
-      const invNum = state.invoiceNumber || state.saleId.slice(0, 8);
-      setSuccessToast(`Sale #${invNum} recorded successfully.`);
+      // Clear the working ticket so a stale basket is never left behind.
       handleResetForNewSale();
-      // Auto-dismiss toast after 5 seconds
-      setTimeout(() => setSuccessToast(null), 5000);
+      // Navigate to receipt page with ?print=1 to auto-trigger print dialog.
+      // The receipt page has a "New Sale" button to return here.
+      setShowInvoiceModal(false);
+      router.push(`/sales/${state.saleId}?print=1`);
     }
   }, [
     state?.success,
     state?.saleId,
-    state?.invoiceNumber,
     lastHandledSaleId,
   ]);
+
 
   // Keyboard shortcut listener
   useEffect(() => {
@@ -522,58 +521,37 @@ export function CreateSaleForm({
 
   return (
     <>
-      {/* ================================================================ */}
-      {/* Success Toast Banner                                              */}
-      {/* ================================================================ */}
-      {successToast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-semibold flex items-center justify-between shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <IconCheck className="w-4 h-4 stroke-[3] shrink-0" />
-            <span>{successToast}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSuccessToast(null)}
-            className="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-800 text-emerald-800 dark:text-emerald-200 cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+
 
       {/* ================================================================ */}
       {/* Invoice Confirmation Modal                                        */}
       {/* ================================================================ */}
       {showInvoiceModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60"
           role="dialog"
           aria-modal="true"
           aria-label="Invoice confirmation"
         >
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+          <div className="bg-surface text-ink rounded-lg border-2 border-rule-strong w-full max-w-lg max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b-2 border-rule-strong shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                  <IconReceipt className="w-4 h-4" />
+                <div className="w-10 h-10 rounded bg-navy text-white flex items-center justify-center">
+                  <IconReceipt className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100">Confirm Invoice</h2>
-                  <p className="text-[11px] text-zinc-400">Review prices before recording sale</p>
+                  <h2 className="text-lg font-extrabold text-ink">Confirm Invoice</h2>
+                  <p className="text-[0.9375rem] text-ink-2">Check the prices below, then record the sale.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowInvoiceModal(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                aria-label="Close modal"
+                className="btn btn-sm !min-h-11 !px-2"
+                aria-label="Close the invoice confirmation and go back to editing"
               >
-                <IconClose className="w-4 h-4" />
+                <IconClose className="w-5 h-5" />
               </button>
             </div>
 
@@ -582,20 +560,20 @@ export function CreateSaleForm({
               {/* Customer & Sale Type row */}
               <div className="flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Customer</span>
+                  <span className="text-zinc-400 block text-xs uppercase font-bold tracking-wider">Customer</span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">
                     {selectedCustomer ? selectedCustomer.name : "Walk-in Customer"}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Price Tier</span>
+                  <span className="text-zinc-400 block text-xs uppercase font-bold tracking-wider">Price Tier</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400 uppercase">{saleType.replace("_", " ")}</span>
                 </div>
               </div>
 
               {/* Line Items — editable prices */}
               <div className="space-y-1.5">
-                <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-1 pb-1 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="grid grid-cols-12 gap-2 text-[0.875rem] font-bold uppercase tracking-wider text-ink-2 px-1 pb-1 border-b-2 border-rule-strong">
                   <span className="col-span-5">Product</span>
                   <span className="col-span-2 text-center">Qty</span>
                   <span className="col-span-3 text-right">Unit Price</span>
@@ -612,13 +590,13 @@ export function CreateSaleForm({
                     return (
                       <div
                         key={item.key}
-                        className="grid grid-cols-12 gap-2 items-center py-1.5 px-1 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                        className="ledger-row grid grid-cols-12 gap-2 items-center py-3 px-1"
                       >
                         <div className="col-span-5 min-w-0">
-                          <div className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate">{prod.name}</div>
-                          <div className="text-[10px] text-zinc-400">{prod.sku}</div>
+                          <div className="font-bold text-[0.9375rem] text-ink break-words">{prod.name}</div>
+                          <div className="text-[0.875rem] text-ink-2 num break-all">{prod.sku}</div>
                         </div>
-                        <div className="col-span-2 text-center text-xs font-black tabular-nums text-zinc-800 dark:text-zinc-200">
+                        <div className="col-span-2 text-center text-[1.0625rem] font-black num text-ink">
                           {item.quantity}
                         </div>
                         <div className="col-span-3 flex justify-end">
@@ -630,11 +608,11 @@ export function CreateSaleForm({
                             onChange={(e) =>
                               handleUpdateItemPrice(realIdx, parseFloat(e.target.value) || 0)
                             }
-                            className="w-full px-2 py-1 text-xs font-bold text-right tabular-nums rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            aria-label={`Unit price for ${prod.name}`}
+                            className="field !py-2 !px-2 !text-[0.9375rem] text-right num"
+                            aria-label={`Unit price per crate for ${prod.name}`}
                           />
                         </div>
-                        <div className="col-span-2 text-right text-xs font-black tabular-nums text-zinc-900 dark:text-zinc-100">
+                        <div className="col-span-2 text-right text-[1.0625rem] font-black num text-ink">
                           {formatCurrency(lineTotal)}
                         </div>
                       </div>
@@ -686,11 +664,11 @@ export function CreateSaleForm({
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 flex gap-3 shrink-0">
+            <div className="px-5 py-4 border-t-2 border-rule-strong flex flex-wrap gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowInvoiceModal(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="btn flex-1 min-w-40"
               >
                 ← Back to Edit
               </button>
@@ -698,7 +676,7 @@ export function CreateSaleForm({
                 type="button"
                 onClick={() => formRef.current?.requestSubmit()}
                 disabled={isPending}
-                className="flex-[2] py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-extrabold text-sm shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="btn btn-primary flex-[2] min-w-52"
               >
                 {isPending ? (
                   <>
@@ -708,8 +686,8 @@ export function CreateSaleForm({
                 ) : (
                   <>
                     <IconCheck className="w-4 h-4 stroke-[3]" />
-                    <span>Confirm & Record Sale</span>
-                    <kbd className="text-[10px] font-mono font-bold opacity-80 bg-white/20 px-1.5 py-0.5 rounded">Ctrl+↵</kbd>
+                    <span>Confirm &amp; Record Sale</span>
+                    <kbd className="text-[0.875rem] font-mono font-bold opacity-80 bg-white/20 px-1.5 py-0.5 rounded">Ctrl+↵</kbd>
                   </>
                 )}
               </button>
@@ -735,16 +713,16 @@ export function CreateSaleForm({
         {(clientError || state?.error) && (
           <div
             role="alert"
-            className="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-sm font-medium flex items-center justify-between shadow-xs"
+            className="mb-4 p-4 rounded-lg bg-stamp-wash border-2 border-stamp text-stamp font-medium flex flex-wrap items-center justify-between gap-3"
           >
             <div className="flex items-center gap-2">
-              <IconAlertTriangle className="w-4 h-4 shrink-0" />
+              <IconAlertTriangle className="w-5 h-5 shrink-0" />
               <span>{clientError || state?.error}</span>
             </div>
             <button
               type="button"
               onClick={() => setClientError(null)}
-              className="text-xs font-semibold px-2.5 py-1 rounded bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-800 dark:text-red-200 cursor-pointer"
+              className="btn btn-sm"
             >
               Dismiss
             </button>
@@ -752,34 +730,33 @@ export function CreateSaleForm({
         )}
 
         {/* Mobile Tab Switcher */}
-        <div className="lg:hidden flex items-center gap-2 mb-4 p-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-xl">
+        <div className="lg:hidden grid grid-cols-2 gap-2 mb-4">
           <button
             type="button"
             onClick={() => setMobileTab("catalog")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              mobileTab === "catalog"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
-                : "text-zinc-600 dark:text-zinc-400"
+            aria-pressed={mobileTab === "catalog"}
+            className={`btn ${
+              mobileTab === "catalog" ? "btn-primary" : ""
             }`}
           >
-            <IconPackage className="w-3.5 h-3.5" />
+            <IconPackage className="w-4 h-4" />
             <span>Catalog ({products.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setMobileTab("ticket")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              mobileTab === "ticket"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "text-zinc-600 dark:text-zinc-400"
+            aria-pressed={mobileTab === "ticket"}
+            className={`btn flex-col !items-start !justify-center gap-0 ${
+              mobileTab === "ticket" ? "btn-primary" : ""
             }`}
           >
-            <IconReceipt className="w-3.5 h-3.5" />
-            <span>Ticket</span>
-            <span className="px-1.5 rounded-full bg-white/20 text-[11px] font-black tabular-nums">
-              {totalCratesSold} crates
+            <span className="flex items-center gap-1.5 text-[0.95rem]">
+              <IconReceipt className="w-4 h-4" />
+              <span>Ticket</span>
             </span>
-            <span className="font-bold">{formatCurrency(totalAmount)}</span>
+            <span className="num text-[0.95rem] font-black">
+              {totalCratesSold} crates — {formatCurrency(totalAmount)}
+            </span>
           </button>
         </div>
 
@@ -790,142 +767,156 @@ export function CreateSaleForm({
           {/* ============================================================= */}
           <div className={`lg:col-span-7 xl:col-span-7 2xl:col-span-8 space-y-3 ${mobileTab === "ticket" ? "hidden lg:block" : "block"}`}>
             {/* Search & Brand Filter Toolbar */}
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Search Bar */}
-                <div className="relative flex-1">
-                  <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const q = searchQuery.trim().toLowerCase();
-                        if (!q) return;
+            <div className="panel">
+              <div className="panel-body space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                  {/* Search Bar */}
+                  <div className="flex-1">
+                    <label
+                      htmlFor="pos-product-search"
+                      className="block text-[0.9375rem] font-bold text-ink-2 mb-1"
+                    >
+                      Find a Product <span className="text-ink-3 font-semibold">(name or scan barcode)</span>
+                    </label>
+                    <div className="relative">
+                      <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-3 pointer-events-none" />
+                      <input
+                        id="pos-product-search"
+                        ref={searchInputRef}
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const q = searchQuery.trim().toLowerCase();
+                            if (!q) return;
 
-                        const exactSku = products.find((p) => p.sku && p.sku.toLowerCase() === q);
-                        if (exactSku && exactSku.currentStock > 0) {
-                          handleAddProductToTicket(exactSku, 1);
-                          setSearchQuery("");
-                          return;
-                        }
+                            const exactSku = products.find((p) => p.sku && p.sku.toLowerCase() === q);
+                            if (exactSku && exactSku.currentStock > 0) {
+                              handleAddProductToTicket(exactSku, 1);
+                              setSearchQuery("");
+                              return;
+                            }
 
-                        const exactName = products.find((p) => p.name.toLowerCase() === q);
-                        if (exactName && exactName.currentStock > 0) {
-                          handleAddProductToTicket(exactName, 1);
-                          setSearchQuery("");
-                          return;
-                        }
+                            const exactName = products.find((p) => p.name.toLowerCase() === q);
+                            if (exactName && exactName.currentStock > 0) {
+                              handleAddProductToTicket(exactName, 1);
+                              setSearchQuery("");
+                              return;
+                            }
 
-                        if (filteredProducts.length === 1 && filteredProducts[0].currentStock > 0) {
-                          handleAddProductToTicket(filteredProducts[0], 1);
-                          setSearchQuery("");
-                          return;
-                        }
-                      }
-                    }}
-                    placeholder="Search or scan barcode (F2)…"
-                    className="w-full pl-10 pr-16 py-2.5 text-sm font-medium rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
-                  />
+                            if (filteredProducts.length === 1 && filteredProducts[0].currentStock > 0) {
+                              handleAddProductToTicket(filteredProducts[0], 1);
+                              setSearchQuery("");
+                              return;
+                            }
+                          }
+                        }}
+                        placeholder="Type a product name…"
+                        autoComplete="off"
+                        className="field !pl-11 !pr-14"
+                      />
 
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                    {searchQuery ? (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery("")}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded transition-colors"
-                        aria-label="Clear search"
-                      >
-                        <IconClose className="w-3.5 h-3.5" />
-                      </button>
-                    ) : (
-                      <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
-                        F2
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        {searchQuery ? (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="btn btn-sm !min-h-11 !px-2 !py-1"
+                            aria-label="Clear the product search box"
+                          >
+                            <IconClose className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[0.9375rem] font-mono font-bold rounded border border-rule bg-surface-alt text-ink-2">
+                            F2
+                          </kbd>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pb-1">
+                    <span className="text-[0.9375rem] text-ink-2">
+                      Showing <strong className="text-ink">{filteredProducts.length}</strong> of {products.length} products
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShortcutsModalOpen(true)}
+                      className="btn"
+                      title="Keyboard Shortcuts (?)"
+                    >
+                      <IconKeyboard className="w-4 h-4" />
+                      <span>Keys</span>
+                      <kbd className="px-1.5 py-0.5 text-[0.9375rem] font-mono font-bold bg-surface-alt border border-rule rounded">
+                        ?
                       </kbd>
-                    )}
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-2 text-xs text-zinc-500">
-                  <span className="hidden sm:inline">
-                    <strong className="text-zinc-800 dark:text-zinc-200">{filteredProducts.length}</strong> products
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShortcutsModalOpen(true)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-300 font-semibold shadow-2xs transition-colors cursor-pointer"
-                    title="Keyboard Shortcuts (?)"
-                  >
-                    <IconKeyboard className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>Keys</span>
-                    <kbd className="px-1 text-[10px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">?</kbd>
-                  </button>
-                </div>
-              </div>
-
-              {/* Brand Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBrand("ALL")}
-                  className={`px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
-                    selectedBrand === "ALL"
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs"
-                      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-750"
-                  }`}
-                >
-                  All
-                </button>
-                {brands.map((b) => {
-                  const isSelected = selectedBrand.toLowerCase() === b.toLowerCase();
-                  const style = getBrandStyle(b);
-                  return (
+                {/* Brand Filter Pills */}
+                <div>
+                  <span className="block text-[0.9375rem] font-bold text-ink-2 mb-1">Filter by Brand</span>
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
-                      key={b}
                       type="button"
-                      onClick={() => setSelectedBrand(b)}
-                      className={`px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
-                        isSelected
-                          ? `${style.accent} text-white shadow-xs`
-                          : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-750"
+                      onClick={() => setSelectedBrand("ALL")}
+                      aria-pressed={selectedBrand === "ALL"}
+                      className={`btn ${
+                        selectedBrand === "ALL" ? "btn-primary" : ""
                       }`}
                     >
-                      {b}
+                      All Brands
                     </button>
-                  );
-                })}
+                    {brands.map((b) => {
+                      const isSelected = selectedBrand.toLowerCase() === b.toLowerCase();
+                      return (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setSelectedBrand(b)}
+                          aria-pressed={isSelected}
+                          className={`btn ${isSelected ? "btn-primary" : ""}`}
+                        >
+                          {b}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* ============================================================= */}
             {/* Product List (dense rows)                                      */}
             {/* ============================================================= */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
+            <div className="panel">
               {filteredProducts.length === 0 ? (
-                <div className="py-14 text-center p-8">
-                  <IconPackage className="w-10 h-10 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-                  <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">No products match</h4>
-                  <p className="text-xs text-zinc-500 mt-1">Try a different keyword or brand.</p>
+                <div className="py-12 text-center p-8">
+                  <IconPackage className="w-10 h-10 text-ink-3 mx-auto mb-2" />
+                  <h4 className="text-lg font-bold text-ink">No products match your search</h4>
+                  <p className="text-[0.9375rem] text-ink-2 mt-1">
+                    Check the spelling, or clear the filters to see all products.
+                  </p>
                   <button
                     type="button"
                     onClick={() => { setSearchQuery(""); setSelectedBrand("ALL"); }}
-                    className="mt-3 px-3 py-1.5 text-xs font-bold rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 cursor-pointer"
+                    className="btn mt-4"
                   >
-                    Clear Filters
+                    Clear Search and Brand Filter
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div>
                   {/* Column headers */}
-                  <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50">
+                  <div className="ledger-head grid grid-cols-12 gap-2 px-4">
                     <div className="col-span-5">Product</div>
                     <div className="col-span-2 hidden sm:block">Type</div>
                     <div className="col-span-2 text-center hidden sm:block">Stock</div>
                     <div className="col-span-2 sm:col-span-1 text-right">Price</div>
-                    <div className="col-span-5 sm:col-span-2 text-right">Qty</div>
+                    <div className="col-span-5 sm:col-span-2 text-right">Quantity</div>
                   </div>
 
                   {filteredProducts.map((prod) => {
@@ -941,30 +932,28 @@ export function CreateSaleForm({
                     return (
                       <div
                         key={prod.id}
-                        className={`grid grid-cols-12 gap-2 px-4 py-2.5 items-center transition-colors select-none ${
-                          !inStock ? "opacity-50" : ""
-                        } ${
-                          qtyInCart > 0
-                            ? "bg-blue-50/60 dark:bg-blue-950/20"
-                            : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                        className={`ledger-row grid grid-cols-12 gap-2 px-4 py-3 items-center ${
+                          qtyInCart > 0 ? "ledger-row-active" : ""
                         }`}
                       >
                         {/* Product Name + Brand + SKU */}
-                        <div className="col-span-5 min-w-0 flex items-center gap-2">
+                        <div className="col-span-5 min-w-0 flex items-start gap-2">
                           {qtyInCart > 0 && (
-                            <span className="shrink-0 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-                              <IconCheck className="w-2.5 h-2.5 text-white stroke-[3]" />
+                            <span className="shrink-0 mt-1 w-5 h-5 bg-navy text-white rounded-full flex items-center justify-center">
+                              <IconCheck className="w-3 h-3 stroke-[3]" />
                             </span>
                           )}
                           <div className="min-w-0">
-                            <div className={`text-xs font-bold truncate ${qtyInCart > 0 ? "text-blue-700 dark:text-blue-300" : "text-zinc-900 dark:text-zinc-100"}`}>
+                            <div className={`text-[0.9375rem] font-bold break-words ${qtyInCart > 0 ? "text-navy" : "text-ink"}`}>
                               {prod.name}
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${brandStyle.bg} ${brandStyle.text} ${brandStyle.border}`}>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className={`text-[0.875rem] font-black uppercase px-1.5 py-0.5 rounded border ${brandStyle.bg} ${brandStyle.text} ${brandStyle.border}`}>
                                 {prod.brand}
                               </span>
-                              {prod.sku && <span className="text-[10px] text-zinc-400 truncate hidden sm:inline">{prod.sku}</span>}
+                              {prod.sku && (
+                                <span className="text-[0.875rem] text-ink-2 num break-all">{prod.sku}</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -972,13 +961,13 @@ export function CreateSaleForm({
                         {/* Packaging Type */}
                         <div className="col-span-2 hidden sm:flex items-center">
                           {isGlass ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/40">
-                              <IconBottle className="w-3 h-3" />
-                              <span>{prod.crateConfig?.bottlesPerCrate || 24}b</span>
+                            <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-navy-wash text-navy border border-navy/30">
+                              <IconBottle className="w-3.5 h-3.5" />
+                              <span>Glass {prod.crateConfig?.bottlesPerCrate || 24}b</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                              <IconPackage className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-surface-alt text-ink-2 border border-rule">
+                              <IconPackage className="w-3.5 h-3.5" />
                               <span>PET</span>
                             </span>
                           )}
@@ -986,36 +975,33 @@ export function CreateSaleForm({
 
                         {/* Stock Level */}
                         <div className="col-span-2 text-center hidden sm:block">
-                          <span
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                              inStock
-                                ? isLowStock
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                                  : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
-                            }`}
-                          >
-                            {inStock ? prod.currentStock : "Out"}
-                          </span>
+                          {inStock ? (
+                            <span className={`badge ${isLowStock ? "badge-warn" : "badge-good"}`}>
+                              {prod.currentStock} crates
+                            </span>
+                          ) : (
+                            <span className="badge badge-bad">Out of stock</span>
+                          )}
                         </div>
 
                         {/* Unit Price */}
                         <div className="col-span-2 sm:col-span-1 text-right">
-                          <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 tabular-nums">
+                          <span className="text-[0.9375rem] font-black text-ink num">
                             {formatCurrency(currentPrice)}
                           </span>
+                          <span className="block text-[0.875rem] text-ink-2">per crate</span>
                         </div>
 
                         {/* Quantity Stepper */}
-                        <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1">
+                        <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1.5">
                           {inStock ? (
                             qtyInCart > 0 ? (
-                              <div className="flex items-center bg-white dark:bg-zinc-800 border border-blue-300 dark:border-blue-700 rounded-lg p-0.5 shadow-xs">
+                              <div className="flex items-center bg-surface border-2 border-navy rounded-md">
                                 <button
                                   type="button"
                                   onClick={() => handleAddProductToTicket(prod, -1)}
-                                  className="w-7 h-7 rounded flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 active:scale-95 transition-transform"
-                                  aria-label="Decrease quantity"
+                                  className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
+                                  aria-label={`Remove one crate of ${prod.name}`}
                                 >
                                   −
                                 </button>
@@ -1028,14 +1014,14 @@ export function CreateSaleForm({
                                     handleUpdateItemQuantity(cartIdx, parseInt(e.target.value, 10) || 1)
                                   }
                                   onClick={(e) => (e.target as HTMLInputElement).select()}
-                                  className="w-9 text-center text-xs font-black tabular-nums bg-transparent focus:outline-none text-blue-700 dark:text-blue-300"
-                                  aria-label={`Quantity for ${prod.name}`}
+                                  className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none text-navy"
+                                  aria-label={`Quantity of ${prod.name} in the ticket`}
                                 />
                                 <button
                                   type="button"
                                   onClick={() => handleAddProductToTicket(prod, 1)}
-                                  className="w-7 h-7 rounded flex items-center justify-center font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 active:scale-95 transition-transform"
-                                  aria-label="Increase quantity"
+                                  className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
+                                  aria-label={`Add one more crate of ${prod.name}`}
                                 >
                                   +
                                 </button>
@@ -1044,15 +1030,14 @@ export function CreateSaleForm({
                               <button
                                 type="button"
                                 onClick={() => handleAddProductToTicket(prod, 1)}
-                                className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white dark:bg-blue-950/60 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
-                                aria-label={`Add ${prod.name}`}
+                                className="btn btn-primary"
                               >
-                                <IconPlus className="w-3 h-3" />
-                                Add
+                                <IconPlus className="w-4 h-4" />
+                                Add to Ticket
                               </button>
                             )
                           ) : (
-                            <span className="text-[10px] text-zinc-400 italic">Out of stock</span>
+                            <span className="text-[0.9375rem] text-ink-3 font-semibold italic">Out of stock</span>
                           )}
                         </div>
                       </div>
@@ -1071,16 +1056,16 @@ export function CreateSaleForm({
               mobileTab === "catalog" ? "hidden lg:block" : "block"
             }`}
           >
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-md p-5 space-y-4">
+            <div className="panel shadow-[0_2px_0_0_var(--rule)]">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div className="panel-head flex items-center justify-between !py-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-2xs">
-                    POS
+                  <div className="w-9 h-9 rounded bg-navy text-white flex items-center justify-center font-black text-[0.9375rem] num">
+                    TKT
                   </div>
                   <div>
-                    <h2 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100">Order Ticket</h2>
-                    <span className="text-[11px] text-zinc-400">
+                    <h2 className="text-lg font-extrabold text-ink leading-tight">Order Ticket</h2>
+                    <span className="text-[0.9375rem] text-ink-2 num">
                       {items.length} item{items.length !== 1 ? "s" : ""} • {totalCratesSold} crate{totalCratesSold !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -1090,183 +1075,188 @@ export function CreateSaleForm({
                   <button
                     type="button"
                     onClick={handleClearCart}
-                    className="text-xs font-semibold text-zinc-400 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded transition-colors cursor-pointer"
+                    className="btn btn-danger btn-sm"
                   >
-                    Clear All
+                    Clear Ticket
                   </button>
                 )}
               </div>
 
-              {/* Customer Selector & Pricing Tier */}
-              <div className="space-y-2 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-750">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                    <span>Customer</span>
-                    <kbd className="px-1 py-0.5 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
-                      F4
-                    </kbd>
-                  </label>
-                  {customerId && (
-                    <button
-                      type="button"
-                      onClick={() => handleCustomerChange("")}
-                      className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Switch to Walk-in
-                    </button>
+              <div className="panel-body space-y-4">
+                {/* Customer Selector & Pricing Tier */}
+                <div className="space-y-2 bg-surface-alt p-3 rounded-md border border-rule">
+                  <div className="flex items-center justify-between gap-2">
+                    <label htmlFor="pos-customer" className="text-[0.9375rem] font-bold text-ink-2 flex items-center gap-1.5">
+                      <span>Customer</span>
+                      <kbd className="px-1.5 py-0.5 text-[0.875rem] font-mono font-bold bg-surface border border-rule rounded">
+                        F4
+                      </kbd>
+                    </label>
+                    {customerId && (
+                      <button
+                        type="button"
+                        onClick={() => handleCustomerChange("")}
+                        className="link-btn"
+                      >
+                        Switch to Walk-in
+                      </button>
+                    )}
+                  </div>
+
+                  <select
+                    id="pos-customer"
+                    ref={customerSelectRef}
+                    value={customerId}
+                    onChange={(e) => handleCustomerChange(e.target.value)}
+                    className="field"
+                  >
+                    <option value="">Walk-in Customer (Cash Counter)</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.priceTier}) {c.phone ? `— ${c.phone}` : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedCustomer && (
+                    <div className="pt-2 border-t border-rule grid grid-cols-3 gap-2 text-[0.9375rem]">
+                      <div>
+                        <span className="text-ink-2 block text-[0.875rem]">Owes Us</span>
+                        <span className="font-extrabold text-warn num text-[1.0625rem]">
+                          {formatCurrency(selectedCustomer.outstandingBalance)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-ink-2 block text-[0.875rem]">Price Tier</span>
+                        <span className="font-extrabold text-ink uppercase">
+                          {selectedCustomer.priceTier}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-ink-2 block text-[0.875rem]">Credit</span>
+                        <span className={`font-extrabold ${selectedCustomer.creditAllowed ? "text-good" : "text-stamp"}`}>
+                          {selectedCustomer.creditAllowed ? "Allowed" : "Cash Only"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Price Tier Override Pills */}
+                  <div>
+                    <span className="text-[0.9375rem] text-ink-2 font-bold block mb-1">Price to charge</span>
+                    <div className="flex flex-wrap gap-2">
+                      {allowedSaleTypes.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => handleSaleTypeChange(t)}
+                          aria-pressed={saleType === t}
+                          className={`btn ${saleType === t ? "btn-primary" : ""}`}
+                        >
+                          {t.replace("_", " ")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ticket Cart Line Items List */}
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                  {items.length === 0 ? (
+                    <div className="py-8 text-center border-2 border-dashed border-rule rounded-md p-4">
+                      <IconReceipt className="w-9 h-9 text-ink-3 mx-auto mb-2" />
+                      <p className="text-[1.0625rem] font-bold text-ink">Ticket is empty</p>
+                      <p className="text-[0.9375rem] text-ink-2 mt-1">
+                        Use the product list on the left to add items.
+                      </p>
+                    </div>
+                  ) : (
+                    items.map((item, idx) => {
+                      const prod = products.find((p) => p.id === item.productId);
+                      if (!prod) return null;
+                      const lineTotal = item.quantity * item.unitPrice;
+
+                      return (
+                        <div
+                          key={item.key}
+                          className="p-3 rounded-md bg-surface-alt border border-rule flex items-center justify-between gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-ink text-[0.9375rem] break-words">
+                              {prod.name}
+                            </div>
+                            <div className="text-[0.9375rem] text-ink-2 num mt-0.5">
+                              {formatCurrency(item.unitPrice)} / crate
+                            </div>
+                            <div className="text-[1.0625rem] font-black text-ink num mt-1">
+                              Line total: {formatCurrency(lineTotal)}
+                            </div>
+                          </div>
+
+                          {/* Stepper */}
+                          <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-1 bg-surface border-2 border-rule-strong rounded-md">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateItemQuantity(idx, item.quantity - 1)}
+                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
+                                aria-label={`Remove one crate of ${prod.name} from the ticket`}
+                              >
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                max={prod.currentStock}
+                                value={item.quantity}
+                                onChange={(e) => handleUpdateItemQuantity(idx, parseInt(e.target.value, 10) || 1)}
+                                className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none"
+                                aria-label={`Quantity of ${prod.name} in the ticket`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateItemQuantity(idx, item.quantity + 1)}
+                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
+                                aria-label={`Add one more crate of ${prod.name} to the ticket`}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="btn btn-sm !min-h-11 !px-2"
+                              title={`Remove ${prod.name} from the ticket`}
+                            >
+                              <IconTrash className="w-4 h-4" />
+                              <span className="sr-only">Remove {prod.name} from the ticket</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
 
-                <select
-                  ref={customerSelectRef}
-                  value={customerId}
-                  onChange={(e) => handleCustomerChange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Walk-in Customer (Cash Counter)</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.priceTier}) {c.phone ? `— ${c.phone}` : ""}
-                    </option>
-                  ))}
-                </select>
-
-                {selectedCustomer && (
-                  <div className="pt-2 border-t border-zinc-200/70 dark:border-zinc-700/60 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-zinc-500 block text-[10px]">Owes Us</span>
-                      <span className="font-extrabold text-amber-700 dark:text-amber-400 tabular-nums">
-                        {formatCurrency(selectedCustomer.outstandingBalance)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-500 block text-[10px]">Tier</span>
-                      <span className="font-extrabold text-zinc-800 dark:text-zinc-200 uppercase">
-                        {selectedCustomer.priceTier}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-500 block text-[10px]">Credit</span>
-                      <span className={`font-extrabold ${selectedCustomer.creditAllowed ? "text-emerald-600" : "text-red-500"}`}>
-                        {selectedCustomer.creditAllowed ? "Allowed" : "Cash Only"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Price Tier Override Pills */}
-                <div className="pt-1 flex items-center gap-1.5">
-                  <span className="text-[10px] text-zinc-400 uppercase font-semibold">Tier:</span>
-                  {allowedSaleTypes.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => handleSaleTypeChange(t)}
-                      className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md cursor-pointer transition-colors ${
-                        saleType === t
-                          ? "bg-blue-600 text-white shadow-2xs"
-                          : "bg-white dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-100"
-                      }`}
-                    >
-                      {t.replace("_", " ")}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Ticket Cart Line Items List */}
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {items.length === 0 ? (
-                  <div className="py-8 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
-                    <IconReceipt className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-1.5" />
-                    <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Cart is empty</p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5">
-                      Use the product list on the left to add items.
-                    </p>
-                  </div>
-                ) : (
-                  items.map((item, idx) => {
-                    const prod = products.find((p) => p.id === item.productId);
-                    if (!prod) return null;
-                    const lineTotal = item.quantity * item.unitPrice;
-
-                    return (
-                      <div
-                        key={item.key}
-                        className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                            {prod.name}
-                          </div>
-                          <div className="text-[11px] text-zinc-400">
-                            {formatCurrency(item.unitPrice)} / crate
-                          </div>
-                        </div>
-
-                        {/* Stepper */}
-                        <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-0.5">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateItemQuantity(idx, item.quantity - 1)}
-                            className="w-6 h-6 rounded flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            max={prod.currentStock}
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateItemQuantity(idx, parseInt(e.target.value, 10) || 1)}
-                            className="w-9 text-center text-xs font-black tabular-nums bg-transparent focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateItemQuantity(idx, item.quantity + 1)}
-                            className="w-6 h-6 rounded flex items-center justify-center font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40"
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        {/* Line Subtotal */}
-                        <div className="text-right shrink-0 w-20">
-                          <div className="font-black text-zinc-900 dark:text-zinc-100 tabular-nums">
-                            {formatCurrency(lineTotal)}
-                          </div>
-                        </div>
-
-                        {/* Remove Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="text-zinc-400 hover:text-red-500 p-1"
-                          title="Remove item"
-                        >
-                          <IconTrash className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
               {/* Container Returns & Discounts */}
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
+              <div className="pt-3 border-t-2 border-rule-strong space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="font-bold text-zinc-700 dark:text-zinc-300 block">
+                    <label
+                      htmlFor="pos-returnable-crates"
+                      className="font-bold text-ink block text-[0.9375rem]"
+                    >
                       {containerSettings?.enabledTypes?.plastic ? "Empty Crates Received:" : "Empty Returnable Crates:"}
-                    </span>
-                    <span className="text-[11px] text-zinc-400">
+                    </label>
+                    <span className="text-[0.875rem] text-ink-2 block">
                       {returnableSummary.returnableCrates > 0
                         ? `Returnable sold: ${returnableSummary.returnableCrates} crates (${returnableSummary.expectedBottles} bottles)`
                         : "No returnable crates (PET/Can)"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <input
+                      id="pos-returnable-crates"
                       type="number"
                       min="0"
                       value={
@@ -1281,61 +1271,64 @@ export function CreateSaleForm({
                         setGlassBottles(count * bpc);
                         setPlasticCrates(plasticActive ? count : 0);
                       }}
-                      className="w-16 px-2 py-1 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center"
+                      className="field !w-20 !px-2 text-center num"
                       placeholder="0"
                     />
                     <button
                       type="button"
                       onClick={handleAutoFillContainers}
                       disabled={returnableSummary.returnableCrates === 0}
-                      className="px-2 py-1 text-[10px] font-bold rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="btn"
                       title="Match with returnable crates sold (F7)"
                     >
                       <span>Match ({returnableSummary.returnableCrates})</span>
-                      <kbd className="text-[9px] font-mono opacity-60">F7</kbd>
+                      <kbd className="text-[0.875rem] font-mono opacity-70">F7</kbd>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-zinc-600 dark:text-zinc-400">Special Discount (Rs.):</span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="pos-discount" className="font-bold text-ink-2 text-[0.9375rem]">
+                    Special Discount (Rs.):
+                  </label>
                   <input
+                    id="pos-discount"
                     type="number"
                     min="0"
                     step="any"
                     value={discount}
                     onChange={(e) => setDiscount(e.target.value)}
-                    className="w-24 px-2 py-1 text-xs font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-right tabular-nums"
+                    className="field !w-32 text-right num"
                     placeholder="0"
                   />
                 </div>
               </div>
 
               {/* Totals & Grand Total Banner */}
-              <div className="p-4 rounded-xl bg-zinc-900 dark:bg-zinc-950 text-white space-y-2 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-zinc-400">
+              <div className="p-4 rounded-md bg-navy-deep text-white space-y-2">
+                <div className="flex items-center justify-between text-[0.9375rem] text-white/80">
                   <span>Subtotal ({totalCratesSold} crates):</span>
-                  <span className="tabular-nums font-semibold">{formatCurrency(subtotal)}</span>
+                  <span className="num font-semibold">{formatCurrency(subtotal)}</span>
                 </div>
                 {discountNum > 0 && (
-                  <div className="flex items-center justify-between text-xs text-emerald-400">
+                  <div className="flex items-center justify-between text-[0.9375rem] text-white/90">
                     <span>Discount:</span>
-                    <span className="tabular-nums font-semibold">− {formatCurrency(discountNum)}</span>
+                    <span className="num font-semibold">− {formatCurrency(discountNum)}</span>
                   </div>
                 )}
-                <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
+                <div className="pt-2 border-t border-white/25 flex items-center justify-between gap-2">
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 block">
+                    <span className="text-[0.875rem] uppercase tracking-wider font-bold text-white/80 block">
                       Total Payable
                     </span>
-                    <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight">
+                    <span className="text-3xl sm:text-4xl font-black text-white num">
                       {formatCurrency(totalAmount)}
                     </span>
                   </div>
 
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block">Payment</span>
-                    <span className="text-xs font-extrabold text-blue-400 uppercase">
+                    <span className="text-[0.875rem] uppercase font-bold text-white/80 block">Payment</span>
+                    <span className="text-[1.0625rem] font-extrabold text-white uppercase">
                       {paymentMethod.replace("_", " ")}
                     </span>
                   </div>
@@ -1344,10 +1337,10 @@ export function CreateSaleForm({
 
               {/* Payment Method Selector Pills */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block">
-                  Payment Channel
-                </label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <span className="text-[0.9375rem] font-bold text-ink-2 block">
+                  How is the customer paying?
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { method: PaymentMethod.CASH, label: "Cash" },
                     { method: PaymentMethod.EASYPAISA, label: "EasyPaisa" },
@@ -1363,11 +1356,8 @@ export function CreateSaleForm({
                           setPaidAmount(totalAmount.toFixed(2));
                         }
                       }}
-                      className={`py-2 px-1 text-xs font-bold rounded-xl transition-all cursor-pointer text-center ${
-                        paymentMethod === pm.method
-                          ? "bg-blue-600 text-white shadow-xs"
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700"
-                      }`}
+                      aria-pressed={paymentMethod === pm.method}
+                      className={`btn ${paymentMethod === pm.method ? "btn-primary" : ""}`}
                     >
                       {pm.label}
                     </button>
@@ -1376,11 +1366,11 @@ export function CreateSaleForm({
               </div>
 
               {/* Payment Tender Row & Shortcuts */}
-              <div className="space-y-2 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-750">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <div className="space-y-2 bg-surface-alt p-3 rounded-md border border-rule">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="pos-amount-received" className="text-[0.9375rem] font-bold text-ink flex items-center gap-1.5">
                     <span>Amount Received (Rs.)</span>
-                    <kbd className="px-1 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
+                    <kbd className="px-1.5 py-0.5 text-[0.875rem] font-mono font-bold bg-surface border border-rule rounded">
                       F9
                     </kbd>
                   </label>
@@ -1388,41 +1378,42 @@ export function CreateSaleForm({
                     <button
                       type="button"
                       onClick={() => setPaidAmount("0")}
-                      className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+                      className="link-btn"
                     >
                       Rs. 0 (Credit)
                     </button>
-                    <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                    <span className="text-rule-strong" aria-hidden="true">|</span>
                     <button
                       type="button"
                       onClick={handlePayInFull}
-                      className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                      className="link-btn"
                       title="Exact Tender / Pay in Full (F8)"
                     >
                       <span>Exact</span>
-                      <kbd className="px-1 text-[9px] font-mono bg-blue-100 dark:bg-blue-950/80 rounded">F8</kbd>
+                      <kbd className="px-1.5 py-0.5 text-[0.875rem] font-mono bg-surface border border-rule rounded">F8</kbd>
                     </button>
                   </div>
                 </div>
 
                 <input
+                  id="pos-amount-received"
                   ref={paidAmountInputRef}
                   type="number"
                   min="0"
                   step="any"
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-base font-black rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:ring-2 focus:ring-blue-500"
+                  className="field !text-2xl !font-black num"
                 />
 
                 {/* Quick Cash Buttons */}
-                <div className="flex items-center gap-1.5 pt-1">
+                <div className="grid grid-cols-3 gap-2 pt-1">
                   {[500, 1000, 5000].map((val) => (
                     <button
                       key={val}
                       type="button"
                       onClick={() => handleAddQuickCash(val)}
-                      className="flex-1 py-1 text-[11px] font-bold rounded-md bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 active:scale-95"
+                      className="btn num !px-1 !min-w-0"
                     >
                       +{val}
                     </button>
@@ -1431,16 +1422,16 @@ export function CreateSaleForm({
 
                 {/* Change Due or Remaining Credit Indicator */}
                 {paidAmountNum > totalAmount && (
-                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="pt-2 border-t border-rule flex items-center justify-between text-[0.9375rem] font-bold text-good">
                     <span>Change Due to Customer:</span>
-                    <span className="text-sm font-black tabular-nums">{formatCurrency(changeDue)}</span>
+                    <span className="text-[1.0625rem] font-black num">{formatCurrency(changeDue)}</span>
                   </div>
                 )}
 
                 {creditAmount > 0 && (
-                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <div className="pt-2 border-t border-rule flex items-center justify-between text-[0.9375rem] font-bold text-warn">
                     <span>Credit Balance (Unpaid):</span>
-                    <span className="text-sm font-black tabular-nums">{formatCurrency(creditAmount)}</span>
+                    <span className="text-[1.0625rem] font-black num">{formatCurrency(creditAmount)}</span>
                   </div>
                 )}
               </div>
@@ -1450,28 +1441,29 @@ export function CreateSaleForm({
                 type="button"
                 onClick={handleOpenInvoiceModal}
                 disabled={isPending || items.length === 0}
-                className="w-full py-4 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.985] disabled:active:scale-100 disabled:opacity-50 text-white font-extrabold text-base shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="btn btn-primary btn-lg w-full !text-xl"
                 title="Preview invoice and submit (Ctrl + Enter)"
               >
                 <>
-                  <IconReceipt className="w-5 h-5 stroke-[2.5]" />
+                  <IconReceipt className="w-5 h-5" />
                   <span>
-                    REVIEW & SUBMIT — {formatCurrency(totalAmount)}
+                    REVIEW &amp; SUBMIT — {formatCurrency(totalAmount)}
                   </span>
-                  <kbd className="text-xs font-mono font-bold opacity-80 bg-white/20 px-2 py-0.5 rounded ml-2 hidden sm:inline-block">
+                  <kbd className="text-[0.875rem] font-mono font-bold opacity-80 bg-white/20 px-2 py-0.5 rounded ml-2 hidden sm:inline-block">
                     Ctrl+↵
                   </kbd>
                 </>
               </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Cashier Quick-Keys Helper Bar */}
-        <div className="hidden lg:flex items-center justify-between px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-600 dark:text-zinc-400 shadow-2xs mt-4">
+        <div className="hidden lg:flex items-center justify-between gap-3 px-4 py-3 bg-surface-alt border-2 border-rule rounded-md text-[0.9375rem] text-ink-2 mt-4 flex-wrap">
           <div className="flex items-center gap-3.5 flex-wrap">
-            <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-              <IconKeyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="font-bold text-ink flex items-center gap-1.5">
+              <IconKeyboard className="w-4 h-4" />
               <span>Hotkeys:</span>
             </span>
             {[
@@ -1484,7 +1476,7 @@ export function CreateSaleForm({
               ["Ctrl+↵", "Review & Submit"],
             ].map(([key, label]) => (
               <span key={key} className="flex items-center gap-1">
-                <kbd className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-1.5 py-0.5 rounded text-[11px]">{key}</kbd>
+                <kbd className="font-mono font-bold bg-surface border border-rule-strong px-1.5 py-0.5 rounded text-[0.875rem]">{key}</kbd>
                 <span>{label}</span>
               </span>
             ))}
@@ -1492,7 +1484,7 @@ export function CreateSaleForm({
           <button
             type="button"
             onClick={() => setShortcutsModalOpen(true)}
-            className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer shrink-0 ml-3"
+            className="link-btn shrink-0"
           >
             All Shortcuts [?]
           </button>

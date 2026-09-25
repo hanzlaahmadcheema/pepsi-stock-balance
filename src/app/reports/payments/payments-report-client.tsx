@@ -209,7 +209,7 @@ export function PaymentsReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"
       >
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
             Start Date
           </label>
           <input
@@ -221,7 +221,7 @@ export function PaymentsReportClient({
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
             End Date
           </label>
           <input
@@ -233,7 +233,7 @@ export function PaymentsReportClient({
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
             Method
           </label>
           <select
@@ -250,7 +250,7 @@ export function PaymentsReportClient({
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
             Payment Type
           </label>
           <select
@@ -265,7 +265,7 @@ export function PaymentsReportClient({
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
             Received By
           </label>
           <select
@@ -297,7 +297,7 @@ export function PaymentsReportClient({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-4">Date &amp; Time</th>
                 <th className="py-3 px-4">Type</th>
                 <th className="py-3 px-4">Method</th>
@@ -320,22 +320,22 @@ export function PaymentsReportClient({
                     key={row.id}
                     className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px]">
+                    <td className="py-3 px-4 whitespace-nowrap font-mono text-xs">
                       {formatDateTime(row.paidAt)}
                     </td>
                     <td className="py-3 px-4">
                       {row.type === "COUNTER_SALE" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300">
                           Counter Sale
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300">
                           Account Debt
                         </span>
                       )}
                     </td>
                     <td className="py-3 px-4 font-semibold">
-                      <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-xs font-bold">
                         {row.paymentMethod}
                       </span>
                     </td>
@@ -351,7 +351,7 @@ export function PaymentsReportClient({
                         <span className="text-zinc-400">Over-the-Counter</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 font-mono text-[11px]">
+                    <td className="py-3 px-4 font-mono text-xs">
                       {row.invoiceNumber ? (
                         <Link
                           href={`/sales/${row.saleId}`}

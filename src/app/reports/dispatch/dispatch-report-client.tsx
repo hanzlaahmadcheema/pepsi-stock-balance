@@ -102,7 +102,7 @@ export function DispatchReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
       >
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">From Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">From Date</label>
           <input
             type="date"
             value={startDate}
@@ -112,7 +112,7 @@ export function DispatchReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">To Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">To Date</label>
           <input
             type="date"
             value={endDate}
@@ -122,7 +122,7 @@ export function DispatchReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Product</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Product</label>
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
@@ -138,7 +138,7 @@ export function DispatchReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Customer</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Customer</label>
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
@@ -166,14 +166,14 @@ export function DispatchReportClient({
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Dispatches Logged</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Dispatches Logged</span>
           <div className="text-2xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalDispatchesCount} line movements
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Total Crates Dispatched</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Total Crates Dispatched</span>
           <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
             {data.summary.totalCratesDispatched} crates
           </div>

@@ -233,10 +233,10 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
             {/* Current Local Version */}
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Currently Running
                 </span>
-                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700">
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700">
                   {data?.branch || "main"}
                 </span>
               </div>
@@ -246,7 +246,7 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2">
                 {data?.local?.message || "No commit message"}
               </p>
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500">
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500">
                 <div>Author: <b className="text-zinc-700 dark:text-zinc-300">{data?.local?.author}</b></div>
                 <div>Date: {data?.local?.date ? new Date(data.local.date).toLocaleString() : "—"}</div>
               </div>
@@ -255,11 +255,11 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
             {/* Remote GitHub Version */}
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Remote GitHub (origin/main)
                 </span>
                 {data?.remote && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                     isUpdateAvailable ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200"
                   }`}>
                     {isUpdateAvailable ? "Newer" : "Matches Local"}
@@ -272,7 +272,7 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2">
                 {data?.remote?.message || (data?.status === "OFFLINE" ? "GitHub unreachable" : "Scanning remote...")}
               </p>
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500">
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500">
                 <div>Author: <b className="text-zinc-700 dark:text-zinc-300">{data?.remote?.author || "—"}</b></div>
                 <div>Date: {data?.remote?.date ? new Date(data.remote.date).toLocaleString() : "—"}</div>
               </div>
@@ -282,7 +282,7 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
           {/* Recent Repository Changes */}
           {data?.recentCommits && data.recentCommits.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                 Recent Commits on This Branch
               </h4>
               <div className="bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-750 divide-y divide-zinc-200 dark:divide-zinc-700/60 overflow-hidden">
@@ -290,19 +290,19 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
                   <div key={i} className="px-3.5 py-2.5 flex items-start justify-between gap-3 text-xs">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                        <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">
                           {c.shortHash}
                         </span>
                         <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
                           {c.message}
                         </span>
                       </div>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         {c.author} &bull; {c.relativeDate}
                       </span>
                     </div>
                     {i === 0 && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shrink-0">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shrink-0">
                         Current HEAD
                       </span>
                     )}
@@ -312,7 +312,7 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
             </div>
           )}
 
-          <div className="text-[11px] text-zinc-400 flex items-center justify-between">
+          <div className="text-xs text-zinc-400 flex items-center justify-between">
             <span>Environment: <b>{data?.environment || "Unknown"}</b></span>
             <span>Last scanned: {data?.lastCheckedAt ? new Date(data.lastCheckedAt).toLocaleTimeString() : "Just now"}</span>
           </div>
@@ -383,10 +383,10 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
       <button
         type="button"
         onClick={() => setModalOpen(true)}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-tight transition-all cursor-pointer shadow-2xs ${
+        className={`inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-md border-2 px-3 text-sm font-bold transition-colors ${
           isUpdateAvailable
-            ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-950/80 dark:hover:bg-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 animate-pulse"
-            : "bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+            ? "border-warn bg-warn-wash text-warn hover:bg-warn hover:text-white"
+            : "border-rule-strong bg-surface text-ink-2 hover:bg-surface-alt"
         }`}
         title={
           isUpdateAvailable
@@ -395,18 +395,21 @@ export function SystemVersionPill({ isOwner = false }: { isOwner?: boolean }) {
         }
       >
         <span
-          className={`w-1.5 h-1.5 rounded-full ${
-            isUpdateAvailable ? "bg-amber-500 animate-ping" : "bg-emerald-500"
+          aria-hidden="true"
+          className={`h-2.5 w-2.5 rounded-full ${
+            isUpdateAvailable ? "bg-warn" : "bg-good"
           }`}
         />
         <span>
           {isUpdateAvailable ? (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               <span>Update Ready</span>
-              <span className="font-mono text-[10px] opacity-75">({shortSha})</span>
+              <span className="num opacity-80">({shortSha})</span>
             </span>
           ) : (
-            <span className="font-mono text-[11px]">git:{shortSha}</span>
+            <span>
+              Software is up to date <span className="num opacity-80">({shortSha})</span>
+            </span>
           )}
         </span>
       </button>

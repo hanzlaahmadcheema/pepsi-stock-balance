@@ -7,6 +7,7 @@ import { logoutAction } from "@/app/login/actions";
 import { Role } from "@prisma/client";
 import type { DbUser } from "@/lib/auth";
 import { KeyboardShortcutsModal } from "@/components/ui/keyboard-shortcuts-modal";
+import { TextSizeControl } from "@/components/ui/text-size-control";
 import {
   IconMenu,
   IconClose,
@@ -22,11 +23,8 @@ import {
   IconScale,
   IconFileSpreadsheet,
   IconShield,
-  IconAlertOctagon,
   IconBox,
   IconPlus,
-  IconArrowLeft,
-  IconArrowRight,
   IconSun,
   IconMoon,
   IconLifebuoy,
@@ -39,6 +37,7 @@ import {
 import { DbStatusIndicator } from "@/components/db-status-indicator";
 import { SystemVersionPill } from "@/components/system-version-pill";
 import { isCloudPortal } from "@/lib/config/portal-mode";
+import { useTheme } from "@/lib/ui-preferences";
 
 interface NavItem {
   name: string;
@@ -59,9 +58,7 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
       {
         id: "home",
         title: "Home",
-        items: [
-          { name: "Dashboard", href: "/", icon: IconChartBar },
-        ],
+        items: [{ name: "Dashboard", href: "/", icon: IconChartBar }],
       },
       {
         id: "sales",
@@ -85,9 +82,7 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
       {
         id: "customers",
         title: "Customers",
-        items: [
-          { name: "Customers & Accounts", href: "/customers", icon: IconUsers },
-        ],
+        items: [{ name: "Customers & Accounts", href: "/customers", icon: IconUsers }],
       },
       {
         id: "management",
@@ -111,16 +106,12 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
     {
       id: "home",
       title: "Overview",
-      items: [
-        { name: "Dashboard", href: "/", icon: IconChartBar },
-      ],
+      items: [{ name: "Dashboard", href: "/", icon: IconChartBar }],
     },
     {
       id: "sales",
       title: "Sales & Invoicing",
-      items: [
-        { name: "Sales History", href: "/sales", icon: IconReceipt },
-      ],
+      items: [{ name: "Sales History", href: "/sales", icon: IconReceipt }],
     },
     {
       id: "stock",
@@ -170,106 +161,72 @@ interface BreadcrumbItem {
 
 function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/" || pathname === "/dashboard") {
-    return [
-      { label: "Home" },
-      { label: "Dashboard", href: "/" },
-    ];
+    return [{ label: "Dashboard" }];
   }
 
   const parts = pathname.split("/").filter(Boolean);
   const first = parts[0];
 
   if (first === "sales") {
-    const items: BreadcrumbItem[] = [{ label: "Sales" }];
-    if (parts[1] === "new") {
-      items.push({ label: "New Sale" });
-    } else {
-      items.push({ label: "Sales History", href: "/sales" });
-      if (parts[2] === "edit") {
-        items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
-        items.push({ label: "Edit" });
-      } else if (parts[1]) {
-        items.push({ label: `Invoice #${parts[1].slice(0, 8)}` });
-      }
+    if (parts[1] === "new") return [{ label: "New Sale" }];
+    const items: BreadcrumbItem[] = [{ label: "Sales History", href: "/sales" }];
+    if (parts[2] === "edit") {
+      items.push({ label: `Invoice #${parts[1].slice(0, 8)}`, href: `/sales/${parts[1]}` });
+      items.push({ label: "Edit" });
+    } else if (parts[1]) {
+      items.push({ label: `Invoice #${parts[1].slice(0, 8)}` });
     }
     return items;
   }
 
   if (first === "customers") {
-    const items: BreadcrumbItem[] = [
-      { label: "Customers" },
-      { label: "Customers & Accounts", href: "/customers" },
-    ];
     if (parts[2] === "payments") {
-      items.push({ label: "Customer Account", href: `/customers/${parts[1]}` });
-      items.push({ label: "Record Payment" });
-    } else if (parts[1]) {
-      items.push({ label: "Customer Account" });
+      return [
+        { label: "Customers & Accounts", href: "/customers" },
+        { label: "Customer Account", href: `/customers/${parts[1]}` },
+        { label: "Record Payment" },
+      ];
     }
-    return items;
+    if (parts[1]) {
+      return [
+        { label: "Customers & Accounts", href: "/customers" },
+        { label: "Customer Account" },
+      ];
+    }
+    return [{ label: "Customers & Accounts" }];
   }
 
   if (first === "products") {
-    const items: BreadcrumbItem[] = [
-      { label: "Stock" },
-      { label: "Current Stock", href: "/products" },
-    ];
-    if (parts[1] === "new") items.push({ label: "New Product" });
-    else if (parts[1]) items.push({ label: "Product Details" });
-    return items;
+    if (parts[1] === "new") return [{ label: "New Product" }];
+    if (parts[1]) return [{ label: "Current Stock" }, { label: "Product Details" }];
+    return [{ label: "Current Stock" }];
   }
 
   if (first === "receiving") {
-    const items: BreadcrumbItem[] = [
-      { label: "Stock" },
-      { label: "Receive Stock", href: "/receiving" },
-    ];
-    if (parts[1] === "new") items.push({ label: "Receive Delivery" });
-    else if (parts[1]) items.push({ label: "Delivery Voucher" });
-    return items;
+    if (parts[1] === "new") return [{ label: "Receive Delivery" }];
+    if (parts[1]) return [{ label: "Receive Stock" }, { label: "Delivery Voucher" }];
+    return [{ label: "Receive Stock" }];
   }
 
   if (first === "returns") {
-    const items: BreadcrumbItem[] = [
-      { label: "Stock" },
-      { label: "Returns & Quarantine", href: "/returns" },
-    ];
-    if (parts[1] === "new") items.push({ label: "Record Return" });
-    else if (parts[1]) items.push({ label: "Inspection & Voucher" });
-    return items;
+    if (parts[1] === "new") return [{ label: "Record Return" }];
+    if (parts[1]) return [{ label: "Returns" }, { label: "Inspection & Voucher" }];
+    return [{ label: "Returns" }];
   }
 
-  if (first === "damage") {
-    return [
-      { label: "Stock" },
-      { label: "Damaged / Expired", href: "/damage" },
-    ];
-  }
+  if (first === "damage") return [{ label: "Damaged / Expired" }];
 
   if (first === "stock-counts") {
-    const items: BreadcrumbItem[] = [
-      { label: "Stock" },
-      { label: "Stock Adjustments", href: "/stock-counts" },
-    ];
-    if (parts[1] === "new") items.push({ label: "New Stock Count" });
-    else if (parts[1]) items.push({ label: "Stock Count Audit" });
-    return items;
+    if (parts[1]) return [{ label: "Stock Adjustments" }, { label: "Stock Count Audit" }];
+    return [{ label: "Stock Adjustments" }];
   }
 
   if (first === "daily-closing") {
-    const items: BreadcrumbItem[] = [
-      { label: "Management" },
-      { label: "Daily Closing", href: "/daily-closing" },
-    ];
-    if (parts[1]) items.push({ label: "Daily Reconciliation" });
-    return items;
+    if (parts[1]) return [{ label: "Daily Closing" }, { label: "Daily Reconciliation" }];
+    return [{ label: "Daily Closing" }];
   }
 
   if (first === "reports") {
-    const items: BreadcrumbItem[] = [
-      { label: "Management" },
-      { label: "Business Reports", href: "/reports" },
-    ];
     const reportNames: Record<string, string> = {
       sales: "Sales Report",
       profit: "Gross Profit Report",
@@ -280,75 +237,33 @@ function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
       customers: "Customer Balances",
       prices: "Price Tiers",
       "fast-slow": "Product Velocity",
+      aging: "Aging Report",
+      payments: "Payment Collections",
     };
     if (parts[1] && reportNames[parts[1]]) {
-      items.push({ label: reportNames[parts[1]] });
+      return [{ label: "Business Reports", href: "/reports" }, { label: reportNames[parts[1]] }];
     }
-    return items;
+    return [{ label: "Business Reports" }];
   }
 
-  if (first === "approvals") {
-    return [
-      { label: "Management" },
-      { label: "Pending Approvals", href: "/approvals" },
-    ];
-  }
+  if (first === "approvals") return [{ label: "Pending Approvals" }];
+  if (first === "suppliers") return [{ label: "Suppliers Directory" }];
+  if (first === "sync") return [{ label: "Depot Sync Status" }];
 
-  if (first === "suppliers") {
-    return [
-      { label: "Management" },
-      { label: "Suppliers Directory", href: "/suppliers" },
-    ];
-  }
+  if (first === "settings" && parts[1] === "users") return [{ label: "User Management" }];
+  if (first === "settings" && parts[1] === "system-update") return [{ label: "System Updates" }];
+  if (first === "settings") return [{ label: "Settings" }];
+  if (first === "technical-services") return [{ label: "Technical Services" }];
 
-  if (first === "sync") {
-    return [
-      { label: "Management" },
-      { label: "Sync Status", href: "/sync/quarantine" },
-    ];
-  }
-
-  if (first === "settings" && (!parts[1] || parts[1] === "crates")) {
-    return [
-      { label: "Management" },
-      { label: "Settings", href: "/settings" },
-    ];
-  }
-
-  if (first === "settings" && parts[1] === "users") {
-    return [
-      { label: "Management" },
-      { label: "User Management", href: "/settings/users" },
-    ];
-  }
-
-  if (first === "settings" && parts[1] === "system-update") {
-    return [
-      { label: "Management" },
-      { label: "System Updates", href: "/settings/system-update" },
-    ];
-  }
-
-  if (first === "technical-services") {
-    return [
-      { label: "Management" },
-      { label: "Technical Services", href: "/technical-services" },
-    ];
-  }
-
-  return [
-    { label: "Workspace" },
-    { label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Home", href: `/${first || ""}` },
-  ];
+  return [{ label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Home" }];
 }
 
 export function AppHeader({ user }: { user: DbUser }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, applyTheme] = useTheme();
   const isOwner = user.role === Role.OWNER;
   const isCloud = isCloudPortal();
   const navGroups = getNavGroups(isCloud);
@@ -362,90 +277,48 @@ export function AppHeader({ user }: { user: DbUser }) {
         target?.tagName === "TEXTAREA" ||
         target?.tagName === "SELECT";
 
-      // Alt + N: New Sale (Local depot mode only)
       if (!isCloud && e.altKey && (e.key === "n" || e.key === "N")) {
         e.preventDefault();
         router.push("/sales/new");
         return;
       }
 
-      // Alt + H: Dashboard / Home
       if (e.altKey && (e.key === "h" || e.key === "H")) {
         e.preventDefault();
         router.push("/");
         return;
       }
 
-      // Alt + P: Products
       if (e.altKey && (e.key === "p" || e.key === "P")) {
         e.preventDefault();
         router.push("/products");
         return;
       }
 
-      // Alt + C: Customers (if not on /sales/new where Alt+C is clear cart)
       if (e.altKey && (e.key === "c" || e.key === "C") && !pathname.startsWith("/sales/new")) {
         e.preventDefault();
         router.push("/customers");
         return;
       }
 
-      // Alt + R: Business Reports
       if (e.altKey && (e.key === "r" || e.key === "R")) {
         e.preventDefault();
         router.push("/reports");
         return;
       }
 
-      // '?' when not in an input on any non-POS page: toggle shortcuts modal
       if (e.key === "?" && !isInput && !pathname.startsWith("/sales/new")) {
         e.preventDefault();
         setShortcutsOpen((prev) => !prev);
-        return;
       }
     };
 
     window.addEventListener("keydown", handleGlobalShortcuts);
     return () => window.removeEventListener("keydown", handleGlobalShortcuts);
-  }, [router, pathname]);
-
-  // Restore desktop collapsed preference
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("pepsi_erp_sidebar_collapsed");
-      if (saved !== null) {
-        setCollapsed(saved === "true");
-      }
-    } catch {}
-  }, []);
-
-  // Sync theme state with DOM on mount
-  useEffect(() => {
-    try {
-      const isDark = document.documentElement.classList.contains("dark");
-      setTheme(isDark ? "dark" : "light");
-    } catch {}
-  }, []);
+  }, [router, pathname, isCloud]);
 
   const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    try {
-      localStorage.setItem("pepsi_theme", next);
-      if (next === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    } catch {}
-  };
-
-  const toggleCollapse = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    try {
-      localStorage.setItem("pepsi_erp_sidebar_collapsed", String(next));
-    } catch {}
+    applyTheme(theme === "dark" ? "light" : "dark");
   };
 
   const isActive = (href: string) => {
@@ -460,441 +333,258 @@ export function AppHeader({ user }: { user: DbUser }) {
   };
 
   const breadcrumbs = resolveBreadcrumbs(pathname);
+  const pageTitle = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].label : "Dashboard";
+
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const navList = (variant: "sidebar" | "drawer") => (
+    <>
+      {navGroups.map((group) => {
+        const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
+        if (visibleItems.length === 0) return null;
+
+        return (
+          <div key={group.id} className="mb-6 last:mb-0">
+            <h2 className="mb-1.5 px-1 text-sm font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+              {group.title}
+            </h2>
+            <ul className="space-y-1">
+              {visibleItems.map((item) => {
+                const active = isActive(item.href);
+                const Icon = item.icon;
+
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={variant === "drawer" ? () => setMobileMenuOpen(false) : undefined}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex min-h-[3.25rem] items-center gap-3 rounded-md border-2 py-2.5 pr-3 pl-3.5 text-lg font-bold transition-colors ${
+                        active
+                          ? "border-navy-deep bg-navy text-white shadow-[0_2px_0_0_var(--navy-deep)]"
+                          : "border-transparent text-zinc-700 hover:border-rule-strong hover:bg-surface-alt dark:text-zinc-100"
+                      }`}
+                    >
+                      <Icon className={`h-6 w-6 shrink-0 ${active ? "text-white" : "text-navy"}`} />
+                      <span className="leading-tight">{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+    </>
+  );
 
   return (
     <>
       {/* ========================================================================= */}
-      {/* 1. DESKTOP ENTERPRISE SIDEBAR (lg+ screen size)                           */}
+      {/* 1. ALWAYS-VISIBLE NAVIGATION (lg+) — never collapsed, never icon-only   */}
       {/* ========================================================================= */}
-      <aside
-        className={`app-sidebar hidden lg:flex lg:flex-col fixed inset-y-0 left-0 z-40 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border-r border-zinc-200 dark:border-zinc-800/80 transition-all duration-200 ${
-          collapsed ? "app-sidebar-collapsed w-20" : "w-64"
-        }`}
-      >
-        {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0">
-          <Link href="/" className="flex items-center gap-3 overflow-hidden group">
-            <span className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-base font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-              P
-            </span>
-            {!collapsed && (
-              <div className="leading-tight overflow-hidden">
-                <span className="font-bold text-sm text-zinc-900 dark:text-zinc-50 tracking-tight block truncate">
-                  Pepsi Distribution
-                </span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block truncate">
-                  Stock &amp; Balance ERP
-                </span>
-              </div>
-            )}
-          </Link>
-        </div>
-
-        {/* User Identity Snapshot */}
-        <div className="px-3 py-3 border-b border-zinc-200 dark:border-zinc-800/60 bg-zinc-50/80 dark:bg-zinc-900/40 shrink-0">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
-                isOwner
-                  ? "bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80"
-                  : "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80"
-              }`}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate leading-tight">
-                  {user.name}
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
-                      isOwner
-                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-300 border border-purple-200 dark:border-purple-700/60"
-                        : "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                </div>
-              </div>
-            )}
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-40 hidden w-[19.5rem] flex-col border-r-2 border-rule bg-surface text-ink lg:flex">
+        {/* Brand */}
+        <div className="flex shrink-0 items-center gap-3 border-b-2 border-rule px-4 py-3.5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-2xl font-bold text-white">
+            P
+          </span>
+          <div className="leading-tight">
+            <span className="block text-lg font-bold text-ink">Pepsi Distribution</span>
+            <span className="block text-sm font-semibold text-ink-3">Stock &amp; Balance System</span>
           </div>
         </div>
 
-        {/* Operational Navigation Groups */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {navGroups.map((group) => {
-            const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
-            if (visibleItems.length === 0) return null;
-
-            return (
-              <div key={group.id} className="space-y-1">
-                {!collapsed ? (
-                  <div className="px-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                    {group.title}
-                  </div>
-                ) : (
-                  <div className="h-2 border-t border-zinc-200 dark:border-zinc-800/60 mx-1 mb-2" />
-                )}
-
-                <div className="space-y-0.5">
-                  {visibleItems.map((item) => {
-                    const active = isActive(item.href);
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        title={collapsed ? item.name : undefined}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 group ${
-                          active
-                            ? "bg-blue-600 text-white font-semibold shadow-xs shadow-blue-500/20"
-                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900/80"
-                        } ${collapsed ? "justify-center px-0" : ""}`}
-                      >
-                        <Icon
-                          className={`w-4 h-4 shrink-0 transition-colors ${
-                            active
-                              ? "text-white"
-                              : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
-                          }`}
-                        />
-                        {!collapsed && (
-                          <span className="truncate flex-1">{item.name}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer Controls */}
-        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-900/40 shrink-0 space-y-1.5">
-          {/* Theme Switcher Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer ${
-              collapsed ? "px-0" : ""
-            }`}
-            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {theme === "dark" ? (
-              <>
-                <IconSun className="w-4 h-4 text-amber-500" />
-                {!collapsed && <span>Light Theme</span>}
-              </>
-            ) : (
-              <>
-                <IconMoon className="w-4 h-4 text-indigo-500" />
-                {!collapsed && <span>Dark Theme</span>}
-              </>
-            )}
-          </button>
-
-          {/* Desktop Collapse Toggle */}
-          <button
-            type="button"
-            onClick={toggleCollapse}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer ${
-              collapsed ? "px-0" : ""
-            }`}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? (
-              <IconArrowRight className="w-4 h-4" />
-            ) : (
-              <>
-                <IconArrowLeft className="w-4 h-4" />
-                <span>Collapse Sidebar</span>
-              </>
-            )}
-          </button>
-
-          {/* Sign Out Action */}
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 border border-transparent hover:border-red-200 dark:hover:border-red-900/50 transition-colors cursor-pointer ${
-                collapsed ? "px-0" : ""
-              }`}
-              title="Sign Out"
-            >
-              <IconClose className="w-3.5 h-3.5" />
-              {!collapsed && <span>Sign Out</span>}
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      {/* ========================================================================= */}
-      {/* 2. TOP WORKSPACE HEADER (Sticky across all viewpoints)                    */}
-      {/* ========================================================================= */}
-      <header
-        className={`app-topbar sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md transition-all duration-200 ${
-          collapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
-      >
-        <div className="px-4 sm:px-6 lg:px-8 xl:px-10 max-w-[1720px] w-full mx-auto h-14 flex items-center justify-between gap-4">
-          {/* Left: Mobile Brand & Hamburger OR Desktop Breadcrumb Trail */}
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile Menu Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0"
-              aria-label="Open navigation menu"
-            >
-              <IconMenu className="w-5 h-5" />
-            </button>
-
-            {/* Mobile Brand Title */}
-            <div className="flex items-center gap-2 lg:hidden">
-              <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
-                P
-              </span>
-              <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                Pepsi ERP
-              </span>
-            </div>
-
-            {/* Desktop Dynamic Breadcrumbs */}
-            <nav aria-label="Breadcrumbs" className="hidden lg:flex items-center gap-1.5 text-xs">
-              {breadcrumbs.map((crumb, idx) => {
-                const isLast = idx === breadcrumbs.length - 1;
-                return (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    {idx > 0 && (
-                      <IconChevronRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
-                    )}
-                    {crumb.href && !isLast ? (
-                      <Link
-                        href={crumb.href}
-                        className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors font-medium"
-                      >
-                        {crumb.label}
-                      </Link>
-                    ) : (
-                      <span
-                        className={
-                          isLast
-                            ? "font-bold text-zinc-900 dark:text-zinc-50"
-                            : "text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[11px]"
-                        }
-                      >
-                        {crumb.label}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Right: Operational Controls & Utilities */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* DB Connection Status Pills */}
-            <DbStatusIndicator />
-
-            {/* Git Repository Version & Update Indicator Pill */}
-            <SystemVersionPill isOwner={isOwner} />
-
-            {/* Theme Toggle Button in Topbar */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-medium"
-              title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
-              aria-label={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
-            >
-              {theme === "dark" ? (
-                <>
-                  <IconSun className="w-4 h-4 text-amber-500" />
-                  <span className="hidden sm:inline">Light</span>
-                </>
-              ) : (
-                <>
-                  <IconMoon className="w-4 h-4 text-indigo-500" />
-                  <span className="hidden sm:inline">Dark</span>
-                </>
-              )}
-            </button>
-
-            {/* Keyboard Shortcuts Cheat Sheet Button */}
-            <button
-              type="button"
-              onClick={() => setShortcutsOpen(true)}
-              className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium"
-              title="Keyboard Shortcuts (?)"
-              aria-label="Keyboard Shortcuts"
-            >
-              <IconKeyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <kbd className="hidden sm:inline-block px-1 py-0.2 text-[9px] font-mono font-bold bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400">?</kbd>
-            </button>
-
-            {/* Quick Register Action or Cloud Portal Badge */}
-            {isCloud ? (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                Cloud Portal (Read-Only)
-              </span>
-            ) : (
-              <Link
-                href="/sales/new"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
-              >
-                <IconPlus className="w-3.5 h-3.5" />
-                <span>New Sale</span>
-              </Link>
-            )}
-
-            {/* Role Badge (Visible on mobile/tablet too) */}
+        {/* Signed-in operator */}
+        <div className="shrink-0 border-b-2 border-rule bg-surface-alt px-4 py-3">
+          <div className="text-xs font-bold uppercase tracking-widest text-ink-3">Signed in as</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="text-lg font-bold text-ink">{user.name}</span>
             <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              className={`shrink-0 rounded border-2 px-2 py-0.5 text-sm font-bold uppercase ${
                 isOwner
-                  ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
-                  : "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                  ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+                  : "border-navy bg-navy-wash text-navy"
               }`}
             >
               {user.role}
             </span>
+          </div>
+        </div>
 
-            {/* Mobile Sign Out (When drawer is closed) */}
-            <form action={logoutAction} className="lg:hidden">
-              <button
-                type="submit"
-                className="p-2 rounded-lg text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                title="Sign Out"
-                aria-label="Sign Out"
-              >
-                <IconClose className="w-4 h-4" />
-              </button>
-            </form>
+        {/* Every destination, always on screen */}
+        <nav aria-label="All screens" className="flex-1 overflow-y-auto px-3 py-4">
+          {navList("sidebar")}
+        </nav>
+
+        {/* Footer: sign out and software version */}
+        <div className="shrink-0 space-y-2 border-t-2 border-rule bg-surface-alt px-3 py-3">
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="btn btn-danger w-full"
+              style={{ minHeight: "3.25rem" }}
+            >
+              <IconClose className="h-5 w-5" />
+              <span>Sign Out</span>
+            </button>
+          </form>
+          <div className="flex justify-center pt-1">
+            <SystemVersionPill isOwner={isOwner} />
+          </div>
+        </div>
+      </aside>
+
+      {/* ========================================================================= */}
+      {/* 2. TOP BAR — page name, today's date, and the controls that matter      */}
+      {/* ========================================================================= */}
+      <header className="app-topbar sticky top-0 z-30 border-b-2 border-rule bg-surface lg:pl-[19.5rem]">
+        <div className="mx-auto flex w-full max-w-[1720px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
+          {/* Left: menu button on small screens, then "you are here" */}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="btn shrink-0 px-3 lg:hidden"
+              aria-label="Open all screens menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <IconMenu className="h-6 w-6" />
+            </button>
+
+            <div className="min-w-0">
+              {/* Breadcrumb trail stays visible so nobody gets lost */}
+              <nav aria-label="Breadcrumbs" className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                {breadcrumbs.map((crumb, idx) => {
+                  const isLast = idx === breadcrumbs.length - 1;
+                  return (
+                    <span key={idx} className="flex items-center gap-1">
+                      {idx > 0 && <IconChevronRight className="h-4 w-4 shrink-0 text-ink-3" />}
+                      {crumb.href && !isLast ? (
+                        <Link href={crumb.href} className="link">
+                          {crumb.label}
+                        </Link>
+                      ) : (
+                        <span className="uppercase tracking-widest text-ink-3">{crumb.label}</span>
+                      )}
+                    </span>
+                  );
+                })}
+              </nav>
+              <h1 className="truncate text-2xl font-bold text-ink">{pageTitle}</h1>
+            </div>
+          </div>
+
+          {/* Right: the controls an operator actually reaches for */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="hidden text-base font-semibold text-ink-2 md:inline">{today}</span>
+
+            <DbStatusIndicator />
+
+            <TextSizeControl />
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="btn px-3"
+              title={theme === "dark" ? "Switch to Day (light) screen" : "Switch to Night Depot (dark) screen"}
+              aria-label={theme === "dark" ? "Switch to Day screen" : "Switch to Night Depot screen"}
+            >
+              {theme === "dark" ? (
+                <>
+                  <IconSun className="h-6 w-6" />
+                  <span className="hidden sm:inline">Day</span>
+                </>
+              ) : (
+                <>
+                  <IconMoon className="h-6 w-6" />
+                  <span className="hidden sm:inline">Night</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShortcutsOpen(true)}
+              className="btn px-3"
+              title="Keyboard shortcuts"
+              aria-label="Keyboard shortcuts"
+            >
+              <IconKeyboard className="h-6 w-6" />
+              <span className="hidden sm:inline">Keys</span>
+            </button>
+
+            {isCloud ? (
+              <span className="badge badge-info">Read-Only Portal</span>
+            ) : (
+              <Link href="/sales/new" className="btn btn-primary" style={{ minHeight: "3.25rem" }}>
+                <IconPlus className="h-6 w-6 stroke-[2.5]" />
+                <span>New Sale</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       {/* ========================================================================= */}
-      {/* 3. MOBILE / TABLET RESPONSIVE SLIDE-OVER DRAWER (<lg screens)             */}
+      {/* 3. ALL-SCREENS DRAWER (small screens) — the same list, big touch rows   */}
       {/* ========================================================================= */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop Overlay */}
+        <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/60"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Drawer Content */}
-          <div className="relative w-72 max-w-[85vw] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 h-full flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200 border-r border-zinc-200 dark:border-zinc-800">
-            {/* Drawer Header */}
-            <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+          <div className="relative flex h-full w-[22rem] max-w-[90vw] flex-col border-r-2 border-rule bg-surface text-ink shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-rule px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-sm">
+                <span className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-xl font-bold text-white">
                   P
                 </span>
-                <div>
-                  <div className="font-bold text-sm text-zinc-900 dark:text-zinc-50 leading-tight">
-                    Pepsi ERP
-                  </div>
-                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-                    Stock &amp; Balance
-                  </div>
-                </div>
+                <span className="text-lg font-bold">All Screens</span>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-                aria-label="Close navigation menu"
+                className="btn px-3"
+                aria-label="Close menu"
               >
-                <IconClose className="w-5 h-5" />
+                <IconClose className="h-6 w-6" />
               </button>
             </div>
 
-            {/* User Identity Banner in Drawer */}
-            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-bold text-zinc-900 dark:text-zinc-200">{user.name}</div>
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">
-                  {user.role} Session
-                </div>
+            <div className="shrink-0 border-b-2 border-rule bg-surface-alt px-4 py-3">
+              <div className="text-xs font-bold uppercase tracking-widest text-ink-3">Signed in as</div>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-lg font-bold">{user.name}</span>
+                <span
+                  className={`shrink-0 rounded border-2 px-2 py-0.5 text-sm font-bold uppercase ${
+                    isOwner
+                      ? "border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+                      : "border-navy bg-navy-wash text-navy"
+                  }`}
+                >
+                  {user.role}
+                </span>
               </div>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
 
-            {/* Categorized Navigation Links */}
-            <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-              {navGroups.map((group) => {
-                const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
-                if (visibleItems.length === 0) return null;
-
-                return (
-                  <div key={group.id} className="space-y-1.5">
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 px-2.5">
-                      {group.title}
-                    </div>
-                    <div className="space-y-1">
-                      {visibleItems.map((item) => {
-                        const active = isActive(item.href);
-                        const Icon = item.icon;
-
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                              active
-                                ? "bg-blue-600 text-white font-semibold shadow-xs"
-                                : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                            }`}
-                          >
-                            <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-zinc-500 dark:text-zinc-400"}`} />
-                            <span>{item.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+            <nav aria-label="All screens" className="flex-1 overflow-y-auto px-3 py-4">
+              {navList("drawer")}
             </nav>
 
-            {/* Drawer Footer / Theme & Sign Out */}
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 shrink-0 space-y-2">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
-                {theme === "dark" ? (
-                  <>
-                    <IconSun className="w-4 h-4 text-amber-500" />
-                    <span>Switch to Light Theme</span>
-                  </>
-                ) : (
-                  <>
-                    <IconMoon className="w-4 h-4 text-indigo-500" />
-                    <span>Switch to Dark Theme</span>
-                  </>
-                )}
-              </button>
-
+            <div className="shrink-0 space-y-3 border-t-2 border-rule bg-surface-alt px-4 py-3">
+              <TextSizeControl />
               <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/60 border border-red-200 dark:border-red-900/60 transition-colors cursor-pointer"
-                >
-                  <IconClose className="w-4 h-4" />
+                <button type="submit" className="btn btn-danger w-full">
+                  <IconClose className="h-5 w-5" />
                   <span>Sign Out</span>
                 </button>
               </form>
@@ -904,88 +594,70 @@ export function AppHeader({ user }: { user: DbUser }) {
       )}
 
       {/* ========================================================================= */}
-      {/* 4. MOBILE BOTTOM QUICK ACTION BAR (<lg screens)                           */}
+      {/* 4. BOTTOM BAR (small screens) — the four daily destinations, always up  */}
       {/* ========================================================================= */}
       <nav
-        aria-label="Mobile quick navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around h-16 px-2 shadow-lg"
+        aria-label="Daily screens"
+        className="app-bottombar fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t-2 border-rule bg-surface shadow-[0_-2px_0_0_var(--rule)] lg:hidden"
       >
         <Link
           href="/"
-          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
+          className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold ${
             pathname === "/" || pathname === "/dashboard"
-              ? "text-blue-600 dark:text-blue-400 font-bold"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "text-navy"
+              : "text-zinc-600 dark:text-zinc-300"
           }`}
         >
-          <IconChartBar className="w-5 h-5 mb-0.5" />
+          <IconChartBar className="h-7 w-7" />
           <span>Home</span>
         </Link>
 
         <Link
           href="/products"
-          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
-            pathname.startsWith("/products")
-              ? "text-blue-600 dark:text-blue-400 font-bold"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold ${
+            pathname.startsWith("/products") ? "text-navy" : "text-zinc-600 dark:text-zinc-300"
           }`}
         >
-          <IconPackage className="w-5 h-5 mb-0.5" />
+          <IconPackage className="h-7 w-7" />
           <span>Stock</span>
         </Link>
 
-        {/* Center Primary Action: + New Sale or Business Reports */}
         {isCloud ? (
-          <Link
-            href="/reports"
-            className="flex flex-col items-center justify-center -mt-5 mx-1"
-            aria-label="Reports"
-          >
-            <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
-              <IconFileSpreadsheet className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-              Reports
+          <Link href="/reports" className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold">
+            <span className="flex h-12 w-12 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-white shadow-[0_2px_0_0_var(--navy-deep)]">
+              <IconFileSpreadsheet className="h-7 w-7" />
             </span>
+            <span className="text-navy">Reports</span>
           </Link>
         ) : (
-          <Link
-            href="/sales/new"
-            className="flex flex-col items-center justify-center -mt-5 mx-1"
-            aria-label="New Sale"
-          >
-            <div className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform">
-              <IconPlus className="w-6 h-6 stroke-[2.5]" />
-            </div>
-            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-              New Sale
+          <Link href="/sales/new" className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold">
+            <span className="flex h-12 w-12 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-white shadow-[0_2px_0_0_var(--navy-deep)]">
+              <IconPlus className="h-7 w-7 stroke-[2.5]" />
             </span>
+            <span className="text-navy">New Sale</span>
           </Link>
         )}
 
         <Link
           href="/customers"
-          className={`flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium transition-colors ${
-            pathname.startsWith("/customers")
-              ? "text-blue-600 dark:text-blue-400 font-bold"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold ${
+            pathname.startsWith("/customers") ? "text-navy" : "text-zinc-600 dark:text-zinc-300"
           }`}
         >
-          <IconUsers className="w-5 h-5 mb-0.5" />
+          <IconUsers className="h-7 w-7" />
           <span>Customers</span>
         </Link>
 
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+          className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-300"
         >
-          <IconMenu className="w-5 h-5 mb-0.5" />
-          <span>Menu</span>
+          <IconMenu className="h-7 w-7" />
+          <span>All Screens</span>
         </button>
       </nav>
 
-      {/* Global Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal
         isOpen={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
@@ -994,4 +666,3 @@ export function AppHeader({ user }: { user: DbUser }) {
     </>
   );
 }
-

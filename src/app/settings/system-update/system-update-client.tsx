@@ -255,14 +255,14 @@ export function SystemUpdateClient({
 
           <div className="space-y-3 text-xs">
             <div>
-              <span className="text-zinc-400 uppercase font-bold text-[10px] tracking-wider block">Commit SHA</span>
+              <span className="text-zinc-400 uppercase font-bold text-xs tracking-wider block">Commit SHA</span>
               <span className="font-mono text-base font-black text-blue-600 dark:text-blue-400 select-all">
                 {data.local.hash}
               </span>
             </div>
 
             <div>
-              <span className="text-zinc-400 uppercase font-bold text-[10px] tracking-wider block">Commit Message</span>
+              <span className="text-zinc-400 uppercase font-bold text-xs tracking-wider block">Commit Message</span>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">
                 {data.local.message}
               </p>
@@ -270,11 +270,11 @@ export function SystemUpdateClient({
 
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
               <div>
-                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Committed By</span>
+                <span className="text-xs uppercase font-bold text-zinc-400 block">Committed By</span>
                 <b className="text-zinc-900 dark:text-zinc-100">{data.local.author}</b>
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Committed Date</span>
+                <span className="text-xs uppercase font-bold text-zinc-400 block">Committed Date</span>
                 <b className="text-zinc-900 dark:text-zinc-100">
                   {new Date(data.local.date).toLocaleString()}
                 </b>
@@ -317,14 +317,14 @@ export function SystemUpdateClient({
 
           <div className="space-y-3 text-xs">
             <div>
-              <span className="text-zinc-400 uppercase font-bold text-[10px] tracking-wider block">Remote Commit SHA</span>
+              <span className="text-zinc-400 uppercase font-bold text-xs tracking-wider block">Remote Commit SHA</span>
               <span className="font-mono text-base font-black text-purple-600 dark:text-purple-400 select-all">
                 {data.remote?.hash || (data.status === "OFFLINE" ? "Offline" : "Unknown")}
               </span>
             </div>
 
             <div>
-              <span className="text-zinc-400 uppercase font-bold text-[10px] tracking-wider block">Latest Message</span>
+              <span className="text-zinc-400 uppercase font-bold text-xs tracking-wider block">Latest Message</span>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">
                 {data.remote?.message || (data.status === "OFFLINE" ? "GitHub unreachable" : "Scanning...")}
               </p>
@@ -332,11 +332,11 @@ export function SystemUpdateClient({
 
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
               <div>
-                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Committed By</span>
+                <span className="text-xs uppercase font-bold text-zinc-400 block">Committed By</span>
                 <b className="text-zinc-900 dark:text-zinc-100">{data.remote?.author || "GitHub"}</b>
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Remote Date</span>
+                <span className="text-xs uppercase font-bold text-zinc-400 block">Remote Date</span>
                 <b className="text-zinc-900 dark:text-zinc-100">
                   {data.remote?.date ? new Date(data.remote.date).toLocaleString() : "—"}
                 </b>
@@ -374,7 +374,7 @@ export function SystemUpdateClient({
                     {c.message}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-zinc-400 text-[11px] shrink-0">
+                <div className="flex items-center gap-3 text-zinc-400 text-xs shrink-0">
                   <span>{c.author}</span>
                   <span>&bull;</span>
                   <span>{c.relativeDate}</span>

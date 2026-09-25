@@ -170,21 +170,21 @@ export function StockCountForm({
 
             <div className="md:col-span-8 flex flex-wrap items-center justify-start md:justify-end gap-3 text-xs">
               <div className="p-3 px-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-750 text-center min-w-[120px]">
-                <span className="text-zinc-500 dark:text-zinc-400 font-medium block text-[11px]">Counted</span>
+                <span className="text-zinc-500 dark:text-zinc-400 font-medium block text-xs">Counted</span>
                 <div className="text-base font-black tabular-nums text-zinc-900 dark:text-zinc-100 mt-0.5">
                   {totalCounted} / {products.length}
                 </div>
               </div>
 
               <div className="p-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-center min-w-[120px]">
-                <span className="text-emerald-700 dark:text-emerald-400 font-bold block text-[11px]">Exact Matches</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold block text-xs">Exact Matches</span>
                 <div className="text-base font-black tabular-nums text-emerald-800 dark:text-emerald-300 mt-0.5">
                   {totalMatched}
                 </div>
               </div>
 
               <div className="p-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-center min-w-[120px]">
-                <span className="text-amber-700 dark:text-amber-400 font-bold block text-[11px]">Discrepancies</span>
+                <span className="text-amber-700 dark:text-amber-400 font-bold block text-xs">Discrepancies</span>
                 <div className="text-base font-black tabular-nums text-amber-800 dark:text-amber-300 mt-0.5">
                   {totalDiscrepancies}
                 </div>
@@ -265,7 +265,7 @@ export function StockCountForm({
 
                   {/* System Stock */}
                   <div className="w-28">
-                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                    <span className="block text-xs uppercase font-bold text-zinc-400 mb-0.5">
                       System Stock
                     </span>
                     <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300 tabular-nums">
@@ -275,7 +275,7 @@ export function StockCountForm({
 
                   {/* Physical Quantity Stepper */}
                   <div className="w-48">
-                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                    <span className="block text-xs uppercase font-bold text-zinc-400 mb-0.5">
                       Physical Count
                     </span>
                     <CrateStepper
@@ -293,7 +293,7 @@ export function StockCountForm({
 
                   {/* Difference Badge */}
                   <div className="w-28">
-                    <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
+                    <span className="block text-xs uppercase font-bold text-zinc-400 mb-0.5">
                       Difference
                     </span>
                     {diff === 0 ? (
@@ -317,7 +317,7 @@ export function StockCountForm({
                   <div className="flex-1 min-w-[200px]">
                     {diff !== 0 && c.counted ? (
                       <div>
-                        <label className="block text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 mb-0.5">
+                        <label className="block text-xs uppercase font-bold text-amber-700 dark:text-amber-400 mb-0.5">
                           Discrepancy Reason *
                         </label>
                         <input

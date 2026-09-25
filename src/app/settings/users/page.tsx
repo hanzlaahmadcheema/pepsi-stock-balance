@@ -95,7 +95,7 @@ export default async function UsersSettingsPage() {
                               <span className="font-mono text-zinc-900 dark:text-zinc-100 font-medium">
                                 {email.replace("@pepsidepot.local", "")}
                               </span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                                 username
                               </span>
                             </div>

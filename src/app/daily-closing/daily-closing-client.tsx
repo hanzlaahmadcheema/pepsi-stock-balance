@@ -450,7 +450,7 @@ export function DailyClosingClient({
                               day: "numeric",
                             })}
                           </div>
-                          <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 lg:hidden inline-block mt-0.5">
+                          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 lg:hidden inline-block mt-0.5">
                             {isCloud ? "View Sheet →" : "Reconcile →"}
                           </span>
                         </Link>
@@ -534,7 +534,7 @@ export function DailyClosingClient({
                           By: <b className="text-zinc-800 dark:text-zinc-200">{c.closedByName}</b>
                         </div>
                         {c.closedAt && (
-                          <div className="text-[11px] text-zinc-400">
+                          <div className="text-xs text-zinc-400">
                             {new Date(c.closedAt).toLocaleString(undefined, {
                               month: "short",
                               day: "numeric",

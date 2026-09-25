@@ -2,46 +2,927 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ========================================================================= */
+/* CLASSIC DEPOT DESIGN SYSTEM — "Printed Ledger"                              */
+/*                                                                             */
+/* Purpose: cashiers, warehouse staff and owners of all ages must be able to  */
+/* read and operate this software with no prior training.                      */
+/*                                                                             */
+/* Rules encoded here:                                                         */
+/*   1. Nothing is smaller than 15px. Nothing is hidden behind a collapse.    */
+/*   2. Every control has a visible 2px edge so it reads as a physical key.    */
+/*   3. Text sits on paper, not on soft grey. Status is written in words.     */
+/*   4. Layout is driven by rem, so the operator's text-size choice scales    */
+/*      the entire application proportionally (see html[data-text-size]).      */
+/* ========================================================================= */
+
+/* ------------------------------------------------------------------------- */
+/* 1. SEMANTIC TOKENS (light = "paper", the default)                         */
+/* ------------------------------------------------------------------------- */
 :root {
-  --background: #f8fafc;
-  --foreground: #09090b;
+  --paper: #f4f0e4;          /* application canvas: ledger paper            */
+  --surface: #ffffff;        /* cards, tables, forms                       */
+  --surface-alt: #faf7ef;    /* quiet panels, table headers                */
+  --ink: #1c1a16;            /* primary text                               */
+  --ink-2: #45402f;          /* secondary text                             */
+  --ink-3: #67604f;          /* labels, helper text (5.7:1 on white)       */
+  --rule: #c8bda3;           /* 2px panel edges, table grid                */
+  --rule-strong: #8a8270;    /* input and button edges (4.2:1 on white)    */
+  --rule-ink: #1c1a16;       /* active / selected edges                    */
+  --navy: #0b4a8b;           /* Pepsi primary: actions, active nav         */
+  --navy-deep: #072c55;
+  --navy-wash: #e8f0fa;
+  --stamp: #b32218;          /* destructive, overdue, attention stamp      */
+  --stamp-wash: #fbe9e7;
+  --good: #15653a;
+  --good-wash: #e7f2eb;
+  --warn: #8a5200;
+  --warn-wash: #fbf0dc;
+  --info-wash: #e8f0fa;
+  --focus: #0b4a8b;
+  --shadow-card: 0 1px 0 0 rgba(28, 26, 22, 0.08);
+  --shadow-pop: 0 10px 25px -5px rgba(28, 26, 22, 0.25), 0 8px 10px -6px rgba(28, 26, 22, 0.2);
+  --font-app-scale: 18px; /* operator text size — overridden per choice */
 }
 
+/* ------------------------------------------------------------------------- */
+/* 2. SEMANTIC TOKENS (dark = "night depot")                                  */
+/* ------------------------------------------------------------------------- */
 .dark {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --paper: #10151b;
+  --surface: #1b2129;
+  --surface-alt: #232b34;
+  --ink: #f2f0ea;
+  --ink-2: #d3dae1;
+  --ink-3: #a7b1bb;
+  --rule: #3f4954;
+  --rule-strong: #6d7883;
+  --rule-ink: #f2f0ea;
+  --navy: #6ba7ea;
+  --navy-deep: #a9cbf2;
+  --navy-wash: #16283c;
+  --stamp: #f2837a;
+  --stamp-wash: #3a1a18;
+  --good: #5cc98d;
+  --good-wash: #14301f;
+  --warn: #e3a857;
+  --warn-wash: #33240d;
+  --info-wash: #16283c;
+  --focus: #8fc0f5;
+  --shadow-card: 0 1px 0 0 rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
 }
 
+/* ------------------------------------------------------------------------- */
+/* 3. TAILWIND THEME — classic palette and the larger type scale              */
+/*                                                                            */
+/* The colour ramps are remapped (not added to) so that every existing       */
+/* screen inherits the classic palette without being rewritten. Shades keep  */
+/* the role they already play: 50-300 = surfaces/lights, 400-600 = muted     */
+/* text, 700-950 = strong text, dark washes and filled buttons.              */
+/* ------------------------------------------------------------------------- */
+@theme {
+  /* Type scale — the smallest text in the product is 15px */
+  --text-xs: 0.9375rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 1.0625rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.35;
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 1.15;
+
+  /* Classic geometry: firm, form-like corners rather than soft pills */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.4375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.75rem;
+
+  /* --- Warm paper neutrals (replaces zinc) --- */
+  --color-zinc-50: #faf7ef;
+  --color-zinc-100: #f1ecde;
+  --color-zinc-200: #e3dac4;
+  --color-zinc-300: #c8bda3;
+  --color-zinc-400: #7e7765;
+  --color-zinc-500: #67604f;
+  --color-zinc-600: #4e4839;
+  --color-zinc-700: #423d33;
+  --color-zinc-800: #2e2b24;
+  --color-zinc-900: #1c1a16;
+  --color-zinc-950: #121110;
+
+  /* --- Pepsi navy (replaces blue) --- */
+  --color-blue-50: #e8f0fa;
+  --color-blue-100: #cfe0f3;
+  --color-blue-200: #a5c2e6;
+  --color-blue-300: #6e9cd2;
+  --color-blue-400: #2f6fbe;
+  --color-blue-500: #15599f;
+  --color-blue-600: #0b4a8b;
+  --color-blue-700: #093b70;
+  --color-blue-800: #072c55;
+  --color-blue-900: #051f3d;
+  --color-blue-950: #0b1c31;
+
+  /* --- Settled green: paid, received, in stock --- */
+  --color-emerald-50: #e7f2eb;
+  --color-emerald-100: #cfe6d9;
+  --color-emerald-200: #a3cfb4;
+  --color-emerald-300: #6baf87;
+  --color-emerald-400: #3c8f63;
+  --color-emerald-500: #1f7a4e;
+  --color-emerald-600: #15653a;
+  --color-emerald-700: #11522e;
+  --color-emerald-800: #0c3d22;
+  --color-emerald-900: #082b18;
+  --color-emerald-950: #e7f2eb;
+
+  /* --- Amber: attention needed, awaiting approval --- */
+  --color-amber-50: #fbf0dc;
+  --color-amber-100: #f6e3bc;
+  --color-amber-200: #ebc98a;
+  --color-amber-300: #dcab55;
+  --color-amber-400: #c08a2c;
+  --color-amber-500: #a26e17;
+  --color-amber-600: #8a5200;
+  --color-amber-700: #6e4000;
+  --color-amber-800: #4e2d00;
+  --color-amber-900: #331e00;
+  --color-amber-950: #4a2a00;
+
+  /* --- Stamp red: destructive, overdue, damaged --- */
+  --color-red-50: #fbe9e7;
+  --color-red-100: #f6d2ce;
+  --color-red-200: #eda9a2;
+  --color-red-300: #de7a70;
+  --color-red-400: #c95045;
+  --color-red-500: #b83327;
+  --color-red-600: #b32218;
+  --color-red-700: #8e1b13;
+  --color-red-800: #6b150e;
+  --color-red-900: #4a0f0a;
+  --color-red-950: #4a0f0a;
+
+  --color-rose-50: #fbe9e9;
+  --color-rose-100: #f6d2d2;
+  --color-rose-200: #eda9a9;
+  --color-rose-300: #de7a7a;
+  --color-rose-400: #c95050;
+  --color-rose-500: #b83333;
+  --color-rose-600: #a32338;
+  --color-rose-700: #851b2d;
+  --color-rose-800: #661423;
+  --color-rose-900: #4a0f1a;
+  --color-rose-950: #3a0c14;
+
+  /* --- Supporting hues, all pulled toward the classic register --- */
+  --color-orange-50: #fcf0e2;
+  --color-orange-100: #f7dfc2;
+  --color-orange-200: #edbe8c;
+  --color-orange-300: #de9a55;
+  --color-orange-400: #c97a2c;
+  --color-orange-500: #b0611b;
+  --color-orange-600: #97500f;
+  --color-orange-700: #783e0b;
+  --color-orange-800: #572d07;
+  --color-orange-900: #3a1e04;
+  --color-orange-950: #3a1e04;
+
+  --color-teal-50: #e4f1f0;
+  --color-teal-100: #c6e2e0;
+  --color-teal-200: #96c8c5;
+  --color-teal-300: #5ba6a2;
+  --color-teal-400: #2c8683;
+  --color-teal-500: #186e6b;
+  --color-teal-600: #0f5a58;
+  --color-teal-700: #0b4745;
+  --color-teal-800: #073332;
+  --color-teal-900: #052220;
+  --color-teal-950: #052220;
+
+  --color-cyan-50: #e4f1f1;
+  --color-cyan-100: #c6e2e2;
+  --color-cyan-200: #96c8c8;
+  --color-cyan-300: #5ba6a6;
+  --color-cyan-400: #2c8686;
+  --color-cyan-500: #186e6e;
+  --color-cyan-600: #0f5a5a;
+  --color-cyan-700: #0b4747;
+  --color-cyan-800: #073333;
+  --color-cyan-900: #052222;
+  --color-cyan-950: #052222;
+
+  --color-sky-50: #e8f0fa;
+  --color-sky-100: #cfe0f3;
+  --color-sky-200: #a5c2e6;
+  --color-sky-300: #6e9cd2;
+  --color-sky-400: #2f6fbe;
+  --color-sky-500: #15599f;
+  --color-sky-600: #0b4a8b;
+  --color-sky-700: #093b70;
+  --color-sky-800: #072c55;
+  --color-sky-900: #051f3d;
+  --color-sky-950: #0b1c31;
+
+  --color-indigo-50: #eaedf7;
+  --color-indigo-100: #d3d9ef;
+  --color-indigo-200: #aab4de;
+  --color-indigo-300: #7b88c8;
+  --color-indigo-400: #4c5bac;
+  --color-indigo-500: #35428e;
+  --color-indigo-600: #2a3676;
+  --color-indigo-700: #212a5d;
+  --color-indigo-800: #182045;
+  --color-indigo-900: #11162f;
+  --color-indigo-950: #0a0d1c;
+
+  --color-purple-50: #efeaf6;
+  --color-purple-100: #dcd2ea;
+  --color-purple-200: #bba9d6;
+  --color-purple-300: #9179b8;
+  --color-purple-400: #6b4f97;
+  --color-purple-500: #543a7d;
+  --color-purple-600: #452e68;
+  --color-purple-700: #362553;
+  --color-purple-800: #271b3d;
+  --color-purple-900: #1a1229;
+  --color-purple-950: #1a1229;
+
+  --color-violet-50: #efeaf6;
+  --color-violet-100: #dcd2ea;
+  --color-violet-200: #bba9d6;
+  --color-violet-300: #9179b8;
+  --color-violet-400: #6b4f97;
+  --color-violet-500: #543a7d;
+  --color-violet-600: #452e68;
+  --color-violet-700: #362553;
+  --color-violet-800: #271b3d;
+  --color-violet-900: #1a1229;
+  --color-violet-950: #1a1229;
+
+  --color-lime-50: #eaf3e6;
+  --color-lime-100: #d3e8cb;
+  --color-lime-200: #a9d19b;
+  --color-lime-300: #74b062;
+  --color-lime-400: #468c34;
+  --color-lime-500: #2f7220;
+  --color-lime-600: #215c16;
+  --color-lime-700: #194710;
+  --color-lime-800: #11330b;
+  --color-lime-900: #0b2207;
+  --color-lime-950: #eaf3e6;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 4. NIGHT DEPOT OVERRIDES                                                   */
+/*                                                                            */
+/* Same roles, tuned for a dark screen: light bands stay light so unpaired   */
+/* light chips keep dark text, and wash/edge shades become mid or dark tones */
+/* so borders remain visible on dark surfaces.                                */
+/* ------------------------------------------------------------------------- */
+.dark {
+  --color-zinc-50: #e9edf1;
+  --color-zinc-100: #dce2e8;
+  --color-zinc-200: #c2cad3;
+  --color-zinc-300: #a3adb8;
+  --color-zinc-400: #8a949f;
+  --color-zinc-500: #77818c;
+  --color-zinc-600: #8a949f;
+  --color-zinc-700: #39414a;
+  --color-zinc-800: #2a313a;
+  --color-zinc-900: #1b2129;
+  --color-zinc-950: #10151b;
+
+  --color-blue-50: #16283c;
+  --color-blue-100: #1d3b58;
+  --color-blue-200: #8fb6e4;
+  --color-blue-300: #a9cbf2;
+  --color-blue-400: #8fc0f5;
+  --color-blue-500: #6ba7ea;
+  --color-blue-600: #1a63b8;
+  --color-blue-700: #2a6fbd;
+  --color-blue-800: #9cc6f2;
+  --color-blue-900: #bcd8f6;
+  --color-blue-950: #16283c;
+
+  --color-emerald-50: #14301f;
+  --color-emerald-100: #1a4229;
+  --color-emerald-200: #4aa874;
+  --color-emerald-300: #5cc98d;
+  --color-emerald-400: #6fd79c;
+  --color-emerald-500: #7fe0ab;
+  --color-emerald-600: #1f7a4e;
+  --color-emerald-700: #2f9a63;
+  --color-emerald-800: #2c6b48;
+  --color-emerald-900: #1f5236;
+  --color-emerald-950: #14301f;
+
+  --color-amber-50: #33240d;
+  --color-amber-100: #4a3410;
+  --color-amber-200: #c08a2c;
+  --color-amber-300: #e3a857;
+  --color-amber-400: #eeb968;
+  --color-amber-500: #f3cb85;
+  --color-amber-600: #8a5200;
+  --color-amber-700: #a26e17;
+  --color-amber-800: #7a4f10;
+  --color-amber-900: #4a2a00;
+  --color-amber-950: #33240d;
+
+  --color-red-50: #3a1a18;
+  --color-red-100: #4f221f;
+  --color-red-200: #de7a70;
+  --color-red-300: #f2837a;
+  --color-red-400: #f69c94;
+  --color-red-500: #f7b0aa;
+  --color-red-600: #b32218;
+  --color-red-700: #c95045;
+  --color-red-800: #8a3a32;
+  --color-red-900: #4a0f0a;
+  --color-red-950: #3a1a18;
+
+  --color-rose-50: #3a1a18;
+  --color-rose-100: #4a2020;
+  --color-rose-200: #e08585;
+  --color-rose-300: #f2837a;
+  --color-rose-400: #f59c94;
+  --color-rose-500: #f7b0aa;
+  --color-rose-600: #a32338;
+  --color-rose-700: #c95050;
+  --color-rose-800: #7d3333;
+  --color-rose-900: #4a0f1a;
+  --color-rose-950: #3a0c14;
+
+  --color-orange-50: #33220f;
+  --color-orange-100: #472f13;
+  --color-orange-200: #de9a55;
+  --color-orange-300: #e8ab63;
+  --color-orange-400: #f0bb7d;
+  --color-orange-500: #f5cb9c;
+  --color-orange-600: #97500f;
+  --color-orange-700: #b0611b;
+  --color-orange-800: #7d4715;
+  --color-orange-900: #3a1e04;
+  --color-orange-950: #33220f;
+
+  --color-teal-50: #0f2c2b;
+  --color-teal-100: #153c3a;
+  --color-teal-200: #5ba6a2;
+  --color-teal-300: #6fbcb8;
+  --color-teal-400: #86cdc9;
+  --color-teal-500: #9adbd7;
+  --color-teal-600: #0f5a58;
+  --color-teal-700: #186e6b;
+  --color-teal-800: #2c8683;
+  --color-teal-900: #052220;
+  --color-teal-950: #0f2c2b;
+
+  --color-cyan-50: #0f2c2c;
+  --color-cyan-100: #153c3c;
+  --color-cyan-200: #5ba6a6;
+  --color-cyan-300: #6fbcbc;
+  --color-cyan-400: #86cdcd;
+  --color-cyan-500: #9adbdb;
+  --color-cyan-600: #0f5a5a;
+  --color-cyan-700: #186e6e;
+  --color-cyan-800: #2c8686;
+  --color-cyan-900: #052222;
+  --color-cyan-950: #0f2c2c;
+
+  --color-sky-50: #16283c;
+  --color-sky-100: #1d3b58;
+  --color-sky-200: #8fb6e4;
+  --color-sky-300: #a9cbf2;
+  --color-sky-400: #8fc0f5;
+  --color-sky-500: #6ba7ea;
+  --color-sky-600: #1a63b8;
+  --color-sky-700: #2a6fbd;
+  --color-sky-800: #9cc6f2;
+  --color-sky-900: #bcd8f6;
+  --color-sky-950: #16283c;
+
+  --color-indigo-50: #1b1f38;
+  --color-indigo-100: #262c4c;
+  --color-indigo-200: #7b88c8;
+  --color-indigo-300: #98a4dc;
+  --color-indigo-400: #b0bae8;
+  --color-indigo-500: #c2caf0;
+  --color-indigo-600: #2a3676;
+  --color-indigo-700: #35428e;
+  --color-indigo-800: #4c5bac;
+  --color-indigo-900: #4a5a94;
+  --color-indigo-950: #1b1f38;
+
+  --color-purple-50: #241b38;
+  --color-purple-100: #32254b;
+  --color-purple-200: #9179b8;
+  --color-purple-300: #a892cc;
+  --color-purple-400: #bfa9dc;
+  --color-purple-500: #d2c0e8;
+  --color-purple-600: #452e68;
+  --color-purple-700: #543a7d;
+  --color-purple-800: #6b4f97;
+  --color-purple-900: #2a1d42;
+  --color-purple-950: #241b38;
+
+  --color-violet-50: #241b38;
+  --color-violet-100: #32254b;
+  --color-violet-200: #9179b8;
+  --color-violet-300: #a892cc;
+  --color-violet-400: #bfa9dc;
+  --color-violet-500: #d2c0e8;
+  --color-violet-600: #452e68;
+  --color-violet-700: #543a7d;
+  --color-violet-800: #6b4f97;
+  --color-violet-900: #2a1d42;
+  --color-violet-950: #241b38;
+
+  --color-lime-50: #1a2a12;
+  --color-lime-100: #243a19;
+  --color-lime-200: #74b062;
+  --color-lime-300: #8ec67c;
+  --color-lime-400: #a8d69a;
+  --color-lime-500: #bde3b1;
+  --color-lime-600: #215c16;
+  --color-lime-700: #2f7220;
+  --color-lime-800: #468c34;
+  --color-lime-900: #194710;
+  --color-lime-950: #1a2a12;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 5. SEMANTIC UTILITIES                                                      */
+/* ------------------------------------------------------------------------- */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-navy-wash: var(--navy-wash);
+  --color-stamp: var(--stamp);
+  --color-stamp-wash: var(--stamp-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-app-sans);
+  --font-mono: var(--font-app-mono);
 }
 
-
+/* ------------------------------------------------------------------------- */
+/* 6. BASE DOCUMENT                                                           */
+/* ------------------------------------------------------------------------- */
 html {
   scroll-behavior: smooth;
+  /* Operator-chosen text size. Every rem-based measurement in the app —     */
+  /* type, spacing, control heights, column widths — scales together.        */
+  font-size: var(--font-app-scale);
+  -webkit-text-size-adjust: 100%;
 }
 
-/* ========================================================================= */
-/* Refined Custom Scrollbar System                                           */
-/* ========================================================================= */
+html[data-text-size="medium"] { --font-app-scale: 16px; }
+html[data-text-size="large"] { --font-app-scale: 18px; }
+html[data-text-size="largest"] { --font-app-scale: 20px; }
 
-/* Firefox standard specification */
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-app-sans), "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Never let long words or codes stretch the page sideways */
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+.num {
+  font-family: var(--font-app-mono), ui-monospace, "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:active:not(:disabled),
+a[role="button"]:active {
+  transform: translateY(1px);
+}
+
+/* ------------------------------------------------------------------------- */
+/* 7. CLASSIC COMPONENT PRIMITIVES                                            */
+/* ------------------------------------------------------------------------- */
+
+/* --- Buttons: 48px tall, 2px visible edge, no soft shadows --------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.5rem 1.125rem;
+  border: 2px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out;
+  box-shadow: 0 2px 0 0 var(--rule);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-alt);
+  border-color: var(--ink-3);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--surface-alt);
+  color: var(--ink-3);
+  border-color: var(--rule);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.btn-primary {
+  background: var(--navy);
+  border-color: var(--navy-deep);
+  color: #ffffff;
+  box-shadow: 0 2px 0 0 var(--navy-deep);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--navy-deep);
+  border-color: var(--navy-deep);
+  color: #ffffff;
+}
+
+.btn-danger {
+  background: var(--surface);
+  border-color: var(--stamp);
+  color: var(--stamp);
+  box-shadow: 0 2px 0 0 var(--stamp);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--stamp-wash);
+  border-color: var(--stamp);
+  color: var(--stamp);
+}
+
+.btn-warn {
+  background: var(--warn-wash);
+  border-color: var(--warn);
+  color: var(--warn);
+  box-shadow: 0 2px 0 0 var(--warn);
+}
+
+.btn-warn:hover:not(:disabled) {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #ffffff;
+}
+
+.btn-good {
+  background: var(--good-wash);
+  border-color: var(--good);
+  color: var(--good);
+  box-shadow: 0 2px 0 0 var(--good);
+}
+
+.btn-good:hover:not(:disabled) {
+  background: var(--good);
+  border-color: var(--good);
+  color: #ffffff;
+}
+
+.btn-lg {
+  min-height: 3.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1875rem;
+}
+
+.btn-sm {
+  min-height: 2.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 0 0 var(--rule);
+}
+
+/* --- Panels: a card is a sheet of paper with a printed header rule ------ */
+.panel {
+  background: var(--surface);
+  border: 2px solid var(--rule);
+  border-radius: 8px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 1rem;
+  background: var(--surface-alt);
+  border-bottom: 2px solid var(--rule);
+  border-radius: 6px 6px 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.panel-body {
+  padding: 1.125rem;
+}
+
+.panel-head-plain {
+  background: transparent;
+  border-bottom: 2px solid var(--rule);
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* --- Fields: 48px tall, permanent label above, error under the box ------- */
+.label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.field::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+
+.field:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--navy);
+}
+
+.field:disabled {
+  background: var(--surface-alt);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.field-error {
+  border-color: var(--stamp);
+  background: var(--stamp-wash);
+}
+
+.field-error:focus {
+  outline-color: var(--stamp);
+  border-color: var(--stamp);
+}
+
+.field-help {
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  color: var(--ink-3);
+}
+
+.field-error-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-top: 0.3125rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--stamp);
+}
+
+select.field {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 1.125rem center, right 0.75rem center;
+  background-size: 0.375rem 0.375rem, 0.375rem 0.375rem;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}
+
+/* --- Status boxes: the word is always written out, colour only supports -- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.125rem 0.5rem;
+  border: 2px solid;
+  border-radius: 5px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.badge-neutral { background: var(--surface-alt); border-color: var(--rule-strong); color: var(--ink-2); }
+.badge-good    { background: var(--good-wash); border-color: var(--good); color: var(--good); }
+.badge-warn    { background: var(--warn-wash); border-color: var(--warn); color: var(--warn); }
+.badge-bad     { background: var(--stamp-wash); border-color: var(--stamp); color: var(--stamp); }
+.badge-info    { background: var(--navy-wash); border-color: var(--navy); color: var(--navy); }
+
+/* --- Links: always underlined so they never read as plain text ---------- */
+.link {
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  color: var(--navy-deep);
+  text-decoration-thickness: 3px;
+}
+
+/* A link that is also a key: full 44px tap area, underline kept so it never
+   stops looking like a link. Used for "next step" links inside panels/tables. */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.25rem;
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-btn:hover {
+  color: var(--navy-deep);
+  text-decoration-thickness: 3px;
+}
+
+/* --- Ledger tables ------------------------------------------------------ */
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.0625rem;
+}
+
+.ledger thead th {
+  padding: 0.625rem 0.75rem;
+  background: var(--surface-alt);
+  border-bottom: 2px solid var(--rule-strong);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.ledger tbody td {
+  padding: 0.6875rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--ink);
+}
+
+.ledger tbody tr:nth-child(even) {
+  background: var(--surface-alt);
+}
+
+.ledger tbody tr:hover {
+  background: var(--navy-wash);
+}
+
+.ledger .num,
+.ledger td.num,
+.ledger th.num {
+  font-family: var(--font-app-mono), ui-monospace, "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- Ledger row grids: div-based tables (POS catalog, ticket rows) --------- */
+.ledger-head {
+  display: grid;
+  align-items: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background: var(--surface-alt);
+  border-bottom: 2px solid var(--rule-strong);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.ledger-row {
+  display: grid;
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ledger-row:nth-child(odd) {
+  background: var(--surface-alt);
+}
+
+.ledger-row:hover {
+  background: var(--navy-wash);
+}
+
+.ledger-row-active {
+  background: var(--navy-wash);
+  box-shadow: inset 3px 0 0 0 var(--navy);
+}
+
+/* --- Notices: warning and error banners --------------------------------- */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.notice-warn { background: var(--warn-wash); border-color: var(--warn); color: var(--ink); }
+.notice-bad  { background: var(--stamp-wash); border-color: var(--stamp); color: var(--ink); }
+.notice-info { background: var(--navy-wash); border-color: var(--navy); color: var(--ink); }
+.notice-good { background: var(--good-wash); border-color: var(--good); color: var(--ink); }
+
+/* --- Scrollbars: visible enough to find, quiet enough to ignore -------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(161, 161, 170, 0.4) transparent;
+  scrollbar-color: rgba(120, 112, 96, 0.55) transparent;
 }
 
 .dark * {
-  scrollbar-color: rgba(113, 113, 122, 0.45) transparent;
+  scrollbar-color: rgba(160, 172, 184, 0.5) transparent;
 }
 
-/* WebKit-based browsers (Chrome, Edge, Safari, Opera) */
 *::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 12px;
+  height: 12px;
 }
 
 *::-webkit-scrollbar-track {
@@ -49,32 +930,20 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(161, 161, 170, 0.38);
-  border-radius: 9999px;
-  border: 2px solid transparent;
+  background: rgba(120, 112, 96, 0.5);
+  border-radius: 6px;
+  border: 3px solid transparent;
   background-clip: content-box;
-  transition: background-color 150ms ease;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: rgba(113, 113, 122, 0.7);
 }
 
 .dark *::-webkit-scrollbar-thumb {
-  background: rgba(113, 113, 122, 0.45);
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-.dark *::-webkit-scrollbar-thumb:hover {
-  background: rgba(161, 161, 170, 0.7);
+  background: rgba(160, 172, 184, 0.5);
 }
 
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Utility to completely hide scrollbar while preserving scroll functionality */
 .no-scrollbar::-webkit-scrollbar,
 .scrollbar-none::-webkit-scrollbar {
   display: none !important;
@@ -86,56 +955,20 @@ html {
   scrollbar-width: none !important;
 }
 
-/* Extra sleek 4px scrollbar for compact elements */
 .thin-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-h1, h2, h3, h4 {
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
-}
-
-:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
-button:active:not(:disabled),
-a[role="button"]:active {
-  transform: scale(0.985);
-  transition: transform 75ms ease-in-out;
-}
-
-table {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Sidebar Shell Layout Integration (Desktop lg+) */
+/* ------------------------------------------------------------------------- */
+/* 8. APP SHELL GEOMETRY                                                     */
+/*                                                                            */
+/* The navigation is never collapsed: every destination stays on screen with */
+/* its full name, so nobody has to remember where a hidden menu went.         */
+/* ------------------------------------------------------------------------- */
 @media (min-width: 1024px) {
-  body:has(.app-sidebar:not(.app-sidebar-collapsed)) main {
-    padding-left: 18rem !important;
-    padding-right: 2.5rem !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-  body:has(.app-sidebar.app-sidebar-collapsed) main {
-    padding-left: 6.5rem !important;
+  body:has(.app-sidebar) main {
+    padding-left: 21.5rem !important;
     padding-right: 2.5rem !important;
     max-width: 100% !important;
     margin-left: 0 !important;
@@ -143,9 +976,26 @@ table {
   }
 }
 
-/* ========================================================================= */
-/* 80mm POS Thermal Receipt Print Specifications                            */
-/* ========================================================================= */
+/* ------------------------------------------------------------------------- */
+/* 9. MOTION                                                                  */
+/* ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* 10. 80mm POS THERMAL RECEIPT PRINT SPECIFICATIONS                         */
+/* ------------------------------------------------------------------------- */
 @media print {
   @page {
     size: 80mm auto;
@@ -165,9 +1015,10 @@ table {
     print-color-adjust: exact !important;
   }
 
+  html { font-size: 12px !important; }
+
   /* Force override any desktop shell sidebar padding on print */
-  body:has(.app-sidebar:not(.app-sidebar-collapsed)) main,
-  body:has(.app-sidebar.app-sidebar-collapsed) main,
+  body:has(.app-sidebar) main,
   main {
     padding: 0 !important;
     margin: 0 auto !important;
@@ -178,27 +1029,49 @@ table {
   /* Hide app shell chrome during receipt printing */
   .app-sidebar,
   .app-topbar,
+  .app-bottombar,
   header,
   aside,
   nav {
     display: none !important;
   }
 
-  /* Thermal 80mm receipt printable boundaries */
+  /* Thermal 80mm receipt printable boundaries                              */
+  /* SpeedX 80mm roll: 80mm paper width, ~72mm printable (4mm margins)     */
   .pos-receipt-80mm {
     width: 72mm !important;
     max-width: 72mm !important;
+    min-width: 72mm !important;
     margin: 0 auto !important;
-    padding: 2mm 1mm 12mm 1mm !important;
+    padding: 2mm 1.5mm 14mm 1.5mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-    font-size: 11px !important;
-    line-height: 1.25 !important;
+    /* Monospace for predictable character widths — thermal standard */
+    font-family: ui-monospace, "Courier New", Courier, monospace !important;
+    font-size: 10.5px !important;
+    line-height: 1.28 !important;
+    /* Wrap long product names — NEVER truncate */
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    /* Keep entire receipt on one thermal page */
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force all text inside receipt to black for thermal print clarity */
+  .pos-receipt-80mm * {
+    color: #000000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Dashed borders must render visibly on thermal paper */
+  .pos-receipt-80mm [class*="border"] {
+    border-color: #000000 !important;
   }
 }
-
-

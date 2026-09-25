@@ -128,7 +128,7 @@ export default async function TechnicalServicesPage() {
                     <IconZap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>System Updates &amp; Version Scanner</span>
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                     Owner Only
                   </span>
                 </div>

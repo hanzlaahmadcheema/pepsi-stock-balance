@@ -2,7 +2,9 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { IconSearch } from "@/components/ui/icons";
 
+/** Type a product name or brand and the list narrows as you go. */
 export function ProductSearch({ defaultValue = "" }: { defaultValue?: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -22,25 +24,39 @@ export function ProductSearch({ defaultValue = "" }: { defaultValue?: string }) 
   }
 
   return (
-    <div className="relative max-w-sm w-full">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <circle cx="11" cy="11" r="8" strokeWidth="2" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m21 21-4.3-4.3" />
-        </svg>
+    <div className="relative w-full sm:max-w-md">
+      <label htmlFor="product-search" className="label">
+        Find a product
+      </label>
+      <div className="relative">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 flex w-12 items-center justify-center text-ink-3"
+        >
+          <IconSearch className="h-6 w-6" />
+        </span>
+        <input
+          id="product-search"
+          type="search"
+          defaultValue={defaultValue}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Type a name or brand, e.g. Pepsi"
+          autoComplete="off"
+          className="field pl-14"
+          aria-describedby="product-search-hint"
+        />
+        {isPending ? (
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-navy"
+          >
+            <span className="h-6 w-6 animate-spin rounded-full border-[3px] border-rule border-t-navy" />
+          </span>
+        ) : null}
       </div>
-      <input
-        type="text"
-        defaultValue={defaultValue}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search products or brands..."
-        className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-      />
-      {isPending && (
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
+      <p id="product-search-hint" className="field-help">
+        The list below narrows to match what you type.
+      </p>
     </div>
   );
 }

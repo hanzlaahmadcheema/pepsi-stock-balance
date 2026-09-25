@@ -198,19 +198,19 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
 
                   <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
                     <div>
-                      <span className="text-zinc-400 block text-[10px] uppercase font-bold">Total</span>
+                      <span className="text-zinc-400 block text-xs uppercase font-bold">Total</span>
                       <span className="font-bold text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(s.totalAmount)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-zinc-400 block text-[10px] uppercase font-bold">Paid</span>
+                      <span className="text-zinc-400 block text-xs uppercase font-bold">Paid</span>
                       <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(s.paidAmount)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-zinc-400 block text-[10px] uppercase font-bold">Credit</span>
+                      <span className="text-zinc-400 block text-xs uppercase font-bold">Credit</span>
                       <span className={s.creditAmount > 0 ? "font-bold text-amber-600 dark:text-amber-400" : "text-zinc-400"}>
                         {s.creditAmount > 0 ? formatCurrency(s.creditAmount) : "Rs. 0"}
                       </span>

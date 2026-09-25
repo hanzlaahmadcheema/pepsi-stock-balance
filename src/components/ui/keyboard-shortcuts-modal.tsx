@@ -146,7 +146,7 @@ export function KeyboardShortcutsModal({
                 POS Terminal &amp; Fast Checkout
               </span>
               {isPosContext && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
                   Active Page
                 </span>
               )}
@@ -161,7 +161,7 @@ export function KeyboardShortcutsModal({
                   <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
                     {item.description}
                     {item.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
+                      <span className="text-xs font-bold px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
                         {item.badge}
                       </span>
                     )}
@@ -169,7 +169,7 @@ export function KeyboardShortcutsModal({
                   <div className="flex items-center gap-1 shrink-0 ml-3">
                     {item.keys.map((k, ki) =>
                       k === "or" ? (
-                        <span key={ki} className="text-[11px] text-zinc-400 px-0.5">
+                        <span key={ki} className="text-xs text-zinc-400 px-0.5">
                           or
                         </span>
                       ) : (
@@ -222,7 +222,7 @@ export function KeyboardShortcutsModal({
 
         {/* Modal Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 text-xs text-zinc-500">
-          <span>Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono text-[10px]">?</kbd> anywhere to open this dialog</span>
+          <span>Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 font-mono text-xs">?</kbd> anywhere to open this dialog</span>
           <button
             type="button"
             onClick={onClose}

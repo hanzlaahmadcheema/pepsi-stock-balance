@@ -15,6 +15,7 @@ import {
   IconFileSpreadsheet,
   IconAlertTriangle,
 } from "@/components/ui/icons";
+import { ThermalReceipt } from "@/components/ui/thermal-receipt";
 import type { SaleDetails } from "@/lib/sales/service";
 import { isCloudPortal } from "@/lib/config/portal-mode";
 
@@ -120,209 +121,16 @@ export function InvoiceView({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. FIXED SIZE 80MM POS THERMAL RECEIPT                                     */}
-      {/* Standard ESC/POS 80mm roll format (Printable width: 72mm)                 */}
-      {/* Always active during print; active on screen when viewMode === "thermal"   */}
+      {/* 2. 80MM POS THERMAL RECEIPT                                                */}
+      {/* Rendered by isolated ThermalReceipt component (thermal-receipt.tsx)       */}
+      {/* Visible on-screen when viewMode==="thermal"; always printed via @media print */}
       {/* ========================================================================= */}
       <div
         className={`${
           viewMode === "thermal" ? "block" : "hidden print:block"
         } mx-auto my-2`}
       >
-        <div className="pos-receipt-80mm bg-white text-black p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-md font-mono text-xs w-[80mm] max-w-[80mm] sm:w-[320px] print:shadow-none print:border-none print:w-[72mm] print:max-w-[72mm] print:p-0 print:m-0 mx-auto select-none print:select-text">
-          {/* Receipt Top Header */}
-          <div className="text-center space-y-0.5 pb-2">
-            <div className="text-sm font-black tracking-tight uppercase">
-              Pepsi Distribution
-            </div>
-            <div className="text-[11px] font-semibold text-zinc-700 print:text-black uppercase">
-              Stock &amp; Balance Depot
-            </div>
-            <div className="text-[10px] text-zinc-600 print:text-black">
-              Authorized Beverage Operations
-            </div>
-            <div className="text-[9px] text-zinc-500 print:text-black">
-              Ph: 042-35800000 • Full Crate System
-            </div>
-          </div>
-
-          {/* Top Divider */}
-          <div className="border-t border-dashed border-zinc-900 print:border-black my-1.5" />
-
-          {/* Cancellation Notice on Receipt */}
-          {isCancelled && (
-            <div className="my-2 p-1.5 border-2 border-dashed border-red-600 print:border-black text-center text-red-700 print:text-black font-bold text-[11px]">
-              <div>*** INVOICE CANCELLED ***</div>
-              {sale.cancellationReason && (
-                <div className="text-[9px] font-normal mt-0.5">
-                  Reason: {sale.cancellationReason}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Receipt Metadata */}
-          <div className="text-[10px] space-y-0.5 leading-tight">
-            <div className="flex justify-between">
-              <span className="text-zinc-600 print:text-black">INVOICE:</span>
-              <span className="font-bold">{sale.invoiceNumber}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-600 print:text-black">DATE:</span>
-              <span>{formatDateTime(sale.soldAt)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-600 print:text-black">CASHIER:</span>
-              <span>{sale.createdByName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-600 print:text-black">PRICE TIER:</span>
-              <span className="font-semibold uppercase">{sale.saleType}</span>
-            </div>
-          </div>
-
-          {/* Customer Block */}
-          <div className="border-t border-dashed border-zinc-900 print:border-black my-1.5" />
-          <div className="text-[10px] space-y-0.5 leading-tight">
-            <div className="flex justify-between font-bold">
-              <span>CUSTOMER:</span>
-              <span className="truncate max-w-[180px] text-right">
-                {sale.customer ? sale.customer.name : "WALK-IN CASH"}
-              </span>
-            </div>
-            {sale.customer?.phone && (
-              <div className="flex justify-between text-zinc-600 print:text-black">
-                <span>Phone:</span>
-                <span>{sale.customer.phone}</span>
-              </div>
-            )}
-            {sale.customer?.address && (
-              <div className="flex justify-between text-zinc-600 print:text-black">
-                <span>Address:</span>
-                <span className="truncate max-w-[180px] text-right">
-                  {sale.customer.address}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Items Header */}
-          <div className="border-t border-dashed border-zinc-900 print:border-black my-1.5" />
-          <div className="text-[10px] font-bold flex justify-between uppercase pb-1 border-b border-zinc-900 print:border-black">
-            <span>ITEM DESCRIPTION</span>
-            <span>TOTAL</span>
-          </div>
-
-          {/* Line Items List (2-Line POS Thermal Standard for 80mm) */}
-          <div className="divide-y divide-dashed divide-zinc-200 print:divide-zinc-400 text-[10px] py-1">
-            {sale.items.map((item) => (
-              <div key={item.id} className="py-1 space-y-0.5">
-                <div className="font-bold truncate text-zinc-900 print:text-black">
-                  {item.productName}
-                </div>
-                <div className="flex justify-between text-zinc-700 print:text-black pl-1">
-                  <span>
-                    {formatCrates(item.quantity)} crt × {formatCurrency(item.unitPrice)}
-                  </span>
-                  <span className="font-bold text-zinc-950 print:text-black">
-                    {formatCurrency(item.totalAmount)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Financial Totals Breakdown */}
-          <div className="border-t border-dashed border-zinc-900 print:border-black my-1.5" />
-          <div className="text-[10px] space-y-1">
-            <div className="flex justify-between text-zinc-700 print:text-black">
-              <span>Subtotal:</span>
-              <span className="font-semibold">{formatCurrency(sale.subtotal)}</span>
-            </div>
-
-            {sale.discount > 0 && (
-              <div className="flex justify-between text-zinc-700 print:text-black font-semibold">
-                <span>Discount:</span>
-                <span>-{formatCurrency(sale.discount)}</span>
-              </div>
-            )}
-
-            {/* Prominent Double Line Total */}
-            <div className="border-t-2 border-b-2 border-zinc-900 print:border-black py-1 my-1 flex justify-between items-center text-xs font-black">
-              <span className="uppercase">Net Total:</span>
-              <span>{formatCurrency(sale.totalAmount)}</span>
-            </div>
-
-            {/* Payments & Balances */}
-            <div className="flex justify-between text-zinc-700 print:text-black">
-              <span>Paid Amount:</span>
-              <span className="font-bold">{formatCurrency(sale.paidAmount)}</span>
-            </div>
-
-            {sale.payments.length > 0 && (
-              <div className="flex justify-between text-[9px] text-zinc-500 print:text-black pl-2">
-                <span>Payment Method:</span>
-                <span>
-                  {sale.payments.map((p) => p.paymentMethod).join(", ")}
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-between text-zinc-700 print:text-black">
-              <span>Balance Due (Credit):</span>
-              <span
-                className={`font-bold ${
-                  sale.creditAmount > 0 ? "text-amber-700 print:text-black" : ""
-                }`}
-              >
-                {formatCurrency(sale.creditAmount)}
-              </span>
-            </div>
-
-            {/* Customer Net Ledger Outstanding Balance */}
-            {sale.customer && (
-              <div className="pt-1 mt-1 border-t border-dashed border-zinc-300 print:border-zinc-500 flex justify-between text-[9px] font-bold">
-                <span>Customer Ledger Balance:</span>
-                <span>{formatCurrency(sale.customer.outstandingBalance)}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Empty Containers Section (If recorded) */}
-          {sale.containers && (sale.containers.plasticCrates > 0 || sale.containers.glassBottles > 0) && (
-            <>
-              <div className="border-t border-dashed border-zinc-900 print:border-black my-1.5" />
-              <div className="text-[10px] space-y-0.5">
-                <div className="font-bold uppercase tracking-wider text-[9px]">
-                  Returnable Containers Ledger:
-                </div>
-                {sale.containers.plasticCrates > 0 && (
-                  <div className="flex justify-between pl-2">
-                    <span>Plastic Crates:</span>
-                    <span className="font-bold">{sale.containers.plasticCrates}</span>
-                  </div>
-                )}
-                {sale.containers.glassBottles > 0 && (
-                  <div className="flex justify-between pl-2">
-                    <span>Glass Bottles:</span>
-                    <span className="font-bold">{sale.containers.glassBottles}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Receipt Footer */}
-          <div className="border-t border-dashed border-zinc-900 print:border-black my-2" />
-          <div className="text-center text-[9px] space-y-1 text-zinc-600 print:text-black pb-6">
-            <div className="font-bold uppercase">Thank You For Your Business!</div>
-            <div>Full crate beverage supply &amp; balance system</div>
-            <div>Goods once dispatched non-refundable without slip</div>
-            <div className="font-mono text-[8px] tracking-wider pt-1 opacity-70">
-              *{sale.invoiceNumber}*
-            </div>
-          </div>
-        </div>
+        <ThermalReceipt sale={sale} />
       </div>
 
       {/* ========================================================================= */}

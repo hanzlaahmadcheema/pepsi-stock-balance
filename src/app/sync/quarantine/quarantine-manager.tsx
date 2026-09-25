@@ -250,7 +250,7 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
               }`}
             >
               <span>Active Blocking</span>
-              <span className="px-1.5 py-0.2 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 rounded-full text-[10px]">
+              <span className="px-1.5 py-0.2 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 rounded-full text-xs">
                 {activeCount}
               </span>
             </button>
@@ -263,7 +263,7 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
               }`}
             >
               <span>Resolved</span>
-              <span className="px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px]">
+              <span className="px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-full text-xs">
                 {resolvedCount}
               </span>
             </button>
@@ -436,7 +436,7 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
                         <div className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
                           {errorInfo.explanation}
                         </div>
-                        <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 mt-1 break-all bg-white dark:bg-zinc-950/50 p-2 rounded border border-zinc-200 dark:border-zinc-800">
+                        <div className="text-xs font-mono text-zinc-500 dark:text-zinc-400 mt-1 break-all bg-white dark:bg-zinc-950/50 p-2 rounded border border-zinc-200 dark:border-zinc-800">
                           {item.errorMessage}
                         </div>
                       </div>
@@ -490,7 +490,7 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
                         </span>
                       </div>
                       {item.resolvedByUser && (
-                        <div className="text-[11px] text-zinc-500">
+                        <div className="text-xs text-zinc-500">
                           Resolved By: {item.resolvedByUser.name} ({item.resolvedByUser.role})
                         </div>
                       )}
@@ -508,7 +508,7 @@ export function QuarantineManager({ initialRecords }: QuarantineManagerProps) {
                       <span>{isExpanded ? "Hide Cloud Payload" : "View Cloud Payload"}</span>
                     </button>
                     {isExpanded && (
-                      <pre className="mt-2 text-[11px] font-mono bg-zinc-900 text-zinc-100 p-3 rounded-xl overflow-x-auto max-h-60 border border-zinc-800">
+                      <pre className="mt-2 text-xs font-mono bg-zinc-900 text-zinc-100 p-3 rounded-xl overflow-x-auto max-h-60 border border-zinc-800">
                         {JSON.stringify(item.payload, null, 2)}
                       </pre>
                     )}

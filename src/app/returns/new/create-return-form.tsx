@@ -261,7 +261,7 @@ export function CreateReturnForm({
           <div className="space-y-6 pt-2">
             <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 block">
+                <span className="text-xs uppercase font-bold text-blue-600 dark:text-blue-400 block">
                   Active Invoice
                 </span>
                 <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
@@ -272,7 +272,7 @@ export function CreateReturnForm({
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Sold On</span>
+                <span className="text-xs uppercase font-bold text-zinc-400 block">Sold On</span>
                 <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                   {new Date(selectedSale.soldAt).toLocaleDateString()}
                 </span>
@@ -332,7 +332,7 @@ export function CreateReturnForm({
                       {sel.selected && (
                         <div className="flex items-center gap-4">
                           <div>
-                            <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                            <span className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                               Return Crates
                             </span>
                             <CrateStepper
@@ -353,7 +353,7 @@ export function CreateReturnForm({
                           </div>
 
                           <div className="text-right w-24">
-                            <span className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">
+                            <span className="block text-xs uppercase font-bold text-zinc-400 mb-1">
                               Return Crates
                             </span>
                             <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">

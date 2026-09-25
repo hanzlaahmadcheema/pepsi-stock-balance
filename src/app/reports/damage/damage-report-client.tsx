@@ -104,7 +104,7 @@ export function DamageReportClient({
         className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
       >
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">From Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">From Date</label>
           <input
             type="date"
             value={startDate}
@@ -114,7 +114,7 @@ export function DamageReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">To Date</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">To Date</label>
           <input
             type="date"
             value={endDate}
@@ -124,7 +124,7 @@ export function DamageReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Product</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Product</label>
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
@@ -140,7 +140,7 @@ export function DamageReportClient({
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase">Damage Type</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Damage Type</label>
           <select
             value={damageType}
             onChange={(e) => setDamageType(e.target.value)}
@@ -168,14 +168,14 @@ export function DamageReportClient({
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Write-Off Logs</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Write-Off Logs</span>
           <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
             {data.summary.totalRecords} records
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase">Crates Damaged</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase">Crates Damaged</span>
           <div className="text-xl font-black text-red-600 dark:text-red-400 mt-1">
             {data.summary.totalCratesDamaged} crates
           </div>
@@ -183,7 +183,7 @@ export function DamageReportClient({
 
         {isOwner && data.summary.totalCostLoss !== undefined ? (
           <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 shadow-xs">
-            <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase">
+            <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase">
               Financial Cost Loss
             </span>
             <div className="text-xl font-black text-purple-700 dark:text-purple-300 mt-1">
@@ -192,7 +192,7 @@ export function DamageReportClient({
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-            <span className="text-[11px] font-semibold text-zinc-500 uppercase">Category Count</span>
+            <span className="text-xs font-semibold text-zinc-500 uppercase">Category Count</span>
             <div className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">
               {data.summary.typeBreakdown.filter((t) => t.crates > 0).length} active types
             </div>
@@ -257,7 +257,7 @@ export function DamageReportClient({
                       {r.quantity} crates
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs">
                         {r.damageType.replace(/_/g, " ")}
                       </span>
                     </td>

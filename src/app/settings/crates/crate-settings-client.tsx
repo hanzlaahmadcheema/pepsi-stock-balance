@@ -258,7 +258,7 @@ export function CrateSettingsClient({
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                       Retail Rate
                     </h3>
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                       Standard Pricing
                     </span>
                   </div>
@@ -295,7 +295,7 @@ export function CrateSettingsClient({
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                       Wholesale Rate
                     </h3>
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                       Bulk Distributors
                     </span>
                   </div>
@@ -332,7 +332,7 @@ export function CrateSettingsClient({
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                       Key Account Rate
                     </h3>
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                       Institutions &amp; VIP
                     </span>
                   </div>
@@ -383,7 +383,7 @@ export function CrateSettingsClient({
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                       Returnable Glass Bottles &amp; Crates
                     </h3>
-                    <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
                       Core Operations (Active)
                     </span>
                   </div>
@@ -433,7 +433,7 @@ export function CrateSettingsClient({
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                       Plastic Crates Only
                     </h3>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                    <span className={`text-xs font-bold uppercase tracking-wider ${
                       plasticEnabled ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-500"
                     }`}>
                       {plasticEnabled ? "Active in Forms" : "Disabled (Not Deleted)"}
@@ -595,7 +595,7 @@ export function CrateSettingsClient({
         {/* Product Table */}
         <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl">
           <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-[11px] font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-xs font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
               <tr>
                 <th className="px-5 py-3">Product Name &amp; Brand</th>
                 <th className="px-5 py-3 text-center">Returnable Crate?</th>

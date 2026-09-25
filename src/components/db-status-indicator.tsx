@@ -138,7 +138,7 @@ function Pill({
 
   return (
     <div
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none cursor-default select-none transition-colors ${pill}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors ${pill}`}
       title={title}
     >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
@@ -160,7 +160,7 @@ function SyncPill({
   if (pendingCount > 0) {
     return (
       <div
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none cursor-default select-none transition-colors bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300"
         title={`${pendingCount} operation(s) waiting to sync to Cloud`}
       >
         <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-500 animate-pulse" />
@@ -172,7 +172,7 @@ function SyncPill({
   if (cloudState === "ok") {
     return (
       <div
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none cursor-default select-none transition-colors bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
         title="All local operations are synchronized with Cloud"
       >
         <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500" />
@@ -183,7 +183,7 @@ function SyncPill({
 
   return (
     <div
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none cursor-default select-none transition-colors bg-zinc-100 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-zinc-100 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
       title="Depot is offline. Changes are saved locally and will sync when reconnected."
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400" />

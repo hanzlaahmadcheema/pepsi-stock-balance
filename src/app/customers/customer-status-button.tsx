@@ -28,37 +28,33 @@ export function CustomerStatusButton({
 
   return (
     <>
-      <div className="inline-flex items-center gap-1.5">
+      <span className="inline-flex items-center gap-2">
         <button
           type="button"
           onClick={() => setModalOpen(true)}
           disabled={isPending}
-          className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50 ${
-            isActive
-              ? "border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 hover:bg-red-100"
-              : "border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
-          }`}
+          className={`btn btn-sm ${isActive ? "btn-danger" : "btn-good"}`}
         >
-          {isActive ? "Deactivate" : "Activate"}
+          {isActive ? "Stop Using" : "Use Again"}
         </button>
 
-        {error && (
-          <span className="text-xs text-red-600 dark:text-red-400">
+        {error ? (
+          <span role="alert" className="text-sm font-bold text-stamp">
             {error}
           </span>
-        )}
-      </div>
+        ) : null}
+      </span>
 
       <ConfirmModal
         isOpen={modalOpen}
-        title={isActive ? "Deactivate Customer" : "Activate Customer"}
+        title={isActive ? "Stop using this customer?" : "Use this customer again?"}
         description={
           isActive
-            ? "Are you sure you want to deactivate this customer account? Inactive customers cannot be selected for new sales invoices."
-            : "Are you sure you want to reactivate this customer account? They will immediately be available for sales."
+            ? "Their account will be hidden from the customer list and cannot be picked on new invoices. Their past invoices, balance and payments stay exactly as they are. You can bring the account back at any time."
+            : "This account will be selectable on new invoices again, straight away. Nothing about their past invoices, balance or payments changes."
         }
-        confirmLabel={isActive ? "Confirm Deactivate" : "Confirm Activate"}
-        cancelLabel={isActive ? "Keep Active" : "Keep Inactive"}
+        confirmLabel={isActive ? "Yes, stop using this customer" : "Yes, use this customer again"}
+        cancelLabel={isActive ? "No, keep it active" : "No, leave it inactive"}
         variant={isActive ? "danger" : "primary"}
         isPending={isPending}
         onConfirm={handleToggle}

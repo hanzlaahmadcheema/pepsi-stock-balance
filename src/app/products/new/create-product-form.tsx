@@ -183,7 +183,7 @@ export function CreateProductForm({
                   placeholder="0.00"
                   className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
                 />
-                <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 mt-1 block">
+                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-1 block">
                   Owner confidential
                 </span>
               </div>

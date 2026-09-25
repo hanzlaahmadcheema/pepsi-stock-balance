@@ -104,7 +104,7 @@ export function AgingReportClient({ data, filters }: AgingReportClientProps) {
           <div className="text-xl font-black text-zinc-900 dark:text-zinc-50">
             {formatCurrency(summary.totalOutstanding)}
           </div>
-          <div className="text-[11px] text-zinc-500">
+          <div className="text-xs text-zinc-500">
             {summary.totalCustomersWithBalance} customers with balance
           </div>
         </div>
@@ -113,56 +113,56 @@ export function AgingReportClient({ data, filters }: AgingReportClientProps) {
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-emerald-200 dark:border-emerald-900/40 shadow-xs space-y-1 bg-emerald-50/10">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
             <span>Current (0-30 Days)</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+            <span className="text-xs px-1.5 py-0.5 rounded font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
               {((summary.buckets.current / total) * 100).toFixed(1)}%
             </span>
           </div>
           <div className="text-xl font-black text-emerald-700 dark:text-emerald-300">
             {formatCurrency(summary.buckets.current)}
           </div>
-          <div className="text-[11px] text-zinc-500">Normal payment cycle</div>
+          <div className="text-xs text-zinc-500">Normal payment cycle</div>
         </div>
 
         {/* 31 - 60 Days */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-amber-200 dark:border-amber-900/40 shadow-xs space-y-1 bg-amber-50/10">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
             <span>31 - 60 Days</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-black bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+            <span className="text-xs px-1.5 py-0.5 rounded font-black bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
               {((summary.buckets.days31To60 / total) * 100).toFixed(1)}%
             </span>
           </div>
           <div className="text-xl font-black text-amber-700 dark:text-amber-300">
             {formatCurrency(summary.buckets.days31To60)}
           </div>
-          <div className="text-[11px] text-zinc-500">Follow-up suggested</div>
+          <div className="text-xs text-zinc-500">Follow-up suggested</div>
         </div>
 
         {/* 61 - 90 Days */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-orange-200 dark:border-orange-900/40 shadow-xs space-y-1 bg-orange-50/10">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-orange-700 dark:text-orange-400">
             <span>61 - 90 Days</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-black bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+            <span className="text-xs px-1.5 py-0.5 rounded font-black bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
               {((summary.buckets.days61To90 / total) * 100).toFixed(1)}%
             </span>
           </div>
           <div className="text-xl font-black text-orange-700 dark:text-orange-300">
             {formatCurrency(summary.buckets.days61To90)}
           </div>
-          <div className="text-[11px] text-zinc-500">Overdue collection</div>
+          <div className="text-xs text-zinc-500">Overdue collection</div>
         </div>
 
         {/* 90+ Days */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-red-200 dark:border-red-900/40 shadow-xs space-y-1 bg-red-50/10">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400">
             <span>90+ Days</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-black bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
+            <span className="text-xs px-1.5 py-0.5 rounded font-black bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
               {((summary.buckets.over90 / total) * 100).toFixed(1)}%
             </span>
           </div>
           <div className="text-xl font-black text-red-700 dark:text-red-300">
             {formatCurrency(summary.buckets.over90)}
           </div>
-          <div className="text-[11px] text-red-600 font-semibold">Critical / High Risk</div>
+          <div className="text-xs text-red-600 font-semibold">Critical / High Risk</div>
         </div>
       </div>
 
@@ -206,7 +206,7 @@ export function AgingReportClient({ data, filters }: AgingReportClientProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-4">Customer</th>
                 <th className="py-3 px-4 text-right">Total Balance</th>
                 <th className="py-3 px-4 text-right">Current (0-30d)</th>
@@ -234,9 +234,9 @@ export function AgingReportClient({ data, filters }: AgingReportClientProps) {
                       <div className="font-bold text-zinc-900 dark:text-zinc-100">
                         {row.customerName}
                       </div>
-                      <div className="text-[11px] text-zinc-500 flex items-center gap-2 mt-0.5">
+                      <div className="text-xs text-zinc-500 flex items-center gap-2 mt-0.5">
                         {row.phone && <span>{row.phone}</span>}
-                        <span className="px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 font-medium uppercase text-[10px]">
+                        <span className="px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 font-medium uppercase text-xs">
                           {row.priceTier}
                         </span>
                       </div>
@@ -259,7 +259,7 @@ export function AgingReportClient({ data, filters }: AgingReportClientProps) {
                     <td className="py-3 px-4 text-center">
                       {row.oldestUnpaidDays > 0 ? (
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
                             row.oldestUnpaidDays > 90
                               ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
                               : row.oldestUnpaidDays > 30

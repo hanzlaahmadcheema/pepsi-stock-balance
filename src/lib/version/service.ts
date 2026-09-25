@@ -300,7 +300,7 @@ export async function triggerSystemUpdate(): Promise<{
       try {
         const escapedBat = batPath.replace(/'/g, "''");
         const escapedTarget = targetDir.replace(/'/g, "''");
-        const cmdLine = `cmd.exe /c ""${escapedBat}"" ""${escapedTarget}""`;
+        const cmdLine = `cmd.exe /c "${escapedBat}" "${escapedTarget}"`;
         const psScript = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${cmdLine}' }; if ($r.ReturnValue -ne 0) { exit $r.ReturnValue }`;
         execSync(`powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "${psScript}"`, {
           timeout: 10000,

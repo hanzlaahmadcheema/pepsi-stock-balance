@@ -9,6 +9,7 @@ import type {
   PendingAdjustmentSummary,
 } from "@/lib/stock-counts/service";
 import { IconHistory, IconAlertTriangle, IconCheck, IconInfo } from "@/components/ui/icons";
+import { isCloudPortal } from "@/lib/config/portal-mode";
 
 export function CountDetailsClient({
   countDetails,
@@ -17,6 +18,7 @@ export function CountDetailsClient({
   countDetails: StockCountDetails;
   isOwner: boolean;
 }) {
+  const isCloud = isCloudPortal();
   const [selectedAdjustment, setSelectedAdjustment] =
     useState<PendingAdjustmentSummary | null>(null);
 
@@ -114,7 +116,7 @@ export function CountDetailsClient({
               <IconAlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>
                 <strong className="font-bold">Discrepancies Detected:</strong> {pendingCount} adjustments{" "}
-                {isOwner ? "awaiting your approval" : "pending Owner review"}.
+                awaiting resolution.
               </span>
             </div>
           )}
@@ -244,7 +246,7 @@ export function CountDetailsClient({
                     </td>
 
                     <td className="px-6 py-4 text-right whitespace-nowrap">
-                      {adj && adj.status === AdjustmentStatus.PENDING && isOwner ? (
+                      {adj && adj.status === AdjustmentStatus.PENDING && !isCloud ? (
                         <button
                           type="button"
                           onClick={() =>

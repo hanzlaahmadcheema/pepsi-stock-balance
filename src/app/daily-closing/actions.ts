@@ -87,7 +87,7 @@ export async function finalizeDailyClosingAction(
 ): Promise<ActionState> {
   try {
     assertNotCloudPortal("Finalize Daily Closing");
-    const user = await requireRole(Role.OWNER);
+    const user = await requireDbUser();
 
     const closingId = formData.get("closingId") as string;
     const physicalCashStr = formData.get("physicalCash") as string | null;
@@ -123,7 +123,7 @@ export async function finalizeDailyClosingAction(
 }
 
 /**
- * Owner reopens a closed session with a mandatory reason for administrative corrections.
+ * Staff or Owner reopens a closed session with a mandatory reason for administrative corrections.
  */
 export async function reopenDailyClosingAction(
   prevState: ActionState,
@@ -131,7 +131,7 @@ export async function reopenDailyClosingAction(
 ): Promise<ActionState> {
   try {
     assertNotCloudPortal("Reopen Daily Closing");
-    const user = await requireRole(Role.OWNER);
+    const user = await requireDbUser();
 
     const closingId = formData.get("closingId") as string;
     const reason = formData.get("reason") as string | null;

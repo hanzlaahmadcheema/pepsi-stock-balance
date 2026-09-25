@@ -63,7 +63,7 @@ export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               {isCloud
                 ? "View synchronized customer returns, quarantine statuses, and quality inspection history."
-                : "Track customer returns, quarantine incoming crates, and conduct owner quality inspections."}
+                : "Track customer returns, quarantine incoming crates, and conduct quality inspections."}
             </p>
           </div>
           {!isCloud && (

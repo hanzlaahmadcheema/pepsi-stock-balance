@@ -106,7 +106,7 @@ export function DailyClosingDetailsClient({
             >
               Back to Dashboard
             </Link>
-            {isOwner && !isCloud && (
+            {!isCloud && (
               <button
                 type="button"
                 onClick={() => setShowReopenModal(true)}
@@ -189,7 +189,7 @@ export function DailyClosingDetailsClient({
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-900 dark:text-emerald-200 font-semibold flex items-center gap-2">
               <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Official closing finalized.</span>
-              {isOwner && !isCloud && (
+              {!isCloud && (
                 <button
                   type="button"
                   onClick={() => setShowReopenModal(true)}
@@ -202,7 +202,7 @@ export function DailyClosingDetailsClient({
           ) : isInReview ? (
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 font-semibold flex items-center gap-2">
               <IconAlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>In Review: Awaiting Owner final verification and close.</span>
+              <span>In Review: Ready to finalize and close.</span>
             </div>
           ) : (
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 font-semibold flex items-center gap-2">
@@ -608,62 +608,56 @@ export function DailyClosingDetailsClient({
                     </div>
                   </div>
 
-                  {isOwner ? (
-                    <form action={finalizeAction} className="space-y-4 pt-2">
-                      <input type="hidden" name="closingId" value={closing.id} />
+                  <form action={finalizeAction} className="space-y-4 pt-2">
+                    <input type="hidden" name="closingId" value={closing.id} />
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                            Verify Physical Cash Count (Rs.)
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="physicalCash"
-                            value={physicalCashInput}
-                            onChange={(e) => setPhysicalCashInput(e.target.value)}
-                            className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                            Owner Final Remarks (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            name="notes"
-                            placeholder="e.g. Reviewed and verified by Owner."
-                            defaultValue={closing.notes || ""}
-                            className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                          />
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                          Verify Physical Cash Count (Rs.)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          name="physicalCash"
+                          value={physicalCashInput}
+                          onChange={(e) => setPhysicalCashInput(e.target.value)}
+                          className="w-full px-3 py-2 text-base font-mono font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                        />
                       </div>
 
-                      <div className="flex items-center justify-end gap-3 pt-2">
-                        <button
-                          type="submit"
-                          disabled={isFinalizing || !summary.readiness.isReadyToClose}
-                          className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-2"
-                        >
-                          {isFinalizing ? (
-                            "Finalizing Day..."
-                          ) : (
-                            <>
-                              <IconCheck className="w-4 h-4" />
-                              <span>Finalize &amp; Close Business Day</span>
-                            </>
-                          )}
-                        </button>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                          Closing Remarks (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          name="notes"
+                          placeholder="e.g. End of day cash count reconciled."
+                          defaultValue={closing.notes || ""}
+                          className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                        />
                       </div>
-                    </form>
-                  ) : (
-                    <div className="text-xs text-zinc-500 italic">
-                      Only the Owner can execute the final close action. Please notify the Owner to complete the end-of-day signoff.
                     </div>
-                  )}
+
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                      <button
+                        type="submit"
+                        disabled={isFinalizing || !summary.readiness.isReadyToClose}
+                        className="px-6 py-2.5 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        {isFinalizing ? (
+                          "Finalizing Day..."
+                        ) : (
+                          <>
+                            <IconCheck className="w-4 h-4" />
+                            <span>Finalize &amp; Close Business Day</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
 
@@ -676,7 +670,7 @@ export function DailyClosingDetailsClient({
                     {closing.notes && <div className="mt-1 italic">&ldquo;{closing.notes}&rdquo;</div>}
                   </div>
 
-                  {isOwner && (
+                  {!isCloud && (
                     <button
                       type="button"
                       onClick={() => setShowReopenModal(true)}

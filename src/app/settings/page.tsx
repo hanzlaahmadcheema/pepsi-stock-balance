@@ -19,10 +19,6 @@ export const metadata = {
 export default async function SettingsPage() {
   const user = await requireDbUser();
 
-  if (user.role !== Role.OWNER) {
-    redirect("/unauthorized");
-  }
-
   const [products, settings] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },

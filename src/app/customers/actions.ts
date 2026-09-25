@@ -64,7 +64,7 @@ export async function updateCustomerAction(
 ): Promise<ActionState> {
   try {
     assertNotCloudPortal("Update Customer");
-    await requireRole(Role.OWNER); // Owner only
+    await requireDbUser();
 
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
@@ -107,7 +107,7 @@ export async function toggleCustomerActiveAction(
 ): Promise<{ success?: boolean; error?: string }> {
   try {
     assertNotCloudPortal("Toggle Customer Status");
-    await requireRole(Role.OWNER); // Owner only
+    await requireDbUser();
 
     if (!customerId) {
       return { error: "Customer ID is required." };

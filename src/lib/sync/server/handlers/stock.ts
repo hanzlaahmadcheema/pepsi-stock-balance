@@ -235,12 +235,8 @@ export async function handleResolveStockAdjustment(
 
   if (!actor.isActive) {
     throw new Error(
-      `Unauthorized: Only an Owner can resolve stock adjustments. Referenced actor user '${actor.name}' is inactive. INACTIVE_ACTOR`
+      `Unauthorized: Referenced actor user '${actor.name}' is inactive. INACTIVE_ACTOR`
     );
-  }
-
-  if (actor.role !== Role.OWNER) {
-    throw new Error("Unauthorized: Only an Owner can resolve stock adjustments.");
   }
 
   const userId = actor.id;

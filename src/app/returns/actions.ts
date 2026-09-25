@@ -92,8 +92,7 @@ export async function inspectReturnAction(
 ): Promise<ReturnActionState> {
   try {
     assertNotCloudPortal("Inspect Return");
-    // Strictly enforce OWNER role server-side
-    const ownerUser = await requireRole(Role.OWNER);
+    const user = await requireDbUser();
 
     const returnId = formData.get("returnId") as string;
     const decisionsJson = formData.get("decisions") as string;
@@ -120,7 +119,7 @@ export async function inspectReturnAction(
         decisions,
         generalNotes,
       },
-      ownerUser.id
+      user.id
     );
 
     revalidatePath("/returns");

@@ -22,10 +22,7 @@ export async function updateContainerTypesAction(
 ): Promise<CrateActionState> {
   try {
     assertNotCloudPortal("Update Container Settings");
-    const user = await requireDbUser();
-    if (user.role !== Role.OWNER) {
-      return { error: "Unauthorized: Only an Owner can modify system crate settings." };
-    }
+    await requireDbUser();
 
     const glassEnabled = formData.get("glassEnabled") === "true";
     const plasticEnabled = formData.get("plasticEnabled") === "true";
@@ -77,10 +74,7 @@ export async function updateBulkProductCratesAction(
 ): Promise<CrateActionState> {
   try {
     assertNotCloudPortal("Update Product Crates");
-    const user = await requireDbUser();
-    if (user.role !== Role.OWNER) {
-      return { error: "Unauthorized: Only an Owner can modify product crate configurations." };
-    }
+    await requireDbUser();
 
     const configsJson = formData.get("configs") as string;
     if (!configsJson) {

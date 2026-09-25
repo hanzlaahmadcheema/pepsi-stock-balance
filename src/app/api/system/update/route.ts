@@ -14,13 +14,6 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (user.role !== Role.OWNER) {
-      return NextResponse.json(
-        { error: "Forbidden: Only an Owner can trigger system updates." },
-        { status: 403 }
-      );
-    }
-
     const result = await triggerSystemUpdate();
 
     return NextResponse.json(result, {

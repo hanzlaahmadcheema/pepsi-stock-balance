@@ -12,11 +12,6 @@ export const metadata = { title: "Pending Approvals" };
 export default async function ApprovalsPage() {
   const user = await requireDbUser();
 
-  // Strict Owner-only enforcement — redirect Staff
-  if (user.role !== Role.OWNER) {
-    redirect("/unauthorized");
-  }
-
   const pendingAdjustments = await prisma.stockAdjustment.findMany({
     where: { status: "PENDING" },
     orderBy: { createdAt: "asc" },

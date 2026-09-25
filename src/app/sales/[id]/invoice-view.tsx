@@ -94,13 +94,13 @@ export function InvoiceView({
             <span>Print 80mm Receipt</span>
           </button>
 
-          {/* OWNER ONLY: Edit and Cancel Actions (Depot mode only) */}
-          {!isCancelled && isOwner && !isCloudPortal() && (
+          {/* Edit and Cancel Actions (Depot mode only) */}
+          {!isCancelled && !isCloudPortal() && (
             <>
               <Link
                 href={`/sales/${sale.id}/edit`}
                 className="px-3.5 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1.5"
-                title="Edit products, rates, quantities or discounts (Owner Only)"
+                title="Edit products, rates, quantities or discounts"
               >
                 <IconPencil className="w-3.5 h-3.5" />
                 <span>Edit Invoice</span>

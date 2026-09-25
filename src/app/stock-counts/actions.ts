@@ -75,8 +75,7 @@ export async function resolveAdjustmentAction(
 ): Promise<StockCountActionState> {
   try {
     assertNotCloudPortal("Resolve Stock Adjustment");
-    // Strictly enforce OWNER role server-side
-    const ownerUser = await requireRole(Role.OWNER);
+    const user = await requireDbUser();
 
     const adjustmentId = formData.get("adjustmentId") as string;
     const decision = formData.get("decision") as "APPROVE" | "REJECT";
@@ -100,7 +99,7 @@ export async function resolveAdjustmentAction(
       adjustmentId,
       decision,
       reason.trim(),
-      ownerUser.id
+      user.id
     );
 
     revalidatePath("/approvals");

@@ -74,16 +74,16 @@ export function StockCountsClient({
               <IconAlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <div>
                 <h2 className="font-bold text-base text-amber-900 dark:text-amber-200">
-                  Pending Owner Adjustments ({pendingAdjustments.length})
+                  Pending Adjustments ({pendingAdjustments.length})
                 </h2>
                 <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
-                  The following physical count discrepancies require exactly one Owner approval to update on-hand stock.
+                  The following physical count discrepancies can be reviewed and decided to update on-hand stock.
                 </p>
               </div>
             </div>
-            {isOwner && (
+            {!isCloud && (
               <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 font-bold">
-                Owner Action Required
+                Action Required
               </span>
             )}
           </div>
@@ -113,7 +113,7 @@ export function StockCountsClient({
                             {adj.productName}
                           </div>
                           <div className="text-zinc-500">{adj.productBrand}</div>
-                          {isOwner && !isCloud && (
+                          {!isCloud && (
                             <div className="mt-2 lg:hidden">
                               <button
                                 type="button"
@@ -145,7 +145,7 @@ export function StockCountsClient({
                         <td className="px-4 py-3 text-right whitespace-nowrap">
                           {isCloud ? (
                             <span className="text-zinc-500 text-xs italic">Awaiting Depot Action</span>
-                          ) : isOwner ? (
+                          ) : (
                             <button
                               type="button"
                               onClick={() => setSelectedAdjustment(adj)}
@@ -153,8 +153,6 @@ export function StockCountsClient({
                             >
                               Review &amp; Decide
                             </button>
-                          ) : (
-                            <span className="text-zinc-400 italic">Awaiting Owner</span>
                           )}
                         </td>
                       </tr>

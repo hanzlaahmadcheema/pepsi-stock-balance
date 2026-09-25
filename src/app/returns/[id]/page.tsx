@@ -60,7 +60,7 @@ export default async function ReturnDetailsPage({ params }: ReturnDetailsPagePro
                 Returned goods have been placed in inspection.
               </h3>
               <p className="text-xs text-amber-900/80 dark:text-amber-300/80 mt-1">
-                These returned items are currently in quarantine and are <strong>NOT available for sale</strong>. They will only enter sellable warehouse stock after an owner completes quality inspection and approves them.
+                These returned items are currently in quarantine and are <strong>NOT available for sale</strong>. They will only enter sellable warehouse stock after completing quality inspection and approval.
               </p>
             </div>
           </div>

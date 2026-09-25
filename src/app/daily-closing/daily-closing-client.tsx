@@ -363,7 +363,7 @@ export function DailyClosingClient({
                 </span>
               ) : todaySummary.readiness.isReadyToClose ? (
                 <span>
-                  Stock count verified and discrepancies reconciled. {isOwner ? "You can finalize the day." : "Awaiting Owner signoff."}
+                  Stock count verified and discrepancies reconciled. Ready to finalize the day.
                 </span>
               ) : (
                 <span>{todaySummary.readiness.blockingReasons.join(" ")}</span>

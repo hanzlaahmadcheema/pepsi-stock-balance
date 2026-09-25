@@ -271,9 +271,9 @@ describe("Phase 3 Security & Identity Audit Tests", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // TEST B: Owner-only stock adjustment resolution cannot be performed by Staff
+  // TEST B: Stock adjustment resolution can be performed by Staff; inactive user cannot
   // ─────────────────────────────────────────────────────────────────────────────
-  it("B. Owner-only stock adjustment resolution cannot be performed by an unauthorized actor", async () => {
+  it("B. Stock adjustment resolution can be performed by Staff; inactive user cannot", async () => {
     const { device } = await createTestDevice();
 
     const adjId = crypto.randomUUID();
@@ -291,24 +291,45 @@ describe("Phase 3 Security & Identity Audit Tests", () => {
       },
     });
 
-    // Staff user attempts to approve the adjustment
-    const staffResolveOp = makeOp(1, "RESOLVE_STOCK_ADJUSTMENT", adjId, {
+    // Sub-test B1: Inactive user attempts to approve the adjustment
+    const inactiveUser = await prisma.user.create({
+      data: {
+        authUserId: `auth-sec-inactive-${testRunId}`,
+        name: `Sec Inactive ${testRunId}`,
+        role: Role.STAFF,
+        isActive: false,
+      },
+    });
+    createdUserIds.add(inactiveUser.id);
+
+    const inactiveResolveOp = makeOp(1, "RESOLVE_STOCK_ADJUSTMENT", adjId, {
       decision: "APPROVE",
-      reason: "Staff attempting to approve adjustment",
-      userId: testStaffUserId, // Staff role
+      reason: "Inactive user attempting to approve adjustment",
+      userId: inactiveUser.id,
     });
 
-    const res = await processDevicePushBatch(device, crypto.randomUUID(), [staffResolveOp]);
-    assert.equal(res.success, false);
-    assert.equal(res.acknowledgedOperationIds.length, 0);
+    const resInactive = await processDevicePushBatch(device, crypto.randomUUID(), [inactiveResolveOp]);
+    assert.equal(resInactive.success, false);
+    assert.equal(resInactive.acknowledgedOperationIds.length, 0);
     assert.ok(
-      res.rejectedOperations?.[0].error.includes("Unauthorized: Only an Owner can resolve stock adjustments"),
-      `Expected unauthorized error, got: ${res.rejectedOperations?.[0].error}`
+      resInactive.rejectedOperations?.[0].error.includes("INACTIVE_ACTOR"),
+      `Expected inactive error, got: ${resInactive.rejectedOperations?.[0].error}`
     );
 
-    // Verify the record was not approved
+    // Sub-test B2: Active Staff user resolves the adjustment (verification from owner not required)
+    const staffResolveOp = makeOp(1, "RESOLVE_STOCK_ADJUSTMENT", adjId, {
+      decision: "APPROVE",
+      reason: "Staff resolving adjustment per business rule",
+      userId: testStaffUserId,
+    });
+
+    const resStaff = await processDevicePushBatch(device, crypto.randomUUID(), [staffResolveOp]);
+    assert.equal(resStaff.success, true);
+    assert.equal(resStaff.acknowledgedOperationIds.length, 1);
+
+    // Verify the record was approved
     const adjRow = await prisma.stockAdjustment.findUniqueOrThrow({ where: { id: adjId } });
-    assert.equal(adjRow.status, AdjustmentStatus.PENDING);
+    assert.equal(adjRow.status, AdjustmentStatus.APPROVED);
   });
 
   // ─────────────────────────────────────────────────────────────────────────────

@@ -100,22 +100,22 @@ export function InspectionPanel({
   }
 
   // If still quarantined, show role-appropriate interface:
-  if (!isOwner || isCloud) {
+  if (isCloud) {
     return (
       <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl p-6 text-sm text-amber-900 dark:text-amber-200 space-y-2">
         <h3 className="font-bold flex items-center gap-2">
           <IconShield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          <span>{isCloud ? "Awaiting Depot Inspection (Read-Only)" : "Awaiting Owner Inspection"}</span>
+          <span>Awaiting Depot Inspection (Read-Only)</span>
         </h3>
         <p className="text-xs text-amber-800 dark:text-amber-300">
           This return is currently placed in <b>QUARANTINE</b>. Returned crates have not been
-          restocked to saleable inventory. {isCloud ? "Physical quality inspection and restocking authorizations are performed on the Windows Depot terminal." : "An Owner must log in to inspect and approve or reject the returned goods."}
+          restocked to saleable inventory. Physical quality inspection and restocking authorizations are performed on the Windows Depot terminal.
         </p>
       </div>
     );
   }
 
-  // Owner inspection form
+  // Inspection form
   const payloadDecisions = returnRecord.items.map((item) => ({
     returnItemId: item.id,
     result: decisions[item.id]?.result || InspectionResult.APPROVED_FOR_STOCK,
@@ -128,10 +128,7 @@ export function InspectionPanel({
         <div>
           <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <IconShield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <span>Owner Quarantine Inspection</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-bold">
-              OWNER ONLY
-            </span>
+            <span>Quarantine Quality Inspection</span>
           </h3>
           <p className="text-xs text-zinc-500 mt-0.5">
             Evaluate physical crate condition. Approving an item will immediately create a RETURN_RESTOCK stock movement to return crates to saleable inventory.

@@ -63,7 +63,6 @@ export function SystemUpdateClient({
   }, []);
 
   const handleUpdate = async () => {
-    if (!isOwner) return;
     if (
       !confirm(
         "Are you sure you want to pull and install the latest update? The background services will rebuild and restart automatically."
@@ -143,30 +142,28 @@ export function SystemUpdateClient({
             )}
           </button>
 
-          {isOwner && (
-            <button
-              type="button"
-              onClick={handleUpdate}
-              disabled={updating || scanning}
-              className={`px-5 py-2 text-xs font-bold rounded-xl text-white shadow-xs transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 ${
-                isUpdateAvailable
-                  ? "bg-amber-600 hover:bg-amber-500 animate-pulse shadow-amber-500/25 ring-2 ring-amber-500/30"
-                  : "bg-blue-600 hover:bg-blue-500"
-              }`}
-            >
-              {updating ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Updating System...</span>
-                </>
-              ) : (
-                <>
-                  <IconZap className="w-3.5 h-3.5" />
-                  <span>{isUpdateAvailable ? "Update to Latest Release" : "Force Pull & Rebuild"}</span>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleUpdate}
+            disabled={updating || scanning}
+            className={`px-5 py-2 text-xs font-bold rounded-xl text-white shadow-xs transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 ${
+              isUpdateAvailable
+                ? "bg-amber-600 hover:bg-amber-500 animate-pulse shadow-amber-500/25 ring-2 ring-amber-500/30"
+                : "bg-blue-600 hover:bg-blue-500"
+            }`}
+          >
+            {updating ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Updating System...</span>
+              </>
+            ) : (
+              <>
+                <IconZap className="w-3.5 h-3.5" />
+                <span>{isUpdateAvailable ? "Update to Latest Release" : "Force Pull & Rebuild"}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -186,16 +183,14 @@ export function SystemUpdateClient({
               </p>
             </div>
           </div>
-          {isOwner && (
-            <button
-              type="button"
-              onClick={handleUpdate}
-              disabled={updating}
-              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-colors shrink-0 shadow-xs cursor-pointer"
-            >
-              Update Now →
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleUpdate}
+            disabled={updating}
+            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-colors shrink-0 shadow-xs cursor-pointer"
+          >
+            Update Now →
+          </button>
         </div>
       ) : data.status === "OFFLINE" ? (
         <div className="bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5 shadow-2xs flex items-center gap-3.5">

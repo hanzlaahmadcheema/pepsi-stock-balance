@@ -97,10 +97,6 @@ export async function editSaleAction(
     assertNotCloudPortal("Edit Sale");
     const user = await requireDbUser();
 
-    if (user.role !== Role.OWNER) {
-      return { error: "Unauthorized: Only an Owner can modify an existing invoice." };
-    }
-
     const saleId = formData.get("saleId") as string;
     const reason = formData.get("reason") as string;
     const customerId = (formData.get("customerId") as string) || null;
@@ -176,10 +172,6 @@ export async function cancelSaleAction(
   try {
     assertNotCloudPortal("Cancel Sale");
     const user = await requireDbUser();
-
-    if (user.role !== Role.OWNER) {
-      return { error: "Unauthorized: Only an Owner can cancel an invoice." };
-    }
 
     const saleId = formData.get("saleId") as string;
     const reason = formData.get("reason") as string;

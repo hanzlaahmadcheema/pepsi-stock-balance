@@ -45,10 +45,6 @@ export default async function EditSalePage({ params }: EditSalePageProps) {
   const user = await requireDbUser();
   const isOwner = user.role === Role.OWNER;
 
-  if (!isOwner) {
-    redirect(`/sales/${id}`);
-  }
-
   const sale = await getSaleDetails(id, isOwner);
 
   if (!sale) {

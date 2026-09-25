@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireDbUser } from "@/lib/auth";
 import { assertNotCloudPortal } from "@/lib/config/portal-mode";
-import { Role } from "@prisma/client";
 
 export type SupplierActionState = {
   error?: string;
@@ -14,7 +13,7 @@ export type SupplierActionState = {
 
 /**
  * Server action to create a new supplier.
- * Strictly enforces OWNER role server-side.
+ * Any signed-in user (OWNER or STAFF) may manage suppliers.
  */
 export async function createSupplierAction(
   _prevState: SupplierActionState | null,
@@ -22,9 +21,9 @@ export async function createSupplierAction(
 ): Promise<SupplierActionState> {
   assertNotCloudPortal("Create Supplier");
   try {
-    await requireRole(Role.OWNER);
+    await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can create suppliers." };
+    return { error: "Unauthorized: You must be signed in to create suppliers." };
   }
 
   const name = (formData.get("name") as string)?.trim();
@@ -58,7 +57,7 @@ export async function createSupplierAction(
 
 /**
  * Server action to update an existing supplier.
- * Strictly enforces OWNER role server-side.
+ * Any signed-in user (OWNER or STAFF) may manage suppliers.
  */
 export async function updateSupplierAction(
   _prevState: SupplierActionState | null,
@@ -66,9 +65,9 @@ export async function updateSupplierAction(
 ): Promise<SupplierActionState> {
   assertNotCloudPortal("Update Supplier");
   try {
-    await requireRole(Role.OWNER);
+    await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can modify suppliers." };
+    return { error: "Unauthorized: You must be signed in to modify suppliers." };
   }
 
   const id = formData.get("id") as string;
@@ -107,16 +106,16 @@ export async function updateSupplierAction(
 
 /**
  * Server action to toggle a supplier's active status.
- * Strictly enforces OWNER role server-side.
+ * Any signed-in user (OWNER or STAFF) may manage suppliers.
  */
 export async function toggleSupplierStatusAction(
   id: string
 ): Promise<{ error?: string; success?: boolean }> {
   assertNotCloudPortal("Toggle Supplier Status");
   try {
-    await requireRole(Role.OWNER);
+    await requireDbUser();
   } catch {
-    return { error: "Unauthorized: Only an Owner can activate or deactivate suppliers." };
+    return { error: "Unauthorized: You must be signed in to change supplier status." };
   }
 
   const supplier = await prisma.supplier.findUnique({

@@ -91,7 +91,7 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
           { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
           { name: "Business Reports", href: "/reports", icon: IconFileSpreadsheet },
           { name: "Pending Approvals", href: "/approvals", icon: IconShield },
-          { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+          { name: "Suppliers", href: "/suppliers", icon: IconBox },
           { name: "Settings", href: "/settings", icon: IconSettings },
           { name: "User Management", href: "/settings/users", icon: IconUsers, ownerOnly: true },
           { name: "System Updates", href: "/settings/system-update", icon: IconServer },
@@ -148,7 +148,7 @@ function getNavGroups(isCloud: boolean): NavGroup[] {
       items: [
         { name: "Daily Closing", href: "/daily-closing", icon: IconScale },
         { name: "Depot Sync Status", href: "/sync", icon: IconServer },
-        { name: "Suppliers", href: "/suppliers", icon: IconBox, ownerOnly: true },
+        { name: "Suppliers", href: "/suppliers", icon: IconBox },
       ],
     },
   ];

@@ -1,5 +1,4 @@
-import { requireRole } from "@/lib/auth";
-import { Role } from "@prisma/client";
+import { requireDbUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
 import { listSuppliers } from "@/lib/suppliers/service";
 import { SupplierListWrapper } from "./supplier-modal";
@@ -12,8 +11,8 @@ export const metadata = {
 };
 
 export default async function SuppliersPage() {
-  // 1. Enforce OWNER role server-side
-  const user = await requireRole(Role.OWNER);
+  // 1. Require a signed-in user (OWNER or STAFF)
+  const user = await requireDbUser();
 
   // 2. Fetch suppliers
   const suppliers = await listSuppliers(false);

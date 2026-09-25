@@ -20,6 +20,9 @@ import * as dotenv from "dotenv";
 
 function loadEnv(envFile: string): { DATABASE_URL: string; DIRECT_URL: string } {
   const resolved = path.resolve(process.cwd(), envFile);
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`Env file not found: ${resolved}`);
+  }
   const parsed = dotenv.parse(fs.readFileSync(resolved));
   return {
     DATABASE_URL: parsed.DATABASE_URL ?? "",
@@ -27,11 +30,21 @@ function loadEnv(envFile: string): { DATABASE_URL: string; DIRECT_URL: string } 
   };
 }
 
-function makeClient(envFile: string): PrismaClient {
-  const { DATABASE_URL, DIRECT_URL } = loadEnv(envFile);
+/**
+ * Accepts either:
+ *   - a path to an env file (e.g. "environments/.env.cloud-prod")
+ *   - a raw postgres URL (e.g. "postgresql://user:pass@host/db")
+ */
+function makeClient(envFileOrUrl: string): PrismaClient {
+  let url: string;
+  if (envFileOrUrl.startsWith("postgresql://") || envFileOrUrl.startsWith("postgres://")) {
+    url = envFileOrUrl;
+  } else {
+    url = loadEnv(envFileOrUrl).DATABASE_URL;
+  }
   // @ts-ignore – Prisma accepts datasources override at runtime
   return new PrismaClient({
-    datasources: { db: { url: DATABASE_URL } },
+    datasources: { db: { url } },
   });
 }
 
@@ -173,10 +186,18 @@ async function wipeTransactionalData(db: PrismaClient, label: string) {
 // ──────────────────────────────────────────────
 
 async function main() {
-  // Allow overriding the local env file via CLI arg:
-  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production
+  // Usage:
+  //   npx tsx scripts/clean-db-keep-products-users.ts [localEnvOrUrl] [cloudProdEnvOrUrl]
+  //
+  // Examples:
+  //   npx tsx scripts/clean-db-keep-products-users.ts                              (Linux defaults)
+  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production              (Windows, cloud-prod from file)
+  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production "postgresql://user:pass@host/db"
   const LOCAL_ENV = process.argv[2] ?? "environments/.env.local";
-  const PROD_ENV = "environments/.env.cloud-prod";
+  const PROD_ENV  = process.argv[3] ?? "environments/.env.cloud-prod";
+
+  console.log(`  Local  : ${LOCAL_ENV}`);
+  console.log(`  Cloud  : ${PROD_ENV.startsWith("postgresql") ? "[URL]" : PROD_ENV}`);
 
   console.log("=".repeat(60));
   console.log(" DB CLEANUP — Keep Products & Real Users Only");

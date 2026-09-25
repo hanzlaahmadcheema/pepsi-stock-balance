@@ -49,61 +49,34 @@ function makeClient(envFileOrUrl: string): PrismaClient {
 }
 
 async function countAll(db: PrismaClient) {
-  const [
-    users,
-    products,
-    prices,
-    suppliers,
-    receivings,
-    receivingItems,
-    customers,
-    sales,
-    saleItems,
-    payments,
-    returns,
-    returnItems,
-    stockMovements,
-    damageRecords,
-    containerMovements,
-    stockAdjustments,
-    dailyClosings,
-    stockCounts,
-    auditLogs,
-    syncOutbox,
-    syncCursor,
-    processedOps,
-    syncChangelog,
-    syncDevices,
-    localProcessed,
-    localQuarantine,
-  ] = await Promise.all([
-    db.user.count(),
-    db.product.count(),
-    db.price.count(),
-    db.supplier.count(),
-    db.receiving.count(),
-    db.receivingItem.count(),
-    db.customer.count(),
-    db.sale.count(),
-    db.saleItem.count(),
-    db.payment.count(),
-    db.return.count(),
-    db.returnItem.count(),
-    db.stockMovement.count(),
-    db.damageRecord.count(),
-    db.containerMovement.count(),
-    db.stockAdjustment.count(),
-    db.dailyClosing.count(),
-    db.stockCount.count(),
-    db.auditLog.count(),
-    db.syncOutbox.count(),
-    db.syncCursor.count(),
-    db.processedSyncOperation.count(),
-    db.syncChangeLog.count(),
-    db.syncDevice.count(),
-    db.localProcessedChange.count(),
-    db.localSyncQuarantine.count(),
-  ]);
+  // Sequential (not parallel) to stay within pgbouncer connection pool limits
+  const users               = await db.user.count();
+  const products            = await db.product.count();
+  const prices              = await db.price.count();
+  const suppliers           = await db.supplier.count();
+  const receivings          = await db.receiving.count();
+  const receivingItems      = await db.receivingItem.count();
+  const customers           = await db.customer.count();
+  const sales               = await db.sale.count();
+  const saleItems           = await db.saleItem.count();
+  const payments            = await db.payment.count();
+  const returns             = await db.return.count();
+  const returnItems         = await db.returnItem.count();
+  const stockMovements      = await db.stockMovement.count();
+  const damageRecords       = await db.damageRecord.count();
+  const containerMovements  = await db.containerMovement.count();
+  const stockAdjustments    = await db.stockAdjustment.count();
+  const dailyClosings       = await db.dailyClosing.count();
+  const stockCounts         = await db.stockCount.count();
+  const auditLogs           = await db.auditLog.count();
+  const syncOutbox          = await db.syncOutbox.count();
+  const syncCursor          = await db.syncCursor.count();
+  const processedOps        = await db.processedSyncOperation.count();
+  const syncChangelog       = await db.syncChangeLog.count();
+  const syncDevices         = await db.syncDevice.count();
+  const localProcessed      = await db.localProcessedChange.count();
+  const localQuarantine     = await db.localSyncQuarantine.count();
+
   return {
     users, products, prices,
     suppliers, receivings, receivingItems,
@@ -113,6 +86,7 @@ async function countAll(db: PrismaClient) {
     stockAdjustments, dailyClosings, stockCounts,
     auditLogs, syncOutbox, syncCursor, processedOps,
     syncChangelog, syncDevices, localProcessed, localQuarantine,
+
   };
 }
 

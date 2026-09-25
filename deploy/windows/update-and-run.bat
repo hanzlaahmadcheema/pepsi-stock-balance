@@ -26,6 +26,14 @@ if not exist "%APP_DIR%" set "APP_DIR=C:\PepsiDepot\app"
 pushd "%APP_DIR%"
 set "APP_DIR=%CD%"
 popd
+
+rem 3. Prevent git self-modification bug by executing from %TEMP%
+if not "%~2"=="--staged" (
+    copy /y "%~f0" "%TEMP%\pepsi-update-and-run.bat" >nul 2>&1
+    call "%TEMP%\pepsi-update-and-run.bat" "%APP_DIR%" --staged
+    exit /b %errorlevel%
+)
+
 cd /d "%APP_DIR%"
 
 echo.

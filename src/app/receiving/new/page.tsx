@@ -32,7 +32,7 @@ export default async function NewReceivingPage() {
       id: true,
       name: true,
       brand: true,
-      ...(isOwner ? { latestPurchasePrice: true } : {}),
+      latestPurchasePrice: true,
     },
   });
 
@@ -40,7 +40,7 @@ export default async function NewReceivingPage() {
     id: p.id,
     name: p.name,
     brand: p.brand,
-    latestPurchasePrice: isOwner && "latestPurchasePrice" in p && p.latestPurchasePrice ? (p.latestPurchasePrice as { toString(): string }).toString() : "0.00",
+    latestPurchasePrice: p.latestPurchasePrice ? p.latestPurchasePrice.toString() : "0.00",
   }));
 
   return (

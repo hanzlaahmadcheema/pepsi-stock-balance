@@ -224,11 +224,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         Alert Below
                       </th>
                       <th scope="col">Selling Prices</th>
-                      {isOwner ? (
-                        <th scope="col" className="num">
-                          You Paid
-                        </th>
-                      ) : null}
+                      <th scope="col" className="num">
+                        You Paid
+                      </th>
                       <th scope="col">Status</th>
                       <th scope="col" className="num">
                         Action
@@ -282,13 +280,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             </div>
                           </td>
 
-                          {isOwner ? (
-                            <td className="num">
-                              {"latestPurchasePrice" in product
-                                ? `Rs. ${product.latestPurchasePrice}`
-                                : "Not recorded"}
-                            </td>
-                          ) : null}
+                          <td className="num">
+                            {product.latestPurchasePrice
+                              ? `Rs. ${product.latestPurchasePrice}`
+                              : "Not recorded"}
+                          </td>
 
                           <td>{stockBadge(product)}</td>
 

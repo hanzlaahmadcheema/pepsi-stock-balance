@@ -141,7 +141,7 @@ export function PricesReportClient({
               <tr>
                 <th className="px-5 py-3">Product Name</th>
                 <th className="px-5 py-3">Brand</th>
-                {isOwner && <th className="px-5 py-3 text-right text-purple-600">Cost/Crate ($)</th>}
+                <th className="px-5 py-3 text-right text-purple-600">Cost/Crate ($)</th>
                 <th className="px-5 py-3 text-right">Retail Tier ($)</th>
                 {isOwner && <th className="px-5 py-3 text-center text-purple-600">Retail Margin</th>}
                 <th className="px-5 py-3 text-right">Wholesale Tier ($)</th>
@@ -153,7 +153,7 @@ export function PricesReportClient({
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {data.catalog.length === 0 ? (
                 <tr>
-                  <td colSpan={isOwner ? 9 : 5} className="px-5 py-8 text-center text-zinc-500">
+                  <td colSpan={isOwner ? 9 : 6} className="px-5 py-8 text-center text-zinc-500">
                     No products found matching the criteria.
                   </td>
                 </tr>
@@ -166,11 +166,9 @@ export function PricesReportClient({
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-zinc-500">{p.brand}</td>
-                    {isOwner && (
-                      <td className="px-5 py-3 text-right font-mono text-zinc-600 dark:text-zinc-400">
-                        {formatCurrency(p.latestPurchasePrice || 0)}
-                      </td>
-                    )}
+                    <td className="px-5 py-3 text-right font-mono text-zinc-600 dark:text-zinc-400">
+                      {formatCurrency(p.latestPurchasePrice || 0)}
+                    </td>
                     <td className="px-5 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
                       {p.retailPrice !== null ? formatCurrency(p.retailPrice) : "—"}
                     </td>

@@ -61,19 +61,18 @@ export type StaffProductListItem = {
     tier: PriceTier;
     amount: string;
   }[];
-};
-
-export type OwnerProductListItem = StaffProductListItem & {
   latestPurchasePrice: string;
 };
 
+export type OwnerProductListItem = StaffProductListItem;
+
 /**
- * Lists products filtered by search query, with strict role-based data projection.
+ * Lists products filtered by search query. Staff and Owner can view costs.
  */
 export async function listProducts(
   searchTerm?: string,
-  isOwner = false
-): Promise<(StaffProductListItem | OwnerProductListItem)[]> {
+  _isOwner = false
+): Promise<StaffProductListItem[]> {
   const trimmed = searchTerm?.trim();
 
   const whereClause: Prisma.ProductWhereInput = trimmed
@@ -95,7 +94,7 @@ export async function listProducts(
       sku: true,
       minimumStockLevel: true,
       isActive: true,
-      ...(isOwner && { latestPurchasePrice: true }),
+      latestPurchasePrice: true,
       prices: {
         where: { effectiveTo: null },
         select: {
@@ -113,7 +112,7 @@ export async function listProducts(
     const currentStock = stockMap.get(p.id) || 0;
     const isLowStock = currentStock <= p.minimumStockLevel;
 
-    const base: StaffProductListItem = {
+    return {
       id: p.id,
       name: p.name,
       brand: p.brand,
@@ -122,21 +121,12 @@ export async function listProducts(
       isActive: p.isActive,
       currentStock,
       isLowStock,
+      latestPurchasePrice: p.latestPurchasePrice.toString(),
       activePrices: p.prices.map((pr) => ({
         tier: pr.tier,
         amount: pr.amount.toString(),
       })),
     };
-
-    if (isOwner) {
-      const ownerProduct = p as { latestPurchasePrice?: { toString(): string } };
-      return {
-        ...base,
-        latestPurchasePrice: ownerProduct.latestPurchasePrice?.toString() ?? "0.00",
-      };
-    }
-
-    return base;
   });
 }
 
@@ -228,9 +218,7 @@ export async function getProductDetails(
     isLowStock,
     activePrices,
     priceHistory,
-    ...(isOwner && {
-      latestPurchasePrice: product.latestPurchasePrice.toString(),
-    }),
+    latestPurchasePrice: product.latestPurchasePrice.toString(),
   };
 }
 

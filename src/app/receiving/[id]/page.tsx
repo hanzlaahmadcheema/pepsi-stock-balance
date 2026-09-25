@@ -171,28 +171,26 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
               </span>
             </div>
 
-            {/* Total Cost (OWNER ONLY) */}
-            {isOwner && (
-              <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-purple-700 dark:text-purple-400">
-                    Total Invoiced Cost
-                  </span>
-                  <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded">
-                    OWNER
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-xs text-zinc-400">Rs.</span>
-                  <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
-                    {receiving.totalCost ?? "0.00"}
-                  </span>
-                </div>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 block">
-                  Delivery invoice total
+            {/* Total Cost */}
+            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Total Invoiced Cost
+                </span>
+                <span className="text-xs bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 font-bold px-1.5 py-0.5 rounded">
+                  Cost
                 </span>
               </div>
-            )}
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-xs text-zinc-400">Rs.</span>
+                <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
+                  {receiving.totalCost ?? "0.00"}
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 block">
+                Delivery invoice total
+              </span>
+            </div>
           </div>
 
           {/* Notes Card if present */}
@@ -220,8 +218,8 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
                     <th scope="col" className="px-6 py-3">Product Name</th>
                     <th scope="col" className="px-6 py-3">Brand</th>
                     <th scope="col" className="px-6 py-3">Quantity (Full Crates)</th>
-                    {isOwner && <th scope="col" className="px-6 py-3">Cost / Crate</th>}
-                    {isOwner && <th scope="col" className="px-6 py-3 text-right">Line Total</th>}
+                    <th scope="col" className="px-6 py-3">Cost / Crate</th>
+                    <th scope="col" className="px-6 py-3 text-right">Line Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -236,16 +234,12 @@ export default async function ReceivingDetailsPage({ params }: ReceivingDetailsP
                       <td className="px-6 py-4 font-bold text-zinc-900 dark:text-zinc-100">
                         {item.quantity} <span className="text-xs font-normal text-zinc-500">crates</span>
                       </td>
-                      {isOwner && (
-                        <td className="px-6 py-4 text-zinc-700 dark:text-zinc-300">
-                          Rs. {item.purchasePrice}
-                        </td>
-                      )}
-                      {isOwner && (
-                        <td className="px-6 py-4 text-right font-bold text-zinc-900 dark:text-zinc-50">
-                          Rs. {item.totalCost}
-                        </td>
-                      )}
+                      <td className="px-6 py-4 text-zinc-700 dark:text-zinc-300">
+                        Rs. {item.purchasePrice}
+                      </td>
+                      <td className="px-6 py-4 text-right font-bold text-zinc-900 dark:text-zinc-50">
+                        Rs. {item.totalCost}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

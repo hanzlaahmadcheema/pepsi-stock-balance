@@ -90,11 +90,8 @@ export async function listReceivings(isOwner = false): Promise<ReceivingListItem
       totalCrates,
       itemsCount: r.items.length,
       isPosted,
+      totalCost: sumCost.toFixed(2),
     };
-
-    if (isOwner) {
-      base.totalCost = sumCost.toFixed(2);
-    }
 
     return base;
   });
@@ -144,12 +141,8 @@ export async function getReceivingDetails(
     productName: item.product.name,
     brand: item.product.brand,
     quantity: item.quantity,
-    ...(isOwner
-      ? {
-          purchasePrice: item.purchasePrice.toString(),
-          totalCost: item.totalCost.toString(),
-        }
-      : {}),
+    purchasePrice: item.purchasePrice.toString(),
+    totalCost: item.totalCost.toString(),
   }));
 
   const details: ReceivingDetailsData = {
@@ -163,12 +156,9 @@ export async function getReceivingDetails(
     createdByName: receiving.createdBy.name,
     isPosted,
     totalCrates,
+    totalCost: sumCost.toFixed(2),
     items,
   };
-
-  if (isOwner) {
-    details.totalCost = sumCost.toFixed(2);
-  }
 
   return details;
 }

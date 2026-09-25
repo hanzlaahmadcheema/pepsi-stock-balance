@@ -74,7 +74,7 @@ export default async function ReceivingPage() {
                     <th scope="col" className="px-6 py-3">Supplier</th>
                     <th scope="col" className="px-6 py-3">Invoice / Ref #</th>
                     <th scope="col" className="px-6 py-3">Crates Received</th>
-                    {isOwner && <th scope="col" className="px-6 py-3">Total Cost</th>}
+                    <th scope="col" className="px-6 py-3">Total Cost</th>
                     <th scope="col" className="px-6 py-3">Recorded By</th>
                     <th scope="col" className="px-6 py-3">Status</th>
                     <th scope="col" className="px-6 py-3 text-right">Action</th>
@@ -84,7 +84,7 @@ export default async function ReceivingPage() {
                   {receivings.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isOwner ? 8 : 7}
+                        colSpan={8}
                         className="px-6 py-12"
                       >
                         <EmptyState
@@ -120,11 +120,9 @@ export default async function ReceivingPage() {
                             crates ({r.itemsCount} items)
                           </span>
                         </td>
-                        {isOwner && (
-                          <td className="px-6 py-4 whitespace-nowrap font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-                            {formatCurrency(r.totalCost)}
-                          </td>
-                        )}
+                        <td className="px-6 py-4 whitespace-nowrap font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                          {formatCurrency(r.totalCost)}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-zinc-600 dark:text-zinc-400 text-xs">
                           {r.createdByName}
                         </td>

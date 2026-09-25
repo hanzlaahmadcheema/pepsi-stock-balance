@@ -177,29 +177,27 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               </p>
             </div>
 
-            {/* Purchase Cost (OWNER ONLY) */}
-            {isOwner && (
-              <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-purple-700 dark:text-purple-400">
-                    Purchase Cost
-                  </span>
-                  <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded">
-                    OWNER
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-xs text-zinc-400">Rs.</span>
-                  <span className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-50">
-                    {product.latestPurchasePrice ?? "0.00"}
-                  </span>
-                  <span className="text-xs text-zinc-400">/ crate</span>
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                  Confidential manual delivery cost per full crate.
-                </p>
+            {/* Purchase Cost */}
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Purchase Cost
+                </span>
+                <span className="text-xs bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 font-bold px-1.5 py-0.5 rounded">
+                  Cost
+                </span>
               </div>
-            )}
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-xs text-zinc-400">Rs.</span>
+                <span className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-50">
+                  {product.latestPurchasePrice ?? "0.00"}
+                </span>
+                <span className="text-xs text-zinc-400">/ crate</span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                Default acquisition cost per full crate.
+              </p>
+            </div>
           </div>
 
           {/* Active Selling Prices per Tier */}

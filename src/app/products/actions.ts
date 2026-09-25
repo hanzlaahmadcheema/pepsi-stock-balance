@@ -66,7 +66,7 @@ export async function createProductAction(
   }
 
   let latestPurchasePrice = 0;
-  if (user.role === Role.OWNER && purchaseCostRaw) {
+  if (purchaseCostRaw && purchaseCostRaw.trim() !== "") {
     latestPurchasePrice = parseFloat(purchaseCostRaw);
     if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
       return { error: "Purchase cost must be a non-negative number." };
@@ -238,8 +238,8 @@ export async function updateProductDetailsAction(
     minimumStockLevel,
   };
 
-  // Only Owner can modify latestPurchasePrice
-  if (user.role === Role.OWNER && purchaseCostRaw !== null && purchaseCostRaw !== undefined && purchaseCostRaw !== "") {
+  // Staff and Owner can modify latestPurchasePrice (product cost)
+  if (purchaseCostRaw !== null && purchaseCostRaw !== undefined && purchaseCostRaw.trim() !== "") {
     const latestPurchasePrice = parseFloat(purchaseCostRaw);
     if (isNaN(latestPurchasePrice) || latestPurchasePrice < 0) {
       return { error: "Purchase cost must be a non-negative number." };

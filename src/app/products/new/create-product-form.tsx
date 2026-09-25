@@ -161,33 +161,31 @@ export function CreateProductForm({
               Pricing &amp; Cost per Crate
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Set unit selling prices for active customer tiers.{isOwner ? " Purchase cost is visible to Owner only." : ""}
+              Set unit selling prices for active customer tiers and initial purchase cost per crate.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {isOwner && (
-              <div>
-                <label
-                  htmlFor="latestPurchasePrice"
-                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
-                >
-                  Purchase Cost (Rs.)
-                </label>
-                <input
-                  id="latestPurchasePrice"
-                  name="latestPurchasePrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
-                />
-                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-1 block">
-                  Owner confidential
-                </span>
-              </div>
-            )}
+            <div>
+              <label
+                htmlFor="latestPurchasePrice"
+                className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1"
+              >
+                Purchase Cost (Rs.)
+              </label>
+              <input
+                id="latestPurchasePrice"
+                name="latestPurchasePrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="w-full px-3 py-2.5 text-sm font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-blue-500 tabular-nums"
+              />
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mt-1 block">
+                Default acquisition cost
+              </span>
+            </div>
 
             {enabledRates.retail && (
               <div>

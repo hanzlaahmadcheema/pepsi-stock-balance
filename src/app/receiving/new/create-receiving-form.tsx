@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createReceivingAction } from "../actions";
 import { formatCurrency, formatCrates } from "@/lib/formatters";
@@ -43,8 +43,13 @@ export function CreateReceivingForm({
   ]);
   const [state, formAction, isPending] = useActionState(createReceivingAction, null);
   const [clientError, setClientError] = useState<string | null>(null);
+  // Posting straight to the ledger is the normal case; drafting is the exception.
+  const [postImmediately, setPostImmediately] = useState(true);
 
-  const addItemRow = () => {
+  const newRowSelectRef = useRef<HTMLSelectElement>(null);
+  const focusNewRowRef = useRef(false);
+
+  const addItemRow = (focusIt = false) => {
     setClientError(null);
     const unselected = products.find((p) => !items.some((i) => i.productId === p.id));
     const prodToUse = unselected || products[0];
@@ -58,7 +63,15 @@ export function CreateReceivingForm({
         purchasePrice: prodToUse?.latestPurchasePrice || "0.00",
       },
     ]);
+    if (focusIt) focusNewRowRef.current = true;
   };
+
+  // Enter in a cost box drops straight into the next line, like a spreadsheet.
+  useEffect(() => {
+    if (!focusNewRowRef.current) return;
+    focusNewRowRef.current = false;
+    newRowSelectRef.current?.focus();
+  }, [items]);
 
   const removeItemRow = (index: number) => {
     if (items.length <= 1) {
@@ -124,6 +137,7 @@ export function CreateReceivingForm({
   return (
     <form action={formAction} onSubmit={handleSubmit} className="w-full">
       <input type="hidden" name="items" value={itemsJson} />
+      <input type="hidden" name="postImmediately" value={postImmediately ? "true" : "false"} />
 
       {/* Accessible Inline Error Banner */}
       {(clientError || state?.error) && (
@@ -247,11 +261,14 @@ export function CreateReceivingForm({
 
             <button
               type="button"
-              onClick={addItemRow}
+              onClick={() => addItemRow()}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-colors cursor-pointer self-start sm:self-auto"
             >
               <IconPlus className="w-4 h-4 stroke-[2.5]" />
               <span>+ Add Another Product</span>
+              <kbd className="px-1.5 py-0.5 font-mono text-[11px] font-bold bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-900 rounded">
+                Enter
+              </kbd>
             </button>
           </div>
 
@@ -275,6 +292,7 @@ export function CreateReceivingForm({
                       Product
                     </label>
                     <select
+                      ref={idx === items.length - 1 ? newRowSelectRef : undefined}
                       value={row.productId}
                       onChange={(e) => updateItemRow(idx, "productId", e.target.value)}
                       className="w-full px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500"
@@ -311,6 +329,21 @@ export function CreateReceivingForm({
                       step="any"
                       value={row.purchasePrice}
                       onChange={(e) => updateItemRow(idx, "purchasePrice", e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        // On the final line Enter finishes the delivery instead.
+                        if (idx === items.length - 1) {
+                          e.currentTarget.form?.requestSubmit();
+                        } else {
+                          addItemRow(true);
+                        }
+                      }}
+                      title={
+                        idx === items.length - 1
+                          ? "Enter to post this delivery"
+                          : "Enter to add another product line"
+                      }
                       className="w-full px-3 py-2 text-sm font-bold text-right rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 tabular-nums focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -362,31 +395,81 @@ export function CreateReceivingForm({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/receiving"
-              className="px-5 py-3 text-sm font-semibold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
-            >
-              Cancel
-            </Link>
+          <div className="flex flex-col items-stretch sm:items-end gap-3">
+            <fieldset className="flex items-center gap-1 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60">
+              <legend className="sr-only">How should this delivery be recorded?</legend>
+              <button
+                type="button"
+                onClick={() => setPostImmediately(true)}
+                aria-pressed={postImmediately}
+                className={`px-3 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  postImmediately
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-700"
+                }`}
+              >
+                Post to Stock Now
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostImmediately(false)}
+                aria-pressed={!postImmediately}
+                className={`px-3 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  postImmediately
+                    ? "text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-700"
+                    : "bg-zinc-700 text-white shadow-sm"
+                }`}
+              >
+                Save as Draft
+              </button>
+            </fieldset>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 sm:text-right max-w-xs">
+              {postImmediately
+                ? "Adds crates to the stock ledger straight away."
+                : "Held as a draft — you review it and post to the ledger afterwards."}
+            </p>
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/receiving"
+                className="px-5 py-3 text-sm font-semibold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+              >
+                Cancel
+              </Link>
 
             <button
               type="submit"
               disabled={isPending}
+              title={postImmediately
+                ? "Post this delivery straight to the stock ledger (Enter)"
+                : "Save as a draft to review and post later (Enter)"}
               className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:active:scale-100 disabled:opacity-50 text-white font-bold text-sm shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-2"
             >
               {isPending ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span>Recording Delivery...</span>
+                  <span>Posting to Stock Ledger...</span>
+                </>
+              ) : postImmediately ? (
+                <>
+                  <IconCheckCircle className="w-4 h-4" />
+                  <span>Receive &amp; Post to Stock</span>
+                  <kbd className="px-1.5 py-0.5 font-mono text-[11px] font-bold bg-white/20 border border-white/40 rounded">
+                    Enter
+                  </kbd>
                 </>
               ) : (
                 <>
                   <IconCheckCircle className="w-4 h-4" />
-                  <span>Receive Stock Delivery</span>
+                  <span>Save as Draft</span>
+                  <kbd className="px-1.5 py-0.5 font-mono text-[11px] font-bold bg-white/20 border border-white/40 rounded">
+                    Enter
+                  </kbd>
                 </>
               )}
             </button>
+          </div>
           </div>
         </div>
       </div>

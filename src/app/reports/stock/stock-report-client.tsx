@@ -156,12 +156,12 @@ export function StockReportClient({
           </div>
         </div>
 
-        {isOwner && data.summary.totalValuation !== undefined && (
+        {data.summary.totalValuation !== undefined && (
           <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 shadow-xs col-span-2 sm:col-span-1">
             <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase">
               Inventory Value
             </span>
-            <div className="text-xl font-black text-purple-700 dark:text-purple-300 mt-1">
+            <div className="text-xl font-black text-purple-700 dark:text-purple-400 mt-1">
               {formatCurrency(data.summary.totalValuation)}
             </div>
           </div>
@@ -179,18 +179,14 @@ export function StockReportClient({
                 <th className="px-5 py-3 text-center">Current Stock</th>
                 <th className="px-5 py-3 text-center">Min Threshold</th>
                 <th className="px-5 py-3 text-center">Status</th>
-                {isOwner && (
-                  <>
-                    <th className="px-5 py-3 text-right text-purple-600">Cost/Crate</th>
-                    <th className="px-5 py-3 text-right text-purple-600">Total Value</th>
-                  </>
-                )}
+                <th className="px-5 py-3 text-right text-purple-600">Cost/Crate</th>
+                <th className="px-5 py-3 text-right text-purple-600">Total Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {data.products.length === 0 ? (
                 <tr>
-                  <td colSpan={isOwner ? 7 : 5} className="px-5 py-8 text-center text-zinc-500">
+                  <td colSpan={7} className="px-5 py-8 text-center text-zinc-500">
                     No products found matching the criteria.
                   </td>
                 </tr>
@@ -222,16 +218,12 @@ export function StockReportClient({
                         {p.status.replace("_", " ")}
                       </span>
                     </td>
-                    {isOwner && (
-                      <>
-                        <td className="px-5 py-3 text-right text-zinc-600 dark:text-zinc-400 font-mono">
-                          {formatCurrency(p.latestPurchasePrice || 0)}
-                        </td>
-                        <td className="px-5 py-3 text-right font-black text-purple-700 dark:text-purple-300">
-                          {formatCurrency(p.inventoryValue || 0)}
-                        </td>
-                      </>
-                    )}
+                    <td className="px-5 py-3 text-right text-zinc-600 dark:text-zinc-400 font-mono">
+                      {formatCurrency(p.latestPurchasePrice || 0)}
+                    </td>
+                    <td className="px-5 py-3 text-right font-black text-purple-700 dark:text-purple-300">
+                      {formatCurrency(p.inventoryValue || 0)}
+                    </td>
                   </tr>
                 ))
               )}

@@ -870,9 +870,7 @@ export async function getStockReport(
 
     const price = Number(p.latestPurchasePrice);
     const value = Math.max(0, currentStock) * price;
-    if (isOwner) {
-      totalValuation += value;
-    }
+    totalValuation += value;
 
     return {
       id: p.id,
@@ -882,8 +880,8 @@ export async function getStockReport(
       currentStock,
       minimumStockLevel: p.minimumStockLevel,
       status,
-      latestPurchasePrice: isOwner ? price : undefined,
-      inventoryValue: isOwner ? value : undefined,
+      latestPurchasePrice: price,
+      inventoryValue: value,
     };
   });
 
@@ -907,7 +905,7 @@ export async function getStockReport(
       totalStockCrates,
       lowStockCount,
       outOfStockCount,
-      totalValuation: isOwner ? totalValuation : undefined,
+      totalValuation,
     },
     products: paginated,
     pagination: {
@@ -1290,7 +1288,7 @@ export async function getPriceReport(
   });
 
   const catalog = products.map((p) => {
-    const cost = isOwner ? Number(p.latestPurchasePrice) : 0;
+    const cost = Number(p.latestPurchasePrice);
 
     let retailPrice: number | null = null;
     let wholesalePrice: number | null = null;
@@ -1311,7 +1309,7 @@ export async function getPriceReport(
       productId: p.id,
       productName: p.name,
       brand: p.brand,
-      latestPurchasePrice: isOwner ? cost : undefined,
+      latestPurchasePrice: cost,
       retailPrice,
       wholesalePrice,
       keyAccountPrice,

@@ -72,6 +72,8 @@ export function CreateSaleForm({
   // Form & Input Refs for fast keyboard navigation
   const formRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const browserSearchRef = useRef<HTMLInputElement>(null);
+  const browserPanelRef = useRef<HTMLDivElement>(null);
   const customerSelectRef = useRef<HTMLSelectElement>(null);
   const paidAmountInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
@@ -101,8 +103,10 @@ export function CreateSaleForm({
 
   // POS Catalog filters
   const [searchQuery, setSearchQuery] = useState<string>("");
+  // The full catalogue is not rendered on the page. It opens on demand, so a
+  // 120-product list never pushes the ticket below the fold.
+  const [browserOpen, setBrowserOpen] = useState<boolean>(false);
   const [selectedBrand, setSelectedBrand] = useState<string>("ALL");
-  const [mobileTab, setMobileTab] = useState<"catalog" | "ticket">("catalog");
 
   // Helper to get unit price for a product based on current saleType
   const getProductDefaultPrice = (product: ProductOption, type: SaleType): number => {
@@ -354,6 +358,40 @@ export function CreateSaleForm({
   ]);
 
 
+  // The catalogue is a real modal: lock the page behind it, keep focus inside it,
+  // and hand focus to its search box on open.
+  useEffect(() => {
+    if (!browserOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    browserSearchRef.current?.focus();
+
+    const panel = browserPanelRef.current;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [browserOpen]);
+
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -375,6 +413,13 @@ export function CreateSaleForm({
       if (e.key === "/" && !isInput) {
         e.preventDefault();
         searchInputRef.current?.focus();
+        return;
+      }
+
+      // F3: Open the product browser pop-up
+      if (e.key === "F3") {
+        e.preventDefault();
+        setBrowserOpen(true);
         return;
       }
 
@@ -440,6 +485,10 @@ export function CreateSaleForm({
 
       // Escape: close modals or clear search
       if (e.key === "Escape") {
+        if (browserOpen) {
+          setBrowserOpen(false);
+          return;
+        }
         if (showInvoiceModal) {
           setShowInvoiceModal(false);
           return;
@@ -466,6 +515,7 @@ export function CreateSaleForm({
     shortcutsModalOpen,
     searchQuery,
     showInvoiceModal,
+    browserOpen,
   ]);
 
   // Submission validation before opening modal
@@ -697,6 +747,272 @@ export function CreateSaleForm({
       )}
 
       {/* ================================================================ */}
+      {/* Product Browser Pop-up - the full catalogue, on demand only       */}
+      {/* ================================================================ */}
+      {browserOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Product catalogue"
+        >
+          <div ref={browserPanelRef} className="bg-surface text-ink rounded-lg border-2 border-rule-strong w-full max-w-4xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b-2 border-rule-strong shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded bg-navy text-white flex items-center justify-center shrink-0">
+                  <IconPackage className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold text-ink leading-tight">Product Catalogue</h2>
+                  <p className="text-[0.9375rem] text-ink-2 num">
+                    Showing {filteredProducts.length} of {products.length} products
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBrowserOpen(false)}
+                className="btn btn-sm shrink-0 !min-h-11 !px-2"
+                aria-label="Close the product catalogue"
+              >
+                <IconClose className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search + brand filter stay pinned while the list scrolls */}
+            <div className="px-5 py-4 border-b-2 border-rule-strong space-y-3 shrink-0">
+              <div className="relative">
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-3 pointer-events-none" />
+                <input
+                  id="pos-browser-search"
+                  ref={browserSearchRef}
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && filteredProducts.length === 1) {
+                      e.preventDefault();
+                      const only = filteredProducts[0];
+                      if (only.currentStock > 0) {
+                        handleAddProductToTicket(only, 1);
+                        setSearchQuery("");
+                      }
+                    }
+                  }}
+                  placeholder="Search by name, brand or SKU..."
+                  autoComplete="off"
+                  className="field !pl-11 !pr-14"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="btn btn-sm absolute right-1.5 top-1/2 -translate-y-1/2 !min-h-11 !min-w-11 !px-2 !py-1"
+                    aria-label="Clear the catalogue search box"
+                  >
+                    <IconClose className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+                              {/* Brand Filter Pills */}
+                              <div>
+                                <span className="block text-[0.9375rem] font-bold text-ink-2 mb-1">Filter by Brand</span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedBrand("ALL")}
+                                    aria-pressed={selectedBrand === "ALL"}
+                                    className={`btn ${
+                                      selectedBrand === "ALL" ? "btn-primary" : ""
+                                    }`}
+                                  >
+                                    All Brands
+                                  </button>
+                                  {brands.map((b) => {
+                                    const isSelected = selectedBrand.toLowerCase() === b.toLowerCase();
+                                    return (
+                                      <button
+                                        key={b}
+                                        type="button"
+                                        onClick={() => setSelectedBrand(b)}
+                                        aria-pressed={isSelected}
+                                        className={`btn ${isSelected ? "btn-primary" : ""}`}
+                                      >
+                                        {b}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+              <p className="text-[0.9375rem] text-ink-2">
+                Added items stay on the ticket, so leave this open to keep adding.
+              </p>
+            </div>
+
+            {/* The list */}
+            <div className="overflow-y-auto px-5 py-4">
+                          <div className="panel">
+                            {filteredProducts.length === 0 ? (
+                              <div className="py-12 text-center p-8">
+                                <IconPackage className="w-10 h-10 text-ink-3 mx-auto mb-2" />
+                                <h4 className="text-lg font-bold text-ink">No products match your search</h4>
+                                <p className="text-[0.9375rem] text-ink-2 mt-1">
+                                  Check the spelling, or clear the filters to see all products.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => { setSearchQuery(""); setSelectedBrand("ALL"); }}
+                                  className="btn mt-4"
+                                >
+                                  Clear Search and Brand Filter
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                {/* Column headers */}
+                                <div className="ledger-head grid grid-cols-12 gap-2 px-4">
+                                  <div className="col-span-5">Product</div>
+                                  <div className="col-span-2 hidden sm:block">Type</div>
+                                  <div className="col-span-2 text-center hidden sm:block">Stock</div>
+                                  <div className="col-span-2 sm:col-span-1 text-right">Price</div>
+                                  <div className="col-span-5 sm:col-span-2 text-right">Quantity</div>
+                                </div>
+
+                                {filteredProducts.map((prod) => {
+                                  const currentPrice = getProductDefaultPrice(prod, saleType);
+                                  const inStock = prod.currentStock > 0;
+                                  const isLowStock = prod.currentStock <= 10 && inStock;
+                                  const itemInCart = items.find((i) => i.productId === prod.id);
+                                  const qtyInCart = itemInCart?.quantity || 0;
+                                  const cartIdx = items.findIndex((i) => i.productId === prod.id);
+                                  const brandStyle = getBrandStyle(prod.brand);
+                                  const isGlass = prod.crateConfig?.hasGlassCrate !== false;
+
+                                  return (
+                                    <div
+                                      key={prod.id}
+                                      className={`ledger-row grid grid-cols-12 gap-2 px-4 py-3 items-center ${
+                                        qtyInCart > 0 ? "ledger-row-active" : ""
+                                      }`}
+                                    >
+                                      {/* Product Name + Brand + SKU */}
+                                      <div className="col-span-5 min-w-0 flex items-start gap-2">
+                                        {qtyInCart > 0 && (
+                                          <span className="shrink-0 mt-1 w-5 h-5 bg-navy text-white rounded-full flex items-center justify-center">
+                                            <IconCheck className="w-3 h-3 stroke-[3]" />
+                                          </span>
+                                        )}
+                                        <div className="min-w-0">
+                                          <div className={`text-[0.9375rem] font-bold break-words ${qtyInCart > 0 ? "text-navy" : "text-ink"}`}>
+                                            {prod.name}
+                                          </div>
+                                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                            <span className={`text-[0.875rem] font-black uppercase px-1.5 py-0.5 rounded border ${brandStyle.bg} ${brandStyle.text} ${brandStyle.border}`}>
+                                              {prod.brand}
+                                            </span>
+                                            {prod.sku && (
+                                              <span className="text-[0.875rem] text-ink-2 num break-all">{prod.sku}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Packaging Type */}
+                                      <div className="col-span-2 hidden sm:flex items-center">
+                                        {isGlass ? (
+                                          <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-navy-wash text-navy border border-navy/30">
+                                            <IconBottle className="w-3.5 h-3.5" />
+                                            <span>Glass {prod.crateConfig?.bottlesPerCrate || 24}b</span>
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-surface-alt text-ink-2 border border-rule">
+                                            <IconPackage className="w-3.5 h-3.5" />
+                                            <span>PET</span>
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Stock Level */}
+                                      <div className="col-span-2 text-center hidden sm:block">
+                                        {inStock ? (
+                                          <span className={`badge ${isLowStock ? "badge-warn" : "badge-good"}`}>
+                                            {prod.currentStock} crates
+                                          </span>
+                                        ) : (
+                                          <span className="badge badge-bad">Out of stock</span>
+                                        )}
+                                      </div>
+
+                                      {/* Unit Price */}
+                                      <div className="col-span-2 sm:col-span-1 text-right">
+                                        <span className="text-[0.9375rem] font-black text-ink num">
+                                          {formatCurrency(currentPrice)}
+                                        </span>
+                                        <span className="block text-[0.875rem] text-ink-2">per crate</span>
+                                      </div>
+
+                                      {/* Quantity Stepper */}
+                                      <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1.5">
+                                        {inStock ? (
+                                          qtyInCart > 0 ? (
+                                            <div className="flex items-center bg-surface border-2 border-navy rounded-md">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleAddProductToTicket(prod, -1)}
+                                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
+                                                aria-label={`Remove one crate of ${prod.name}`}
+                                              >
+                                                −
+                                              </button>
+                                              <input
+                                                type="number"
+                                                min="1"
+                                                max={prod.currentStock}
+                                                value={qtyInCart}
+                                                onChange={(e) =>
+                                                  handleUpdateItemQuantity(cartIdx, parseInt(e.target.value, 10) || 1)
+                                                }
+                                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                                className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none text-navy"
+                                                aria-label={`Quantity of ${prod.name} in the ticket`}
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => handleAddProductToTicket(prod, 1)}
+                                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
+                                                aria-label={`Add one more crate of ${prod.name}`}
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleAddProductToTicket(prod, 1)}
+                                              className="btn btn-primary"
+                                            >
+                                              <IconPlus className="w-4 h-4" />
+                                              Add to Ticket
+                                            </button>
+                                          )
+                                        ) : (
+                                          <span className="text-[0.9375rem] text-ink-3 font-semibold italic">Out of stock</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ================================================================ */}
       {/* Main POS Form                                                     */}
       {/* ================================================================ */}
       <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="w-full">
@@ -729,329 +1045,215 @@ export function CreateSaleForm({
           </div>
         )}
 
-        {/* Mobile Tab Switcher */}
-        <div className="lg:hidden grid grid-cols-2 gap-2 mb-4">
-          <button
-            type="button"
-            onClick={() => setMobileTab("catalog")}
-            aria-pressed={mobileTab === "catalog"}
-            className={`btn ${
-              mobileTab === "catalog" ? "btn-primary" : ""
-            }`}
-          >
-            <IconPackage className="w-4 h-4" />
-            <span>Catalog ({products.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("ticket")}
-            aria-pressed={mobileTab === "ticket"}
-            className={`btn flex-col !items-start !justify-center gap-0 ${
-              mobileTab === "ticket" ? "btn-primary" : ""
-            }`}
-          >
-            <span className="flex items-center gap-1.5 text-[0.95rem]">
-              <IconReceipt className="w-4 h-4" />
-              <span>Ticket &amp; Pay</span>
-            </span>
-            <span className="num text-[0.95rem] font-black">
-              {totalCratesSold} crates — {formatCurrency(totalAmount)}
-            </span>
-          </button>
-        </div>
 
-        {/* POS Layout: catalog on top, added products below it, payment at the bottom */}
+        {/* POS Layout: add a product, then the ticket, then payment at the bottom */}
         <div className="space-y-6">
           {/* ============================================================= */}
-          {/* STEP 1 — PRODUCT CATALOG (pick items)                       */}
           {/* ============================================================= */}
-          <div className={`space-y-3 ${mobileTab === "ticket" ? "hidden lg:block" : "block"}`}>
-            {/* Search & Brand Filter Toolbar */}
-            <div className="panel">
-              <div className="panel-body space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                  {/* Search Bar */}
-                  <div className="flex-1">
-                    <label
-                      htmlFor="pos-product-search"
-                      className="block text-[0.9375rem] font-bold text-ink-2 mb-1"
-                    >
-                      Find a Product <span className="text-ink-3 font-semibold">(name or scan barcode)</span>
-                    </label>
-                    <div className="relative">
-                      <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-3 pointer-events-none" />
-                      <input
-                        id="pos-product-search"
-                        ref={searchInputRef}
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const q = searchQuery.trim().toLowerCase();
-                            if (!q) return;
+          {/* STEP 1 — ADD A PRODUCT: search for it, or open the catalogue  */}
+          {/* ============================================================= */}
+          <div className="panel">
+            <div className="panel-body">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+                {/* Search Bar — results appear inline, never the whole list */}
+                <div className="flex-1">
+                  <label
+                    htmlFor="pos-product-search"
+                    className="block text-[0.9375rem] font-bold text-ink-2 mb-1"
+                  >
+                    Add a Product <span className="text-ink-3 font-semibold">(name or scan barcode)</span>
+                  </label>
+                  <div className="relative">
+                    <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-3 pointer-events-none" />
+                    <input
+                      id="pos-product-search"
+                      ref={searchInputRef}
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const q = searchQuery.trim().toLowerCase();
+                          if (!q) return;
 
-                            const exactSku = products.find((p) => p.sku && p.sku.toLowerCase() === q);
-                            if (exactSku && exactSku.currentStock > 0) {
-                              handleAddProductToTicket(exactSku, 1);
-                              setSearchQuery("");
-                              return;
-                            }
-
-                            const exactName = products.find((p) => p.name.toLowerCase() === q);
-                            if (exactName && exactName.currentStock > 0) {
-                              handleAddProductToTicket(exactName, 1);
-                              setSearchQuery("");
-                              return;
-                            }
-
-                            if (filteredProducts.length === 1 && filteredProducts[0].currentStock > 0) {
-                              handleAddProductToTicket(filteredProducts[0], 1);
-                              setSearchQuery("");
-                              return;
-                            }
+                          const exactSku = products.find((p) => p.sku && p.sku.toLowerCase() === q);
+                          if (exactSku && exactSku.currentStock > 0) {
+                            handleAddProductToTicket(exactSku, 1);
+                            setSearchQuery("");
+                            return;
                           }
-                        }}
-                        placeholder="Type a product name…"
-                        autoComplete="off"
-                        className="field !pl-11 !pr-14"
-                      />
 
-                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                        {searchQuery ? (
-                          <button
-                            type="button"
-                            onClick={() => setSearchQuery("")}
-                            className="btn btn-sm !min-h-11 !min-w-11 !px-2 !py-1"
-                            aria-label="Clear the product search box"
-                          >
-                            <IconClose className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[0.9375rem] font-mono font-bold rounded border border-rule bg-surface-alt text-ink-2">
-                            F2
-                          </kbd>
-                        )}
-                      </div>
+                          const exactName = products.find((p) => p.name.toLowerCase() === q);
+                          if (exactName && exactName.currentStock > 0) {
+                            handleAddProductToTicket(exactName, 1);
+                            setSearchQuery("");
+                            return;
+                          }
+
+                          if (filteredProducts.length === 1 && filteredProducts[0].currentStock > 0) {
+                            handleAddProductToTicket(filteredProducts[0], 1);
+                            setSearchQuery("");
+                            return;
+                          }
+                        }
+                      }}
+                      placeholder="Type a product name…"
+                      autoComplete="off"
+                      className="field !pl-11 !pr-14"
+                    />
+
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                      {searchQuery ? (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery("")}
+                          className="btn btn-sm !min-h-11 !min-w-11 !px-2 !py-1"
+                          aria-label="Clear the product search box"
+                        >
+                          <IconClose className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-[0.9375rem] font-mono font-bold rounded border border-rule bg-surface-alt text-ink-2">
+                          F2
+                        </kbd>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pb-1">
-                    <span className="text-[0.9375rem] text-ink-2">
-                      Showing <strong className="text-ink">{filteredProducts.length}</strong> of {products.length} products
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShortcutsModalOpen(true)}
-                      className="btn"
-                      title="Keyboard Shortcuts (?)"
-                    >
-                      <IconKeyboard className="w-4 h-4" />
-                      <span>Keys</span>
-                      <kbd className="px-1.5 py-0.5 text-[0.9375rem] font-mono font-bold bg-surface-alt border border-rule rounded">
-                        ?
-                      </kbd>
-                    </button>
                   </div>
                 </div>
 
-                {/* Brand Filter Pills */}
-                <div>
-                  <span className="block text-[0.9375rem] font-bold text-ink-2 mb-1">Filter by Brand</span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedBrand("ALL")}
-                      aria-pressed={selectedBrand === "ALL"}
-                      className={`btn ${
-                        selectedBrand === "ALL" ? "btn-primary" : ""
-                      }`}
-                    >
-                      All Brands
-                    </button>
-                    {brands.map((b) => {
-                      const isSelected = selectedBrand.toLowerCase() === b.toLowerCase();
-                      return (
-                        <button
-                          key={b}
-                          type="button"
-                          onClick={() => setSelectedBrand(b)}
-                          aria-pressed={isSelected}
-                          className={`btn ${isSelected ? "btn-primary" : ""}`}
-                        >
-                          {b}
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* The full catalogue opens in a pop-up, never on the page */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBrowserOpen(true)}
+                    className="btn btn-primary"
+                    title="Open the product catalogue (F3)"
+                  >
+                    <IconPackage className="w-4 h-4" />
+                    <span>Browse All Products</span>
+                    <kbd className="px-1.5 py-0.5 text-[0.9375rem] font-mono font-bold bg-white/20 border border-white/40 rounded">
+                      F3
+                    </kbd>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShortcutsModalOpen(true)}
+                    className="btn"
+                    title="Keyboard Shortcuts (?)"
+                  >
+                    <IconKeyboard className="w-4 h-4" />
+                    <span>Keys</span>
+                    <kbd className="px-1.5 py-0.5 text-[0.9375rem] font-mono font-bold bg-surface-alt border border-rule rounded">
+                      ?
+                    </kbd>
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* ============================================================= */}
-            {/* Product List (dense rows)                                      */}
-            {/* ============================================================= */}
-            <div className="panel">
-              {filteredProducts.length === 0 ? (
-                <div className="py-12 text-center p-8">
-                  <IconPackage className="w-10 h-10 text-ink-3 mx-auto mb-2" />
-                  <h4 className="text-lg font-bold text-ink">No products match your search</h4>
-                  <p className="text-[0.9375rem] text-ink-2 mt-1">
-                    Check the spelling, or clear the filters to see all products.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => { setSearchQuery(""); setSelectedBrand("ALL"); }}
-                    className="btn mt-4"
-                  >
-                    Clear Search and Brand Filter
-                  </button>
+            {/* Search results: what was asked for, capped so the page stays short */}
+            {searchQuery.trim().length > 0 && (
+              <div
+                className="border-t-2 border-rule-strong"
+                aria-live="polite"
+              >
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-surface-alt border-b border-rule">
+                  <span className="text-[0.9375rem] font-bold text-ink-2 num">
+                    {filteredProducts.length === 0
+                      ? "No products match"
+                      : `${filteredProducts.length} product${filteredProducts.length !== 1 ? "s" : ""} match`}
+                  </span>
+                  {filteredProducts.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="btn btn-sm"
+                    >
+                      Clear Search
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setBrowserOpen(true)}
+                      className="btn btn-sm"
+                      title="Open the product catalogue (F3)"
+                    >
+                      <IconPackage className="w-4 h-4" />
+                      <span>Open Catalogue</span>
+                      <kbd className="px-1.5 py-0.5 text-[0.875rem] font-mono font-bold bg-surface-alt border border-rule rounded">
+                        F3
+                      </kbd>
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div>
-                  {/* Column headers */}
-                  <div className="ledger-head grid grid-cols-12 gap-2 px-4">
-                    <div className="col-span-5">Product</div>
-                    <div className="col-span-2 hidden sm:block">Type</div>
-                    <div className="col-span-2 text-center hidden sm:block">Stock</div>
-                    <div className="col-span-2 sm:col-span-1 text-right">Price</div>
-                    <div className="col-span-5 sm:col-span-2 text-right">Quantity</div>
-                  </div>
 
-                  {filteredProducts.map((prod) => {
-                    const currentPrice = getProductDefaultPrice(prod, saleType);
-                    const inStock = prod.currentStock > 0;
-                    const isLowStock = prod.currentStock <= 10 && inStock;
-                    const itemInCart = items.find((i) => i.productId === prod.id);
-                    const qtyInCart = itemInCart?.quantity || 0;
-                    const cartIdx = items.findIndex((i) => i.productId === prod.id);
-                    const brandStyle = getBrandStyle(prod.brand);
-                    const isGlass = prod.crateConfig?.hasGlassCrate !== false;
+                {filteredProducts.length === 0 ? (
+                  <p className="px-4 py-5 text-[0.9375rem] text-ink-2">
+                    Nothing matches &ldquo;{searchQuery.trim()}&rdquo;. Check the spelling, or open the
+                    catalogue to browse by brand.
+                  </p>
+                ) : (
+                  <ul>
+                    {filteredProducts.slice(0, 8).map((prod) => {
+                      const inStock = prod.currentStock > 0;
+                      const qtyInCart = items.find((i) => i.productId === prod.id)?.quantity || 0;
+                      const price = getProductDefaultPrice(prod, saleType);
 
-                    return (
-                      <div
-                        key={prod.id}
-                        className={`ledger-row grid grid-cols-12 gap-2 px-4 py-3 items-center ${
-                          qtyInCart > 0 ? "ledger-row-active" : ""
-                        }`}
-                      >
-                        {/* Product Name + Brand + SKU */}
-                        <div className="col-span-5 min-w-0 flex items-start gap-2">
-                          {qtyInCart > 0 && (
-                            <span className="shrink-0 mt-1 w-5 h-5 bg-navy text-white rounded-full flex items-center justify-center">
-                              <IconCheck className="w-3 h-3 stroke-[3]" />
-                            </span>
-                          )}
-                          <div className="min-w-0">
-                            <div className={`text-[0.9375rem] font-bold break-words ${qtyInCart > 0 ? "text-navy" : "text-ink"}`}>
+                      return (
+                        <li
+                          key={prod.id}
+                          className="ledger-row flex items-center gap-3 px-4 py-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[0.9375rem] font-bold text-ink break-words">
                               {prod.name}
                             </div>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className={`text-[0.875rem] font-black uppercase px-1.5 py-0.5 rounded border ${brandStyle.bg} ${brandStyle.text} ${brandStyle.border}`}>
-                                {prod.brand}
+                            <div className="text-[0.875rem] text-ink-2 break-words">
+                              {prod.brand}
+                              {prod.sku ? <span className="num"> · {prod.sku}</span> : null}
+                              <span className="num">
+                                {" "}· {formatCurrency(price)}/crate · {prod.currentStock} in stock
                               </span>
-                              {prod.sku && (
-                                <span className="text-[0.875rem] text-ink-2 num break-all">{prod.sku}</span>
-                              )}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Packaging Type */}
-                        <div className="col-span-2 hidden sm:flex items-center">
-                          {isGlass ? (
-                            <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-navy-wash text-navy border border-navy/30">
-                              <IconBottle className="w-3.5 h-3.5" />
-                              <span>Glass {prod.crateConfig?.bottlesPerCrate || 24}b</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[0.9375rem] font-bold px-2 py-0.5 rounded bg-surface-alt text-ink-2 border border-rule">
-                              <IconPackage className="w-3.5 h-3.5" />
-                              <span>PET</span>
+                          {qtyInCart > 0 && (
+                            <span className="badge badge-good shrink-0">
+                              In ticket: {qtyInCart}
                             </span>
                           )}
-                        </div>
 
-                        {/* Stock Level */}
-                        <div className="col-span-2 text-center hidden sm:block">
-                          {inStock ? (
-                            <span className={`badge ${isLowStock ? "badge-warn" : "badge-good"}`}>
-                              {prod.currentStock} crates
-                            </span>
-                          ) : (
-                            <span className="badge badge-bad">Out of stock</span>
-                          )}
-                        </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddProductToTicket(prod, 1)}
+                            disabled={!inStock}
+                            className="btn btn-sm btn-primary shrink-0 !min-h-11"
+                          >
+                            <IconPlus className="w-4 h-4" />
+                            <span>{inStock ? "Add" : "Out of stock"}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
 
-                        {/* Unit Price */}
-                        <div className="col-span-2 sm:col-span-1 text-right">
-                          <span className="text-[0.9375rem] font-black text-ink num">
-                            {formatCurrency(currentPrice)}
-                          </span>
-                          <span className="block text-[0.875rem] text-ink-2">per crate</span>
-                        </div>
-
-                        {/* Quantity Stepper */}
-                        <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1.5">
-                          {inStock ? (
-                            qtyInCart > 0 ? (
-                              <div className="flex items-center bg-surface border-2 border-navy rounded-md">
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddProductToTicket(prod, -1)}
-                                  className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
-                                  aria-label={`Remove one crate of ${prod.name}`}
-                                >
-                                  −
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={prod.currentStock}
-                                  value={qtyInCart}
-                                  onChange={(e) =>
-                                    handleUpdateItemQuantity(cartIdx, parseInt(e.target.value, 10) || 1)
-                                  }
-                                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                                  className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none text-navy"
-                                  aria-label={`Quantity of ${prod.name} in the ticket`}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddProductToTicket(prod, 1)}
-                                  className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
-                                  aria-label={`Add one more crate of ${prod.name}`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleAddProductToTicket(prod, 1)}
-                                className="btn btn-primary"
-                              >
-                                <IconPlus className="w-4 h-4" />
-                                Add to Ticket
-                              </button>
-                            )
-                          ) : (
-                            <span className="text-[0.9375rem] text-ink-3 font-semibold italic">Out of stock</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                {filteredProducts.length > 8 && (
+                  <p className="px-4 py-2 border-t border-rule text-[0.9375rem] text-ink-2">
+                    {filteredProducts.length - 8} more match. Open the catalogue to see all{" "}
+                    {filteredProducts.length}.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
+
 
           {/* ============================================================= */}
           {/* STEP 2 — ADDED PRODUCTS: one row per product, in columns      */}
           {/* ============================================================= */}
-          <section className={`space-y-4 ${mobileTab === "catalog" ? "hidden lg:block" : "block"}`}>
+          <section className="space-y-4">
             <div className="panel">
               <div className="panel-head flex flex-wrap items-center justify-between !py-3 gap-3">
                 <div className="flex items-center gap-2">
@@ -1516,6 +1718,7 @@ export function CreateSaleForm({
             </span>
             {[
               ["F2", "Search"],
+              ["F3", "Browse Catalogue"],
               ["Enter", "Scan Barcode"],
               ["F4", "Customer"],
               ["F7", "Match Empties"],

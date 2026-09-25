@@ -22,6 +22,11 @@ const POS_SHORTCUTS: ShortcutItem[] = [
     badge: "Fast Scan",
   },
   {
+    keys: ["F3"],
+    description: "Open the product catalogue pop-up to browse every product",
+    badge: "Browse",
+  },
+  {
     keys: ["Enter"],
     description: "Auto-add first matched product or scanned barcode SKU to ticket",
     badge: "Scanner",

@@ -17,7 +17,7 @@ describe("Application Branding & Developer Credit", () => {
     assert.equal(DEVELOPER_CREDIT.name, "Hanzla Ahmad");
     assert.equal(DEVELOPER_CREDIT.whatsappUrl, "https://wa.me/923266900001");
     assert.equal(DEVELOPER_CREDIT.whatsappNumber, "+92 326 6900001");
-    assert.equal(DEVELOPER_CREDIT.displayLabel, "-----By Hanzla Ahmad");
+    assert.equal(DEVELOPER_CREDIT.displayLabel, "Built by Hanzla Ahmad");
   });
 
   it("returns default branding when given null or empty object", () => {

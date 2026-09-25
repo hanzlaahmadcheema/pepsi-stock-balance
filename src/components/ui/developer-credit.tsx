@@ -5,7 +5,7 @@ export const DEVELOPER_CREDIT = {
   name: "Hanzla Ahmad",
   whatsappNumber: "+92 326 6900001",
   whatsappUrl: "https://wa.me/923266900001",
-  displayLabel: "-----By Hanzla Ahmad",
+  displayLabel: "Built by Hanzla Ahmad",
 };
 
 interface DeveloperCreditProps {

@@ -212,36 +212,17 @@ describe("Phase 5 Step 3 — Sync Quarantine Management UI & Resolution", () => 
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Test C: Staff cannot access quarantine actions (unauthorized)
   // ─────────────────────────────────────────────────────────────────────────────
-  it("Test C: Staff role is strictly blocked from viewing and resolving quarantine", async () => {
-    const dummyId = crypto.randomUUID();
-
-    // 1. Staff query blocked
+  // Test C: Staff can access quarantine actions
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test C: Staff role is permitted to view and resolve quarantine", async () => {
+    // 1. Staff query permitted
     const viewRes = await getQuarantineRecordsAction(
       undefined,
       { id: staffUser.id, role: Role.STAFF }
     );
-    assert.equal(viewRes.success, false);
-    assert.match(viewRes.error || "", /Unauthorized/i);
-
-    // 2. Staff retry blocked
-    const retryRes = await retryQuarantineAction({
-      quarantineId: dummyId,
-      reason: "Staff attempting retry",
-      _testUser: { id: staffUser.id, role: Role.STAFF },
-    });
-    assert.equal(retryRes.success, false);
-    assert.match(retryRes.error || "", /Unauthorized/i);
-
-    // 3. Staff discard blocked
-    const discardRes = await discardQuarantineAction({
-      quarantineId: dummyId,
-      reason: "Staff attempting discard",
-      _testUser: { id: staffUser.id, role: Role.STAFF },
-    });
-    assert.equal(discardRes.success, false);
-    assert.match(discardRes.error || "", /Unauthorized/i);
+    assert.equal(viewRes.success, true);
+    assert.ok(Array.isArray(viewRes.records));
   });
 
   // ─────────────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireDbUser } from "@/lib/auth";
 import { Role, QuarantineStatus, SyncChangeAction } from "@prisma/client";
 import { resolveQuarantineChange, ResolveQuarantineResult } from "@/lib/sync/client/pull";
 
@@ -13,7 +13,7 @@ import {
 
 /**
  * Server action to fetch quarantine records with filters.
- * STRICTLY requires OWNER role.
+ * Accessible to authenticated Staff and Owner.
  */
 export async function getQuarantineRecordsAction(
   filters?: QuarantineFilters,
@@ -24,17 +24,13 @@ export async function getQuarantineRecordsAction(
   error?: string;
 }> {
   try {
-    if (_testUser) {
-      if (_testUser.role !== Role.OWNER) {
-        throw new Error("Unauthorized");
-      }
-    } else {
-      await requireRole(Role.OWNER);
+    if (!_testUser) {
+      await requireDbUser();
     }
   } catch {
     return {
       success: false,
-      error: "Unauthorized: Only an Owner can view the sync quarantine.",
+      error: "Unauthorized: You must be logged in to view the sync quarantine.",
     };
   }
 
@@ -119,7 +115,7 @@ export async function getQuarantineRecordsAction(
 
 /**
  * Server action to retry an active quarantine change.
- * STRICTLY requires OWNER role.
+ * Accessible to authenticated Staff and Owner.
  */
 export async function retryQuarantineAction(params: {
   quarantineId: string;
@@ -131,20 +127,17 @@ export async function retryQuarantineAction(params: {
   error?: string;
   errorCode?: string;
 }> {
-  let owner: { id: string };
+  let actor: { id: string };
   try {
     if (params._testUser) {
-      if (params._testUser.role !== Role.OWNER) {
-        throw new Error("Unauthorized");
-      }
-      owner = params._testUser;
+      actor = params._testUser;
     } else {
-      owner = await requireRole(Role.OWNER);
+      actor = await requireDbUser();
     }
   } catch {
     return {
       success: false,
-      error: "Unauthorized: Only an Owner can resolve quarantined sync items.",
+      error: "Unauthorized: You must be logged in to resolve quarantined sync items.",
     };
   }
 
@@ -160,7 +153,7 @@ export async function retryQuarantineAction(params: {
       quarantineId: params.quarantineId,
       action: "RETRY",
       reason: params.reason.trim(),
-      resolvedByUserId: owner.id,
+      resolvedByUserId: actor.id,
     });
 
     try {
@@ -184,7 +177,7 @@ export async function retryQuarantineAction(params: {
 
 /**
  * Server action to discard an active quarantine change.
- * STRICTLY requires OWNER role.
+ * Accessible to authenticated Staff and Owner.
  */
 export async function discardQuarantineAction(params: {
   quarantineId: string;
@@ -196,20 +189,17 @@ export async function discardQuarantineAction(params: {
   error?: string;
   errorCode?: string;
 }> {
-  let owner: { id: string };
+  let actor: { id: string };
   try {
     if (params._testUser) {
-      if (params._testUser.role !== Role.OWNER) {
-        throw new Error("Unauthorized");
-      }
-      owner = params._testUser;
+      actor = params._testUser;
     } else {
-      owner = await requireRole(Role.OWNER);
+      actor = await requireDbUser();
     }
   } catch {
     return {
       success: false,
-      error: "Unauthorized: Only an Owner can discard quarantined sync items.",
+      error: "Unauthorized: You must be logged in to discard quarantined sync items.",
     };
   }
 
@@ -225,7 +215,7 @@ export async function discardQuarantineAction(params: {
       quarantineId: params.quarantineId,
       action: "DISCARD",
       reason: params.reason.trim(),
-      resolvedByUserId: owner.id,
+      resolvedByUserId: actor.id,
     });
 
     try {

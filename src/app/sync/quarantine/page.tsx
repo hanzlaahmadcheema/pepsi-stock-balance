@@ -14,11 +14,6 @@ export const metadata = {
 export default async function SyncQuarantinePage() {
   const user = await requireDbUser();
 
-  // Strict Owner-only enforcement — redirect Staff
-  if (user.role !== Role.OWNER) {
-    redirect("/unauthorized");
-  }
-
   const res = await getQuarantineRecordsAction();
   const initialRecords = res.records || [];
 

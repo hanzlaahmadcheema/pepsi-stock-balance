@@ -587,7 +587,6 @@ export function EditSaleForm({
               <option value={PaymentMethod.CASH}>CASH</option>
               <option value={PaymentMethod.EASYPAISA}>EASYPAISA</option>
               <option value={PaymentMethod.JAZZCASH}>JAZZCASH</option>
-              <option value={PaymentMethod.MPESA}>MPESA</option>
               <option value={PaymentMethod.QR}>QR CODE</option>
             </select>
           </div>

@@ -826,7 +826,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
             {/* Cash */}
             <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
               <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
@@ -857,17 +857,6 @@ export default async function HomePage() {
               </div>
               <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
                 {formatMoney(data.payments.totalJazzCashCollected)}
-              </div>
-            </div>
-
-            {/* M-Pesa */}
-            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>M-Pesa</span>
-                <IconCreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                {formatMoney(data.payments.totalMpesaCollected)}
               </div>
             </div>
 

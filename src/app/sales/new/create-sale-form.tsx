@@ -321,9 +321,11 @@ export function CreateSaleForm({
     itemCount: number;
     cratesSold: number;
   } | null>(null);
+  const [lastHandledSaleId, setLastHandledSaleId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state?.success && state.saleId && !completedSale) {
+    if (state?.success && state.saleId && state.saleId !== lastHandledSaleId) {
+      setLastHandledSaleId(state.saleId);
       setCompletedSale({
         saleId: state.saleId,
         invoiceNumber: state.invoiceNumber || state.saleId.slice(0, 8),
@@ -339,7 +341,7 @@ export function CreateSaleForm({
     state?.success,
     state?.saleId,
     state?.invoiceNumber,
-    completedSale,
+    lastHandledSaleId,
     selectedCustomer,
     totalAmount,
     paidAmountNum,
@@ -456,7 +458,7 @@ export function CreateSaleForm({
   const handleResetForNewSale = () => {
     setCompletedSale(null);
     setCustomerId("");
-    setSaleType(SaleType.RETAIL);
+    setSaleType(allowedSaleTypes[0] || SaleType.RETAIL);
     setDiscount("0");
     setPaymentMethod(PaymentMethod.CASH);
     setPaidAmount("0");
@@ -465,6 +467,9 @@ export function CreateSaleForm({
     setClientError(null);
     setItems([]);
     router.refresh();
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 50);
   };
 
   // When sale is completed, pressing Enter or Space rings up the next sale

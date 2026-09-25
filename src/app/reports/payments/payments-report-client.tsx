@@ -245,7 +245,6 @@ export function PaymentsReportClient({
             <option value="CASH">Cash</option>
             <option value="EASYPAISA">EasyPaisa</option>
             <option value="JAZZCASH">JazzCash</option>
-            <option value="MPESA">M-Pesa</option>
             <option value="QR">QR Code</option>
           </select>
         </div>

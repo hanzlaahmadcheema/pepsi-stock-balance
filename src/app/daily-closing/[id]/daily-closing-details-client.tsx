@@ -332,12 +332,6 @@ export function DailyClosingDetailsClient({
               </b>
             </div>
             <div className="flex justify-between">
-              <span>M-Pesa:</span>
-              <b className="text-zinc-900 dark:text-zinc-100">
-                {formatCurrency(summary.payments.totalMpesaCollected)}
-              </b>
-            </div>
-            <div className="flex justify-between">
               <span>QR Code:</span>
               <b className="text-zinc-900 dark:text-zinc-100">
                 {formatCurrency(summary.payments.totalQrCollected)}

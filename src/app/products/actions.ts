@@ -44,7 +44,11 @@ export async function createProductAction(
 
   const isReturnableRaw = formData.get("isReturnable") as string | null;
   const hasGlassCrateRaw = formData.get("hasGlassCrate") as string | null;
-  const hasGlassCrate = isReturnableRaw !== null ? (isReturnableRaw === "on" || isReturnableRaw === "true") : (hasGlassCrateRaw !== "false");
+  const hasGlassCrate =
+    isReturnableRaw === "true" ||
+    isReturnableRaw === "on" ||
+    hasGlassCrateRaw === "true" ||
+    hasGlassCrateRaw === "on";
   const bottlesPerCrate = getContainerSettings().defaultBottlesPerCrate || 24;
 
   // Validation
@@ -245,6 +249,7 @@ export async function updateProductDetailsAction(
 
   const isReturnableRaw = formData.get("isReturnable") as string | null;
   const hasGlassCrateRaw = formData.get("hasGlassCrate") as string | null;
+  const crateConfigSubmitted = formData.get("crateConfigSubmitted") === "1";
 
   try {
     await prisma.product.update({
@@ -252,8 +257,12 @@ export async function updateProductDetailsAction(
       data: updateData,
     });
 
-    if (isReturnableRaw !== null || hasGlassCrateRaw !== null) {
-      const hasGlassCrate = isReturnableRaw !== null ? (isReturnableRaw === "on" || isReturnableRaw === "true") : (hasGlassCrateRaw === "true" || hasGlassCrateRaw === "on");
+    if (crateConfigSubmitted || isReturnableRaw !== null || hasGlassCrateRaw !== null) {
+      const hasGlassCrate =
+        isReturnableRaw === "true" ||
+        isReturnableRaw === "on" ||
+        hasGlassCrateRaw === "true" ||
+        hasGlassCrateRaw === "on";
       const defaultBottles = getContainerSettings().defaultBottlesPerCrate || 24;
       try {
         setProductCrateConfig(productId, {

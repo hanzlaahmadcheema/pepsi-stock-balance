@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateProductDetailsAction } from "../actions";
 
 export function EditProductForm({
@@ -21,6 +21,7 @@ export function EditProductForm({
   };
 }) {
   const [state, formAction, isPending] = useActionState(updateProductDetailsAction, null);
+  const [isReturnable, setIsReturnable] = useState(Boolean(initialData.hasGlassCrate));
 
   return (
     <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
@@ -143,12 +144,14 @@ export function EditProductForm({
           )}
 
           <div className="sm:col-span-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+            <input type="hidden" name="crateConfigSubmitted" value="1" />
+            <input type="hidden" name="isReturnable" value={isReturnable ? "true" : "false"} />
             <label htmlFor="isReturnable" className="flex items-start gap-3 cursor-pointer">
               <input
                 id="isReturnable"
-                name="isReturnable"
                 type="checkbox"
-                defaultChecked={initialData.hasGlassCrate}
+                checked={isReturnable}
+                onChange={(e) => setIsReturnable(e.target.checked)}
                 className="mt-0.5 w-5 h-5 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <div>

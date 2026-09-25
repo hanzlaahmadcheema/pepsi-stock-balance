@@ -92,9 +92,9 @@ export function inferDefaultCrateConfig(productName: string): ProductCrateConfig
     };
   }
 
-  // Default to glass crate with 24 bottles
+  // Default to non-returnable crate
   return {
-    hasGlassCrate: true,
+    hasGlassCrate: false,
     bottlesPerCrate: 24,
   };
 }

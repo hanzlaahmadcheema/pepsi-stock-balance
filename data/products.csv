@@ -1,0 +1,122 @@
+Name,Brand,CostPrice,RetailPrice,SKU,LowStockAlert,GlassCrate
+Coca Cola 250ml,Coca Cola,0,0,Coke-250,5,TRUE
+Sprite 250ml,Coca Cola,0,0,Sprite-250,5,TRUE
+Fanta 250ml,Coca Cola,0,0,Fanta-250,5,TRUE
+Sprite Zero 250ml,Coca Cola,0,0,Sprite-Z-250,5,TRUE
+Sprite Mint 250ml,Coca Cola,0,0,Sprite-Mint-250,5,TRUE
+Coca Cola 1500ml,Coca Cola,0,0,Coke-1500,5,FALSE
+Sprite 1500ml,Coca Cola,0,0,Sprite-1500,5,FALSE
+Fanta 1500ml,Coca Cola,0,0,Fanta-1500,5,FALSE
+Mint 1500ml,Coca Cola,0,0,Mint-1500,5,FALSE
+Sprite Zero 1500ml,Coca Cola,0,0,Sprite-Z-1500,5,FALSE
+Coca Cola 1000ml,Coca Cola,0,0,Coke-1000,5,FALSE
+Sprite 1000ml,Coca Cola,0,0,Sprite-1000,5,FALSE
+Fanta 1000ml,Coca Cola,0,0,Fanta-1000,5,FALSE
+Sprite Zero 1000ml,Coca Cola,0,0,Sprite-Z-1000,5,FALSE
+Mint 1000ml,Coca Cola,0,0,Mint-1000,5,FALSE
+Coca Cola 300ml,Coca Cola,0,0,Coke-300,5,FALSE
+Sprite 300ml,Coca Cola,0,0,Sprite-300,5,FALSE
+Fanta 300ml,Coca Cola,0,0,Fanta-300,5,FALSE
+Fanta Anaar 300ml,Coca Cola,0,0,Fanta-Anaar-300,5,FALSE
+Roor 300ml,Coca Cola,0,0,Roor-300,5,FALSE
+Coca Cola 2000ml,Coca Cola,0,0,Coke-2000,5,FALSE
+Sprite 2000ml,Coca Cola,0,0,Sprite-2000,5,FALSE
+Fanta 2000ml,Coca Cola,0,0,Fanta-2000,5,FALSE
+Mint 2000ml,Coca Cola,0,0,Mint-2000,5,FALSE
+Coca Cola Can 250ml,Coca Cola,0,0,Coke-Can-250,5,FALSE
+Sprite Can 250ml,Coca Cola,0,0,Sprite-Can-250,5,FALSE
+Fanta Can 250ml,Coca Cola,0,0,Fanta-Can-250,5,FALSE
+Coke Diet Can 250ml,Coca Cola,0,0,Coke-Diet-Can-250,5,FALSE
+Sprite Diet Can 250ml,Coca Cola,0,0,Sprite-Diet-Can-250,5,FALSE
+Coca Cola 500ml,Coca Cola,0,0,Coke-500,5,FALSE
+Sprite 500ml,Coca Cola,0,0,Sprite-500,5,FALSE
+Fanta 500ml,Coca Cola,0,0,Fanta-500,5,FALSE
+Sprite Zero 500ml,Coca Cola,0,0,Sprite-Z-500,5,FALSE
+Pepsi 250ml,PepsiCo,0,0,Pepsi-250,5,TRUE
+7up 250ml,PepsiCo,0,0,7up-250,5,TRUE
+Mountain Dew 250ml,PepsiCo,0,0,Dew-250,5,TRUE
+Mirinda 250ml,PepsiCo,0,0,Mirinda-250,5,TRUE
+7up Mint 250ml,PepsiCo,0,0,7up-Mint-250,5,TRUE
+Sting 240ml,PepsiCo,0,0,Sting-240,5,FALSE
+Slice 240ml,PepsiCo,0,0,Slice-240,5,FALSE
+Pepsi 1500ml,PepsiCo,0,0,Pepsi-1500,5,FALSE
+7up 1500ml,PepsiCo,0,0,7up-1500,5,FALSE
+Mountain Dew 1500ml,PepsiCo,0,0,Dew-1500,5,FALSE
+Mirinda 1500ml,PepsiCo,0,0,Mirinda-1500,5,FALSE
+7up Mint 1500ml,PepsiCo,0,0,7up-Mint-1500,5,FALSE
+Pepsi 1000ml,PepsiCo,0,0,Pepsi-1000,5,FALSE
+7up 1000ml,PepsiCo,0,0,7up-1000,5,FALSE
+Mountain Dew 1000ml,PepsiCo,0,0,Dew-1000,5,FALSE
+Mirinda 1000ml,PepsiCo,0,0,Mirinda-1000,5,FALSE
+7up Mint 1000ml,PepsiCo,0,0,7up-Mint-1000,5,FALSE
+7up Zero 1000ml,PepsiCo,0,0,7up-Z-1000,5,FALSE
+Pepsi 2000ml,PepsiCo,0,0,Pepsi-2000,5,FALSE
+7up 2000ml,PepsiCo,0,0,7up-2000,5,FALSE
+Mountain Dew 2000ml,PepsiCo,0,0,Dew-2000,5,FALSE
+Pepsi 500ml,PepsiCo,0,0,Pepsi-500,5,FALSE
+7up 500ml,PepsiCo,0,0,7up-500,5,FALSE
+Mountain Dew 500ml,PepsiCo,0,0,Dew-500,5,FALSE
+Mirinda 500ml,PepsiCo,0,0,Mirinda-500,5,FALSE
+7up Zero 500ml,PepsiCo,0,0,7up-Z-500,5,FALSE
+7up Mint 500ml,PepsiCo,0,0,7up-Mint-500,5,FALSE
+Sting Red 500ml,PepsiCo,0,0,Sting-Red-500,5,FALSE
+Sting Yellow 500ml,PepsiCo,0,0,Sting-Yellow-500,5,FALSE
+Pepsi 345ml,PepsiCo,0,0,Pepsi-345,5,FALSE
+7up 345ml,PepsiCo,0,0,7up-345,5,FALSE
+Mountain Dew 345ml,PepsiCo,0,0,Dew-345,5,FALSE
+Mirinda 345ml,PepsiCo,0,0,Mirinda-345,5,FALSE
+7up Mint 345ml,PepsiCo,0,0,7up-Mint-345,5,FALSE
+7up Zero 345ml,PepsiCo,0,0,7up-Z-345,5,FALSE
+Sting 300ml,PepsiCo,0,0,Sting-300,5,FALSE
+Aquafina 1500ml,PepsiCo,0,0,Aquafina-1500,5,FALSE
+Aquafina 500ml,PepsiCo,0,0,Aquafina-500,5,FALSE
+Pepsi Can 250ml,PepsiCo,0,0,Pepsi-Can-250,5,FALSE
+7up Can 250ml,PepsiCo,0,0,7up-Can-250,5,FALSE
+Mountain Dew Can 250ml,PepsiCo,0,0,Dew-Can-250,5,FALSE
+Mirinda Can 250ml,PepsiCo,0,0,Mirinda-Can-250,5,FALSE
+Sting Can 250ml,PepsiCo,0,0,Sting-Can-250,5,FALSE
+7up Zero Can 250ml,PepsiCo,0,0,7up-Z-Can-250,5,FALSE
+Pepsi Zero Can 250ml,PepsiCo,0,0,Pepsi-Z-Can-250,5,FALSE
+Slice Juice Tetra 200ml,PepsiCo,0,0,Slice-Juice-Tetra-200,5,FALSE
+Slice Juice 1000ml,PepsiCo,0,0,Slice-Juice-1000,5,FALSE
+Revive Lemonade 300ml,PepsiCo,0,0,Revive-Lemonade-300,5,FALSE
+Revive Lychee 300ml,PepsiCo,0,0,Revive-Lychee-300,5,FALSE
+Next Cola 1500ml,Next,0,0,Next-Cola-1500,5,FALSE
+Next Fizzup 1500ml,Next,0,0,Next-Fizzup-1500,5,FALSE
+Next Rango 1500ml,Next,0,0,Next-Rango-1500,5,FALSE
+Next Dare 1500ml,Next,0,0,Next-Dare-1500,5,FALSE
+Next Anar 1500ml,Next,0,0,Next-Anar-1500,5,FALSE
+Next Mint 1500ml,Next,0,0,Next-Mint-1500,5,FALSE
+Next Cola 1000ml,Next,0,0,Next-Cola-1000,5,FALSE
+Next Fizzup 1000ml,Next,0,0,Next-Fizzup-1000,5,FALSE
+Next Rango 1000ml,Next,0,0,Next-Rango-1000,5,FALSE
+Next Dare 1000ml,Next,0,0,Next-Dare-1000,5,FALSE
+Next Anar 1000ml,Next,0,0,Next-Anar-1000,5,FALSE
+Next Lychee 1000ml,Next,0,0,Next-Lychee-1000,5,FALSE
+Next Cola Jumbo,Next,0,0,Next-Cola-Jumbo,5,FALSE
+Next Fizzup Jumbo,Next,0,0,Next-Fizzup-Jumbo,5,FALSE
+Next Rango Jumbo,Next,0,0,Next-Rango-Jumbo,5,FALSE
+Next Dare Jumbo,Next,0,0,Next-Dare-Jumbo,5,FALSE
+Next Cola 500ml,Next,0,0,Next-Cola-500,5,FALSE
+Next Fizzup 500ml,Next,0,0,Next-Fizzup-500,5,FALSE
+Next Rango 500ml,Next,0,0,Next-Rango-500,5,FALSE
+Next Dare 500ml,Next,0,0,Next-Dare-500,5,FALSE
+Next Strom 500ml,Next,0,0,Next-Strom-500,5,FALSE
+Next Cola 300ml,Next,0,0,Next-Cola-300,5,FALSE
+Next Fizzup 300ml,Next,0,0,Next-Fizzup-300,5,FALSE
+Next Rango 300ml,Next,0,0,Next-Rango-300,5,FALSE
+Next Dare 300ml,Next,0,0,Next-Dare-300,5,FALSE
+Next Anar 300ml,Next,0,0,Next-Anar-300,5,FALSE
+Next Mint 300ml,Next,0,0,Next-Mint-300,5,FALSE
+Next Lychee 300ml,Next,0,0,Next-Lychee-300,5,FALSE
+Next Strom 300ml,Next,0,0,Next-Strom-300,5,FALSE
+Next Water 1500ml,Next,0,0,Next-Water-1500,5,FALSE
+Next Water 500ml,Next,0,0,Next-Water-500,5,FALSE
+Next Cola Can 250ml,Next,0,0,Next-Cola-Can-250,5,FALSE
+Next Fizzup Can 250ml,Next,0,0,Next-Fizzup-Can-250,5,FALSE
+Next Rango Can 250ml,Next,0,0,Next-Rango-Can-250,5,FALSE
+Next Dare Can 250ml,Next,0,0,Next-Dare-Can-250,5,FALSE
+Next Anar Can 250ml,Next,0,0,Next-Anar-Can-250,5,FALSE
+Next Mint Can 250ml,Next,0,0,Next-Mint-Can-250,5,FALSE
+Next Strom Can 250ml,Next,0,0,Next-Strom-Can-250,5,FALSE
+Next Lychee Can 250ml,Next,0,0,Next-Lychee-Can-250,5,FALSE

@@ -1,0 +1,994 @@
+{
+  "enabledTypes": {
+    "glass": true,
+    "plastic": false
+  },
+  "defaultBottlesPerCrate": 24,
+  "enabledRates": {
+    "retail": true,
+    "wholesale": true,
+    "key": true
+  },
+  "productConfigs": {
+    "53545d50-82fc-4f6d-ab87-46a643c125cf": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "ef22af4b-4e77-47ce-b031-e03a2c5eb2ad": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "758e707b-ebe3-4060-b1c6-ade866007468": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "57303d69-a1f8-4702-bf36-16663454b45b": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Zero 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "b13f5943-b82c-4bf9-87e0-374eaae59257": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Mint 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "5589bdcf-615b-4a8d-81fa-5d130cbc378b": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "3fb317c3-6747-4ebe-bad4-1bf4b88fb769": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6831d4c3-46df-4cb9-bb02-a0f886217f2f": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "b83f848d-5251-44f1-b50b-029702235a06": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mint 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "41c23cee-e58c-4813-8efa-e983a2580c58": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Zero 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5088718d-c5e8-4088-880c-dbe12041bdfd": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "995db738-2509-432e-8280-887527afcd18": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "275a0534-d75d-4e84-a972-7c28e9b879d4": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "fec79544-43f4-4ab1-be81-32e4c559d9a8": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Zero 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "09bbddc3-fe7a-4c53-b731-807740274dc5": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mint 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "cb56616e-a119-45d1-858b-8d9528acabe5": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "240938e1-8f58-46d0-b4d1-fd51456dcb3a": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "31311f33-b6cb-4e44-93b3-9c16991b6919": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "c2b94de9-ebac-432d-b15e-15e5f0bc97d6": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta Anaar 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "0cab81c6-60ab-4a12-9459-1dcab9c060fa": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Roor 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "2ce896a4-fe8a-4db6-8cc5-fea9f4420e03": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "db625294-f645-42db-b957-aa1bf46c10b8": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "80539199-6b39-4b97-97bb-dbc3c1381991": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "9ead4a4d-b8ad-4ac8-9c87-fbb7309ed538": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mint 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "127ff2e0-e80d-453e-8087-4b2b41e17eae": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "10b09359-d298-4f69-8a13-2f6757f21b03": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "c736eccd-24f1-4373-b9cb-9b23f6549886": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6ed0703f-0a02-4032-8b8b-6f694fd04ba1": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coke Diet Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "fc7b726c-3660-4e36-9d6a-57343bdb1bf8": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Diet Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "84fdc626-85c8-4fc4-b6f1-a3f58d433351": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Coca Cola 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "376e973f-8bf1-4013-a515-b16a7dbca2fa": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "53814e15-3049-4be4-bcff-982e20b842e4": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Fanta 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "4f9a9500-0da4-4fe1-a62c-33ebbd30ef69": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sprite Zero 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "916cd62c-1941-4e0a-b018-ad193378c53c": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "0ac8d740-aa9b-4d16-8759-7c14efc550c4": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "7up 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "2d2bfb58-a00b-4642-9946-99914f6b8abf": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "d21d08e1-f0ea-4080-8d75-2f1809e860da": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "b8e9ad09-3093-45d2-a795-b663e8a70c0d": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "7up Mint 250ml": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "62dd482d-9bef-4988-a0e1-1e2611810593": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sting 240ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "833dbd95-2e47-4ef5-90c5-6c20cde4105f": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Slice 240ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6a8f18a0-3ee7-4a25-bf74-e7983e8ecf19": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "72f23653-244c-4bc8-9fa2-19534713cd5a": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "b283fb1d-834a-47be-a720-e431ea3d22cf": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "880f0a6d-3cbf-41bb-8dfc-57fde381426f": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "840598f0-9db1-4405-baae-7f0137e11e54": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Mint 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6983d55f-17f3-41ad-abbc-bf1a2cebbe15": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6cb0c004-0a51-4c5a-8c47-52ce9852c206": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "f9c31d29-8a54-41ae-b0d2-50d8774a1be1": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "14837342-411c-47c6-87d6-7d73d19fb64f": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "89b375e3-ecee-4d02-948e-93bb5c404d6e": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Mint 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "19bb926d-b055-4d26-b193-480b8d75df80": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Zero 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "09c3b09f-c4bc-4510-a6c8-5e7f725ba02b": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "bf8844a9-ae85-4851-bbf3-92e313c42cf9": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "9b3f4e13-1db8-42d0-ad8a-2a453f849f53": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 2000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5013ce0c-13f3-482e-b86f-77bd0da506ba": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "b883f518-f32d-4c3a-8a4e-2538a5411d1e": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "1e31c185-a9d1-4318-8ced-5e4e46492292": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "951bfa1e-5525-455b-b4f2-e68da27cc451": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "895b611a-b4d1-4478-b71f-7daeb5c9cec5": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Zero 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "f25216ad-a4f2-4def-aa9f-54af2fc58f43": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Mint 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "da758e71-ed3f-432b-894f-9da107307feb": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sting Red 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "af1b3bc3-f9c0-4767-9773-a2b86ba71b26": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sting Yellow 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "61255ec9-41ca-4781-8f35-1c8c4003c936": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5b27696d-164f-4abb-83db-d8d503e03cb1": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "50456fce-a846-4fca-ba93-deb0c59f0a13": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "f2a6a20c-c843-4016-85ed-af7fae6e8778": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "1ae1a827-0a74-4a65-aba7-2f81c95df68a": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Mint 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "15b9a8be-247b-4b85-ac76-302e98d1d159": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Zero 345ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "923038e7-dce6-41b6-8554-87190be73bd6": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sting 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "52ee3b5d-ccc8-407d-bf7c-accbe145bb81": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Aquafina 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "a8c89026-22f7-433b-84c7-82bd67bbb8ba": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Aquafina 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7044c2c2-afca-43ed-82c7-d75706b0a419": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "b280bb45-d428-42df-a8f8-d440564d5b2b": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "cc9dac49-4949-44f9-927e-f4b2a7fa5bf5": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mountain Dew Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "fcc7e294-936b-4a13-b1d7-05b9bc58b56b": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Mirinda Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "09856826-53c7-44a9-b09f-41baa5611f6d": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Sting Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6fff8800-cda8-4a5e-91cc-7876c77de60c": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7up Zero Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "e4267d3a-ebeb-4534-9456-8db52e6b4fdd": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Pepsi Zero Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "07428aa4-3a70-489c-b416-8d58aebbffba": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Slice Juice Tetra 200ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "adad5f37-7ed6-482f-a29d-accd95adbac8": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Slice Juice 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "579eebb8-25be-40b3-bb83-4ee4f25ad985": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Revive Lemonade 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "0496fd4d-79fb-479f-8aab-4c8aee8065d3": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Revive Lychee 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "3b09a667-c4f2-4e1e-aab6-86d12ffdef19": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "cb2fc044-2458-4207-9846-56e6c64dbcf4": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "0419da1f-1531-44a1-92b6-9b4b464ccab9": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "8a642010-d615-4d1c-abfc-d477b3d74716": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "1810491d-6e8f-4488-a4cb-f4f1d4f0fa44": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Anar 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5bb74fe4-6dc5-4c6d-8f09-096f8797c4b3": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Mint 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "d13bea06-3ca2-4090-bfac-fa1ad683c9fe": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "68b9248e-74f4-4762-b14c-eb072597c6c0": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "ecf0cff9-faab-4c88-aa5b-79722b316e34": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5523fe05-c7d8-4f31-b191-27ae543573f9": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "3dbd209d-68ac-4d85-9881-03b865c14dde": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Anar 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "cea7d740-3629-4ca4-8356-dc32c60821b4": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Lychee 1000ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "4cb5b025-933d-4ecb-b73b-e68ad725a0a3": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola Jumbo": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7cbc51a8-6b64-4983-9aab-52e7af2171f9": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup Jumbo": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "bb3e4a8f-6086-43d7-8757-953ea57482a4": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango Jumbo": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "84e3856d-6c93-4f6b-afd5-c6483a0f6b91": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare Jumbo": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "7edb7e2d-034f-4c4c-8b86-0d66aeddc481": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "800db141-9e2a-4eb7-91d9-e041734a1998": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "17d3a7c7-c5eb-4f91-b4a5-d6b7219b7dac": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "4d2decd3-f282-42fe-a41f-229355c643f5": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "bea00262-9a4b-4dab-9205-e2955d7e8ed2": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Strom 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "628a14f7-3961-4b68-8a38-ce5e7dd2cd16": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "69acc6df-a206-41fb-9a60-74584937458a": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "398a1b12-84e9-4b7b-9614-1d03d8e586b2": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "5a297bba-7698-4c8d-8b77-52d0d5c9ad06": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "bd9b5bdd-1169-403d-b337-4c06c40ad7a6": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Anar 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "11026464-d80c-402b-b860-6667b711a265": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Mint 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "542c4208-ef3d-4a4c-b6d3-c3079be62608": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Lychee 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "55d7a39e-acbd-4a4c-8b87-7246cb94fe9f": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Strom 300ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "6c72db5f-ec29-4dfc-9701-364ba0d05aaa": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Water 1500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "3d1eb6a1-72f3-4ea6-b408-1366180f41e0": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Water 500ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "805508c3-81fb-4cdf-8002-6fba1315cc76": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Cola Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "447962e7-516d-47a6-bc56-3f59f8acf3fe": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Fizzup Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "3c1aa5af-dae0-45c4-9863-1f9cdba67e3d": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Rango Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "f551b4a2-6800-4d78-9a40-68756adf0c3e": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Dare Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "4d57d3ef-9a55-48b7-a637-c727f0abc80a": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Anar Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "449da5af-31cc-41bf-831a-a1be090786ec": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Mint Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "decdca48-c6b9-4486-b26c-3eeaf980ebe9": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Strom Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "9e032aee-cc2e-4a50-a6b8-141833e9d0f6": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "Next Lychee Can 250ml": {
+      "hasGlassCrate": false,
+      "bottlesPerCrate": 24
+    },
+    "test-prod-non-returnable-1790338201907": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "test-prod-non-returnable-1790338705553": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    },
+    "test-prod-non-returnable-1790338955768": {
+      "hasGlassCrate": true,
+      "bottlesPerCrate": 24
+    }
+  }
+}

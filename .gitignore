@@ -53,5 +53,7 @@ __pycache__/
 *.pyc
 
 # Local data files
-data/
+data/*
+!data/products.csv
+!data/container-settings.json
 

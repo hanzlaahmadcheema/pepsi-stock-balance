@@ -729,6 +729,41 @@ describe("Phase 3 Sync: Business Push Handlers", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // J2. POST_RECEIVING with unknown/un-synced supplier auto-provisions placeholder supplier
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("J2. POST_RECEIVING with unknown/un-synced supplier auto-provisions placeholder supplier", async () => {
+    const { device } = await createTestDevice();
+    const receivingId = crypto.randomUUID();
+    const unknownSupplierId = crypto.randomUUID();
+    createdReceivingIds.add(receivingId);
+
+    const op = makeOp(1, "POST_RECEIVING", receivingId, {
+      supplierId: unknownSupplierId,
+      supplierName: "Direct Depot Wholesale",
+      referenceNumber: "AUTO-SUPP-1",
+      items: [{ productId: testProductId1, quantity: 15, purchasePrice: 120 }],
+      userId: testOwnerUserId,
+    });
+
+    const res = await processDevicePushBatch(device, crypto.randomUUID(), [op]);
+    assert.equal(res.success, true);
+    assert.deepEqual(res.acknowledgedOperationIds, [op.operationId]);
+
+    // Verify supplier was auto-created with the provided name
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: unknownSupplierId },
+    });
+    assert.ok(supplier);
+    assert.equal(supplier.name, "Direct Depot Wholesale");
+
+    // Cleanup
+    await prisma.stockMovement.deleteMany({ where: { referenceId: receivingId } });
+    await prisma.receivingItem.deleteMany({ where: { receivingId } });
+    await prisma.receiving.deleteMany({ where: { id: receivingId } });
+    await prisma.supplier.deleteMany({ where: { id: unknownSupplierId } });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // K. DELETE_DRAFT_RECEIVING only deletes drafts
   // ─────────────────────────────────────────────────────────────────────────────
   it("K. DELETE_DRAFT_RECEIVING only deletes drafts; strictly forbids deleting posted", async () => {

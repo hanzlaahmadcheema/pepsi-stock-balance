@@ -168,6 +168,43 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
   }
 }
 
+// ─── Local Suppliers Outbox Backfill ──────────────────────────────────────────
+
+/**
+ * Ensures any local suppliers in the database have a corresponding UPSERT_SUPPLIER record
+ * in SyncOutbox. This guarantees that suppliers created on the depot are propagated to Cloud
+ * before or alongside any receiving records referencing them.
+ */
+async function ensureLocalSuppliersEnqueued(tx: TransactionClient): Promise<void> {
+  const localSuppliers = await tx.supplier.findMany();
+  for (const s of localSuppliers) {
+    const existing = await tx.syncOutbox.findFirst({
+      where: {
+        operationType: "UPSERT_SUPPLIER",
+        entityId: s.id,
+      },
+    });
+    if (!existing) {
+      await tx.syncOutbox.create({
+        data: {
+          operationId: crypto.randomUUID(),
+          operationType: "UPSERT_SUPPLIER",
+          entityId: s.id,
+          payload: {
+            id: s.id,
+            name: s.name,
+            contactPerson: s.contactPerson,
+            phone: s.phone,
+            address: s.address,
+            isActive: s.isActive,
+          },
+          status: "PENDING",
+        },
+      });
+    }
+  }
+}
+
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -228,7 +265,25 @@ export async function pushPendingOperations(
       // 2. Recover orphaned IN_FLIGHT operations from a prior crash.
       await recoverOrphanedInFlightOps(tx);
 
-      // 2b. Auto-compact sequences of un-synced operations to guarantee contiguous ordering.
+      // 2a. Auto-recover operations that failed due to "Supplier not found"
+      // Since Cloud auto-provisions missing suppliers and local depot backfills them,
+      // this failure is transient and can be retried immediately.
+      await tx.syncOutbox.updateMany({
+        where: {
+          status: "FAILED",
+          lastError: { contains: "Supplier not found" },
+        },
+        data: {
+          status: "PENDING",
+          lastError: null,
+          retryCount: 0,
+        },
+      });
+
+      // 2b. Ensure any local suppliers exist in SyncOutbox
+      await ensureLocalSuppliersEnqueued(tx);
+
+      // 2c. Auto-compact sequences of un-synced operations to guarantee contiguous ordering.
       await compactOutboxSequences(tx);
 
       // 3. Check if any FAILED operations exist in the outbox.

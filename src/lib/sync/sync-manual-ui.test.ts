@@ -459,5 +459,71 @@ describe("Manual Sync & Local Operations Outbox Ledger Actions", () => {
     await prisma.product.deleteMany({ where: { id: testProdId } });
     await prisma.localProcessedChange.deleteMany({ where: { changeSequence: BigInt(21) } });
   });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Test 8: Auto-recovery of FAILED operations with "Supplier not found"
+  // ─────────────────────────────────────────────────────────────────────────────
+  it("Test 8: Operations failed with 'Supplier not found' are auto-recovered to PENDING on sync", async () => {
+    const opId = crypto.randomUUID();
+    createdOperationIds.add(opId);
+
+    // Create an operation failed specifically with [DETERMINISTIC_FAILURE] Supplier not found.
+    await prisma.syncOutbox.create({
+      data: {
+        operationId: opId,
+        clientSequence: BigInt(50),
+        operationType: "POST_RECEIVING",
+        entityId: crypto.randomUUID(),
+        payload: {
+          items: [{ productId: crypto.randomUUID(), quantity: 10, purchasePrice: 100 }],
+          supplierId: crypto.randomUUID(),
+        },
+        status: "FAILED",
+        lastError: "[DETERMINISTIC_FAILURE] Supplier not found.",
+        retryCount: 0,
+      },
+    });
+
+    let pushedOps: any[] = [];
+    const mockPushFetch = async (url: string, init?: RequestInit) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/sync/push")) {
+        const body = JSON.parse(String(init?.body));
+        pushedOps = body.operations;
+        return new Response(
+          JSON.stringify({
+            success: true,
+            batchId: "test-batch",
+            acknowledgedOperationIds: body.operations.map((o: any) => o.operationId),
+            rejectedOperations: [],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(JSON.stringify({ success: true, changes: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    };
+
+    const res = await triggerManualSyncAction(
+      { id: staffUser.id, role: Role.STAFF },
+      {
+        cloudBaseUrl: "http://mock-cloud.test",
+        deviceId: testDevice.deviceId,
+        deviceToken: rawDeviceToken,
+        fetchFn: mockPushFetch as any,
+      }
+    );
+
+    assert.equal(res.success, true);
+    // The failed operation was auto-recovered and included in the push batch!
+    const found = pushedOps.find((o) => o.operationId === opId);
+    assert.ok(found, "The failed operation must be auto-recovered and sent to Cloud");
+
+    // Clean up
+    await prisma.syncOutbox.deleteMany({ where: { operationId: opId } });
+    createdOperationIds.delete(opId);
+  });
 });
 

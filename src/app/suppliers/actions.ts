@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireDbUser } from "@/lib/auth";
 import { assertNotCloudPortal } from "@/lib/config/portal-mode";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type SupplierActionState = {
   error?: string;
@@ -36,14 +37,25 @@ export async function createSupplierAction(
   }
 
   try {
-    await prisma.supplier.create({
-      data: {
-        name,
-        contactPerson,
-        phone,
-        address,
-        isActive: true,
-      },
+    await prisma.$transaction(async (tx) => {
+      const s = await tx.supplier.create({
+        data: {
+          name,
+          contactPerson,
+          phone,
+          address,
+          isActive: true,
+        },
+      });
+
+      await enqueueOutbox(tx, "UPSERT_SUPPLIER", s.id, {
+        id: s.id,
+        name: s.name,
+        contactPerson: s.contactPerson,
+        phone: s.phone,
+        address: s.address,
+        isActive: s.isActive,
+      });
     });
   } catch (err) {
     console.error("Failed to create supplier:", err);
@@ -85,14 +97,25 @@ export async function updateSupplierAction(
   }
 
   try {
-    await prisma.supplier.update({
-      where: { id },
-      data: {
-        name,
-        contactPerson,
-        phone,
-        address,
-      },
+    await prisma.$transaction(async (tx) => {
+      const s = await tx.supplier.update({
+        where: { id },
+        data: {
+          name,
+          contactPerson,
+          phone,
+          address,
+        },
+      });
+
+      await enqueueOutbox(tx, "UPSERT_SUPPLIER", s.id, {
+        id: s.id,
+        name: s.name,
+        contactPerson: s.contactPerson,
+        phone: s.phone,
+        address: s.address,
+        isActive: s.isActive,
+      });
     });
   } catch (err) {
     console.error("Failed to update supplier:", err);
@@ -126,9 +149,20 @@ export async function toggleSupplierStatusAction(
     return { error: "Supplier not found." };
   }
 
-  await prisma.supplier.update({
-    where: { id },
-    data: { isActive: !supplier.isActive },
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.supplier.update({
+      where: { id },
+      data: { isActive: !supplier.isActive },
+    });
+
+    await enqueueOutbox(tx, "UPSERT_SUPPLIER", updated.id, {
+      id: updated.id,
+      name: updated.name,
+      contactPerson: updated.contactPerson,
+      phone: updated.phone,
+      address: updated.address,
+      isActive: updated.isActive,
+    });
   });
 
   revalidatePath("/suppliers");

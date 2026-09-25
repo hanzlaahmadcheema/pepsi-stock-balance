@@ -254,8 +254,14 @@ export async function createReceivingTransaction(input: CreateReceivingInput) {
     if (postImmediately) {
       await recalculateAllSalesFifo(tx);
 
+      const supplierRecord = await tx.supplier.findUnique({
+        where: { id: supplierId },
+        select: { name: true },
+      });
+
       await enqueueOutbox(tx, "POST_RECEIVING", receiving.id, {
         supplierId,
+        supplierName: supplierRecord?.name ?? null,
         referenceNumber,
         receivedAt: receiving.receivedAt.toISOString(),
         notes: receiving.notes,
@@ -339,9 +345,15 @@ export async function postReceivingTransaction(receivingId: string, userId: stri
     // Reconcile FIFO acquisition costs across historical sales
     await recalculateAllSalesFifo(tx);
 
+    const supplierRecord = await tx.supplier.findUnique({
+      where: { id: receiving.supplierId },
+      select: { name: true },
+    });
+
     // Enqueue for Cloud Sync
     await enqueueOutbox(tx, "POST_RECEIVING", receiving.id, {
       supplierId: receiving.supplierId,
+      supplierName: supplierRecord?.name ?? null,
       referenceNumber: receiving.referenceNumber,
       receivedAt: receiving.receivedAt.toISOString(),
       notes: receiving.notes,

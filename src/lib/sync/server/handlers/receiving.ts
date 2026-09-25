@@ -27,6 +27,7 @@ interface ReceivingItemPayload {
 
 interface PostReceivingPayload {
   supplierId: string;
+  supplierName?: string | null;
   referenceNumber?: string | null;
   receivedAt?: string;
   notes?: string | null;
@@ -55,12 +56,23 @@ export async function handlePostReceiving(
     throw new Error("Supplier ID is required.");
   }
 
-  const supplier = await tx.supplier.findUnique({
+  let supplier = await tx.supplier.findUnique({
     where: { id: payload.supplierId },
   });
 
   if (!supplier) {
-    throw new Error("Supplier not found.");
+    // If supplier was created offline or hasn't synced yet, auto-provision placeholder supplier
+    // with stable UUID so foreign key constraint and receiving succeed without blocking sync ledger.
+    const fallbackName =
+      payload.supplierName?.trim() ||
+      `Supplier (${payload.supplierId.slice(0, 8)})`;
+    supplier = await tx.supplier.create({
+      data: {
+        id: payload.supplierId,
+        name: fallbackName,
+        isActive: true,
+      },
+    });
   }
 
   const userId = await resolveUserId(

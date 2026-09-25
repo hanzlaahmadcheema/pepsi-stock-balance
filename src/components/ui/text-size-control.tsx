@@ -32,7 +32,7 @@ export function TextSizeControl({ compact = false }: { compact?: boolean }) {
               aria-pressed={selected}
               title={option.label}
               aria-label={option.label}
-              className={`flex min-w-12 items-center justify-center rounded-md border-2 px-2 font-bold leading-none transition-colors ${option.glyphClass} ${
+              className={`flex min-w-11 items-center justify-center rounded-md border-2 px-2 font-bold leading-none transition-colors ${option.glyphClass} ${
                 selected
                   ? "border-navy-deep bg-navy text-white"
                   : "border-rule-strong bg-surface text-ink hover:bg-surface-alt"

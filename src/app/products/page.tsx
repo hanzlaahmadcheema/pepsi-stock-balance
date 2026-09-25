@@ -207,7 +207,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </div>
 
             {/* Desktops: the ledger row, the same numbers in a scannable table */}
-            <div className="panel hidden overflow-hidden lg:block">
+            <div className="hidden lg:block">
+              <div className="panel overflow-hidden">
               <ScrollableTable>
                 <table className="ledger">
                   <caption className="sr-only">
@@ -314,6 +315,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   </Link>
                 </div>
               ) : null}
+              </div>
             </div>
           </>
         )}

@@ -342,66 +342,84 @@ export function AppHeader({ user }: { user: DbUser }) {
     year: "numeric",
   });
 
-  const navList = (variant: "sidebar" | "drawer") => (
-    <>
-      {navGroups.map((group) => {
-        const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
-        if (visibleItems.length === 0) return null;
+  const navList = (variant: "rail" | "drawer") => {
+    const isRail = variant === "rail";
+    const show = isRail
+      ? "sr-only group-hover/rail:not-sr-only group-focus-within/rail:not-sr-only"
+      : "";
 
-        return (
-          <div key={group.id} className="mb-6 last:mb-0">
-            <h2 className="mb-1.5 px-1 text-sm font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
-              {group.title}
-            </h2>
-            <ul className="space-y-1">
-              {visibleItems.map((item) => {
-                const active = isActive(item.href);
-                const Icon = item.icon;
+    return (
+      <>
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((item) => !item.ownerOnly || isOwner);
+          if (visibleItems.length === 0) return null;
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={variant === "drawer" ? () => setMobileMenuOpen(false) : undefined}
-                      aria-current={active ? "page" : undefined}
-                      className={`flex min-h-[3.25rem] items-center gap-3 rounded-md border-2 py-2.5 pr-3 pl-3.5 text-lg font-bold transition-colors ${
-                        active
-                          ? "border-navy-deep bg-navy text-white shadow-[0_2px_0_0_var(--navy-deep)]"
-                          : "border-transparent text-zinc-700 hover:border-rule-strong hover:bg-surface-alt dark:text-zinc-100"
-                      }`}
-                    >
-                      <Icon className={`h-6 w-6 shrink-0 ${active ? "text-white" : "text-navy"}`} />
-                      <span className="leading-tight">{item.name}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-    </>
-  );
+          return (
+            <div key={group.id} className={isRail ? "mb-3 last:mb-0" : "mb-6 last:mb-0"}>
+              <h2
+                className={
+                  isRail
+                    ? `sr-only mb-1.5 px-1 text-sm font-bold uppercase tracking-widest text-ink-3 ${show}`
+                    : "mb-1.5 px-1 text-sm font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300"
+                }
+              >
+                {group.title}
+              </h2>
+              <ul className="space-y-1">
+                {visibleItems.map((item) => {
+                  const active = isActive(item.href);
+                  const Icon = item.icon;
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={variant === "drawer" ? () => setMobileMenuOpen(false) : undefined}
+                        aria-current={active ? "page" : undefined}
+                        title={isRail ? item.name : undefined}
+                        className={`flex w-full min-h-[2.75rem] items-center gap-3 rounded-md border-2 py-2 pr-3 pl-3.5 text-lg font-bold transition-colors group-hover/rail:min-h-[3.25rem] group-focus-within/rail:min-h-[3.25rem] ${
+                          isRail
+                            ? "justify-center group-hover/rail:justify-start group-focus-within/rail:justify-start"
+                            : ""
+                        } ${
+                          active
+                            ? "border-navy-deep bg-navy text-white shadow-[0_2px_0_0_var(--navy-deep)]"
+                            : "border-transparent text-zinc-700 hover:border-rule-strong hover:bg-surface-alt dark:text-zinc-100"
+                        }`}
+                      >
+                        <Icon className={`h-6 w-6 shrink-0 ${active ? "text-white" : "text-navy"}`} />
+                        <span className={`leading-tight ${show}`}>{item.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </>
+    );
+  };
 
   return (
     <>
       {/* ========================================================================= */}
-      {/* 1. ALWAYS-VISIBLE NAVIGATION (lg+) — never collapsed, never icon-only   */}
+      {/* 1. NAVIGATION RAIL (lg+) — icons at rest, full names on pointer or focus */}
       {/* ========================================================================= */}
-      <aside className="app-sidebar fixed inset-y-0 left-0 z-40 hidden w-[19.5rem] flex-col border-r-2 border-rule bg-surface text-ink lg:flex">
+      <aside className="app-sidebar group/rail fixed inset-y-0 left-0 z-40 hidden flex-col border-r-2 border-rule bg-surface text-ink lg:flex">
         {/* Brand */}
         <div className="flex shrink-0 items-center gap-3 border-b-2 border-rule px-4 py-3.5">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border-2 border-navy-deep bg-navy text-2xl font-bold text-white">
             P
           </span>
-          <div className="leading-tight">
+          <div className="sr-only leading-tight group-hover/rail:not-sr-only group-focus-within/rail:not-sr-only">
             <span className="block text-lg font-bold text-ink">Pepsi Distribution</span>
             <span className="block text-sm font-semibold text-ink-3">Stock &amp; Balance System</span>
           </div>
         </div>
 
         {/* Signed-in operator */}
-        <div className="shrink-0 border-b-2 border-rule bg-surface-alt px-4 py-3">
+        <div className="hidden shrink-0 border-b-2 border-rule bg-surface-alt px-4 py-3 group-hover/rail:block group-focus-within/rail:block">
           <div className="text-xs font-bold uppercase tracking-widest text-ink-3">Signed in as</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="text-lg font-bold text-ink">{user.name}</span>
@@ -417,24 +435,22 @@ export function AppHeader({ user }: { user: DbUser }) {
           </div>
         </div>
 
-        {/* Every destination, always on screen */}
+        {/* Every destination. Icons carry the rail; names appear on hover/focus. */}
         <nav aria-label="All screens" className="flex-1 overflow-y-auto px-3 py-4">
-          {navList("sidebar")}
+          {navList("rail")}
         </nav>
 
         {/* Footer: sign out and software version */}
         <div className="shrink-0 space-y-2 border-t-2 border-rule bg-surface-alt px-3 py-3">
           <form action={logoutAction}>
-            <button
-              type="submit"
-              className="btn btn-danger w-full"
-              style={{ minHeight: "3.25rem" }}
-            >
+            <button type="submit" className="btn btn-danger w-full">
               <IconClose className="h-5 w-5" />
-              <span>Sign Out</span>
+              <span className="sr-only group-hover/rail:not-sr-only group-focus-within/rail:not-sr-only">
+                Sign Out
+              </span>
             </button>
           </form>
-          <div className="flex justify-center pt-1">
+          <div className="hidden justify-center pt-1 group-hover/rail:flex group-focus-within/rail:flex">
             <SystemVersionPill isOwner={isOwner} />
           </div>
         </div>
@@ -443,28 +459,30 @@ export function AppHeader({ user }: { user: DbUser }) {
       {/* ========================================================================= */}
       {/* 2. TOP BAR — page name, today's date, and the controls that matter      */}
       {/* ========================================================================= */}
-      <header className="app-topbar sticky top-0 z-30 border-b-2 border-rule bg-surface lg:pl-[19.5rem]">
-        <div className="mx-auto flex w-full max-w-[1720px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
+      <header className="app-topbar sticky top-0 z-30 border-b-2 border-rule bg-surface lg:pl-[7.5rem]">
+        <div className="mx-auto flex w-full max-w-[1720px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:px-6 lg:flex-nowrap lg:px-8">
           {/* Left: menu button on small screens, then "you are here" */}
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="btn shrink-0 px-3 lg:hidden"
-              aria-label="Open all screens menu"
-              aria-expanded={mobileMenuOpen}
-            >
-              <IconMenu className="h-6 w-6" />
-            </button>
+          <div className="flex flex-1 items-center gap-3 lg:min-w-[9rem]">
+            <div className="lg:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="btn shrink-0 px-3"
+                aria-label="Open all screens menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                <IconMenu className="h-6 w-6" />
+              </button>
+            </div>
 
             <div className="min-w-0">
               {/* Breadcrumb trail stays visible so nobody gets lost */}
-              <nav aria-label="Breadcrumbs" className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+              <nav aria-label="Breadcrumbs" className="flex items-center gap-1 overflow-hidden text-xs font-semibold leading-tight">
                 {breadcrumbs.map((crumb, idx) => {
                   const isLast = idx === breadcrumbs.length - 1;
                   return (
                     <span key={idx} className="flex items-center gap-1">
-                      {idx > 0 && <IconChevronRight className="h-4 w-4 shrink-0 text-ink-3" />}
+                      {idx > 0 && <IconChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" />}
                       {crumb.href && !isLast ? (
                         <Link href={crumb.href} className="link">
                           {crumb.label}
@@ -476,17 +494,19 @@ export function AppHeader({ user }: { user: DbUser }) {
                   );
                 })}
               </nav>
-              <h1 className="truncate text-2xl font-bold text-ink">{pageTitle}</h1>
+              <h1 className="truncate text-xl font-bold leading-tight text-ink">{pageTitle}</h1>
             </div>
           </div>
 
           {/* Right: the controls an operator actually reaches for */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className="hidden text-base font-semibold text-ink-2 md:inline">{today}</span>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:shrink-0 lg:flex-nowrap">
+            <span className="hidden whitespace-nowrap text-sm font-semibold text-ink-2 2xl:inline">{today}</span>
 
-            <DbStatusIndicator />
+            <div className="hidden sm:flex lg:hidden xl:flex">
+              <DbStatusIndicator />
+            </div>
 
-            <TextSizeControl />
+            <TextSizeControl compact />
 
             <button
               type="button"
@@ -498,34 +518,38 @@ export function AppHeader({ user }: { user: DbUser }) {
               {theme === "dark" ? (
                 <>
                   <IconSun className="h-6 w-6" />
-                  <span className="hidden sm:inline">Day</span>
+                  <span className="hidden xl:inline">Day</span>
                 </>
               ) : (
                 <>
                   <IconMoon className="h-6 w-6" />
-                  <span className="hidden sm:inline">Night</span>
+                  <span className="hidden xl:inline">Night</span>
                 </>
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShortcutsOpen(true)}
-              className="btn px-3"
-              title="Keyboard shortcuts"
-              aria-label="Keyboard shortcuts"
-            >
-              <IconKeyboard className="h-6 w-6" />
-              <span className="hidden sm:inline">Keys</span>
-            </button>
+            <div className="hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setShortcutsOpen(true)}
+                className="btn px-3"
+                title="Keyboard shortcuts"
+                aria-label="Keyboard shortcuts"
+              >
+                <IconKeyboard className="h-6 w-6" />
+                <span className="hidden xl:inline">Keys</span>
+              </button>
+            </div>
 
             {isCloud ? (
               <span className="badge badge-info">Read-Only Portal</span>
             ) : (
-              <Link href="/sales/new" className="btn btn-primary" style={{ minHeight: "3.25rem" }}>
-                <IconPlus className="h-6 w-6 stroke-[2.5]" />
-                <span>New Sale</span>
-              </Link>
+              <div className="hidden lg:block">
+                <Link href="/sales/new" className="btn btn-primary">
+                  <IconPlus className="h-6 w-6 stroke-[2.5]" />
+                  <span>New Sale</span>
+                </Link>
+              </div>
             )}
           </div>
         </div>

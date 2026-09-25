@@ -84,7 +84,7 @@ export function DbStatusIndicator() {
 
   return (
     <div
-      className="hidden sm:flex items-center gap-1.5"
+      className="flex items-center gap-1.5"
       title={lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : "Checking…"}
     >
       <Pill
@@ -95,17 +95,11 @@ export function DbStatusIndicator() {
           local === "ok" ? `${localMs}ms` : local === "error" ? "unreachable" : "checking…"
         }`}
       />
-      <Pill
-        label="Cloud"
-        state={cloud}
-        latencyMs={cloudMs}
-        title={`Supabase Cloud — ${
-          cloud === "ok" ? `${cloudMs}ms` : cloud === "error" ? "offline / unreachable" : "checking…"
-        }`}
-      />
       <SyncPill
         pendingCount={pendingCount}
+        localState={local}
         cloudState={cloud}
+        cloudMs={cloudMs}
       />
     </div>
   );
@@ -150,21 +144,46 @@ function Pill({
   );
 }
 
+/**
+ * One pill for the cloud link and the sync queue. Splitting these into separate
+ * pills only repeated the same word twice on screen while costing top-bar width
+ * that the page itself needs, so the cloud reading now lives in the tooltip.
+ */
 function SyncPill({
   pendingCount,
+  localState,
   cloudState,
+  cloudMs,
 }: {
   pendingCount: number;
+  localState: DbState;
   cloudState: DbState;
+  cloudMs: number | null;
 }) {
+  const cloudWord =
+    cloudState === "ok" ? `${cloudMs}ms` : cloudState === "error" ? "unreachable" : "checking…";
+  const cloudTitle = `Supabase Cloud — ${cloudWord}`;
+
   if (pendingCount > 0) {
     return (
       <div
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300"
-        title={`${pendingCount} operation(s) waiting to sync to Cloud`}
+        title={`${pendingCount} operation(s) waiting to sync to Cloud. ${cloudTitle}`}
       >
         <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-500 animate-pulse" />
         <span>{pendingCount} Pending</span>
+      </div>
+    );
+  }
+
+  if (localState === "error") {
+    return (
+      <div
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300"
+        title={`Local database is unreachable. ${cloudTitle}`}
+      >
+        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-500" />
+        <span>Local Down</span>
       </div>
     );
   }
@@ -173,7 +192,7 @@ function SyncPill({
     return (
       <div
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-        title="All local operations are synchronized with Cloud"
+        title={`All local operations are synchronized with Cloud. ${cloudTitle}`}
       >
         <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500" />
         <span>Synced</span>
@@ -184,7 +203,7 @@ function SyncPill({
   return (
     <div
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-semibold leading-none cursor-default select-none transition-colors bg-zinc-100 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
-      title="Depot is offline. Changes are saved locally and will sync when reconnected."
+      title={`Depot is offline. Changes are saved locally and will sync when reconnected. ${cloudTitle}`}
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400" />
       <span>Offline</span>

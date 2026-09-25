@@ -963,16 +963,76 @@ select.field {
 /* ------------------------------------------------------------------------- */
 /* 8. APP SHELL GEOMETRY                                                     */
 /*                                                                            */
-/* The navigation is never collapsed: every destination stays on screen with */
-/* its full name, so nobody has to remember where a hidden menu went.         */
+/* The navigation is a rail. At rest it is a narrow column of icons so the   */
+/* ledger tables get the screen back; the moment the pointer enters it — or  */
+/* the keyboard tabs into it — it springs open to the full width and every    */
+/* destination shows its full name. Nothing is ever hidden from someone who   */
+/* cannot hover, because focus opens the rail exactly like hover does.        */
+/*                                                                            */
+/* Touch screens cannot hover, so there the rail stays open all the time.    */
 /* ------------------------------------------------------------------------- */
+:root {
+  --rail-w: 5.5rem;
+  --sidebar-w: 19.5rem;
+  --shell-gutter: 2rem;
+}
+
+/* The top bar is one row of controls and must never wrap into a wall.       */
+.app-topbar .btn {
+  min-height: 2.75rem;
+}
+
+/*
+ * The shell's own clipping is declared unlayered, not with Tailwind's
+ * `truncate` / `whitespace-nowrap`. Those utilities live in @layer utilities
+ * and are being outranked in this build, so the page title and the rail
+ * labels wrap character by character and push the shell to 3x its height.
+ * Unlayered rules win, so the shell holds one line whatever happens.
+ */
+.app-topbar h1,
+.app-topbar nav[aria-label="Breadcrumbs"],
+.app-topbar nav[aria-label="Breadcrumbs"] > span,
+.app-sidebar nav[aria-label="All screens"] a > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (min-width: 1024px) {
+  .app-sidebar {
+    width: var(--rail-w);
+    transition: width 150ms ease-out;
+  }
+
   body:has(.app-sidebar) main {
-    padding-left: 21.5rem !important;
-    padding-right: 2.5rem !important;
+    padding-left: calc(var(--rail-w) + var(--shell-gutter)) !important;
+    padding-right: var(--shell-gutter) !important;
     max-width: 100% !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    transition: padding-left 150ms ease-out;
+  }
+}
+
+@media (min-width: 1024px) and (pointer: fine) {
+  .app-sidebar:hover,
+  .app-sidebar:focus-within {
+    width: var(--sidebar-w);
+  }
+
+  body:has(.app-sidebar:hover) main,
+  body:has(.app-sidebar:focus-within) main {
+    padding-left: calc(var(--sidebar-w) + var(--shell-gutter)) !important;
+  }
+}
+
+@media (min-width: 1024px) and (pointer: coarse) {
+  .app-sidebar {
+    width: var(--sidebar-w);
+  }
+
+  body:has(.app-sidebar) main {
+    padding-left: calc(var(--sidebar-w) + var(--shell-gutter)) !important;
   }
 }
 

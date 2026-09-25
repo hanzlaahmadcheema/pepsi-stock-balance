@@ -115,13 +115,13 @@ rem 7. Pull latest code from GitHub
 echo [%DATE% %TIME%] [2/5] Pulling latest code from origin main... >> "%LOG_FILE%"
 git fetch origin main >> "%LOG_FILE%" 2>&1
 if errorlevel 1 (
-    echo [%DATE% %TIME%] [ERROR] git fetch origin main failed! Checking network connectivity. >> "%LOG_FILE%"
+    echo [%DATE% %TIME%] [ERROR] git fetch origin main failed. Checking network connectivity. >> "%LOG_FILE%"
     goto :restart_services
 )
 
 git reset --hard origin/main >> "%LOG_FILE%" 2>&1
 if errorlevel 1 (
-    echo [%DATE% %TIME%] [ERROR] git reset --hard origin/main failed! >> "%LOG_FILE%"
+    echo [%DATE% %TIME%] [ERROR] git reset --hard origin/main failed. >> "%LOG_FILE%"
     goto :restart_services
 )
 

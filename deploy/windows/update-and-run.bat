@@ -93,12 +93,12 @@ echo.
 echo [2/6] Pulling latest code from origin main...
 git fetch origin main
 if errorlevel 1 (
-    echo [ERROR] git fetch origin main failed! Checking network connection...
+    echo [ERROR] git fetch origin main failed. Checking network connection...
     goto :handle_build_error
 )
 git reset --hard origin/main
 if errorlevel 1 (
-    echo [ERROR] git reset --hard origin/main failed!
+    echo [ERROR] git reset --hard origin/main failed.
     goto :handle_build_error
 )
 echo [OK] Code updated to latest commit:
@@ -117,7 +117,7 @@ echo.
 echo [4/6] Generating database client (Prisma)...
 call npx prisma generate
 if errorlevel 1 (
-    echo [ERROR] Prisma generate failed!
+    echo [ERROR] Prisma generate failed.
     goto :handle_build_error
 )
 
@@ -126,7 +126,7 @@ echo.
 echo [5/6] Building application and sync daemon...
 call npm run build
 if errorlevel 1 (
-    echo [ERROR] Production build failed! Check output above.
+    echo [ERROR] Production build failed. Check output above.
     goto :handle_build_error
 )
 echo [OK] Production build succeeded.
@@ -171,7 +171,7 @@ start http://localhost:3000
 
 echo.
 echo ==============================================================================
-echo  ALL COMPONENTS ARE UPDATED AND RUNNING!
+echo  ALL COMPONENTS ARE UPDATED AND RUNNING.
 echo  Web Application: http://localhost:3000
 echo ==============================================================================
 echo.

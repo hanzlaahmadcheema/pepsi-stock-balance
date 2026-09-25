@@ -166,37 +166,38 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
 
       {/* ── Items Table ────────────────────────────────────────────── */}
       {/*
-       * Column layout (72mm printable ≈ 28 chars at 10.5px mono):
-       *   Product name  — full width, wraps freely on second line
-       *   Qty × Rate    Amount  (indented sub-line)
-       *
-       * This 2-line-per-item layout is the ESC/POS 80mm standard for
-       * long product names. It avoids truncation and fits all cases.
+       * 4-column layout matching SpeedX 80mm thermal receipt standard:
+       *   Item (left, wraps cleanly) | Qty (right) | Rate (right) | Amount (right)
        */}
-      <div className="space-y-[1.5px]">
-        {/* Column header */}
-        <div className="flex justify-between font-bold text-xs uppercase border-b border-black pb-[1px]">
-          <span>Item</span>
-          <span>Amt (Rs.)</span>
-        </div>
-
-        {sale.items.map((item) => (
-          <div key={item.id} className="py-[1px]">
-            {/* Line 1: Product name — wraps if long */}
-            <div className="font-semibold break-words leading-tight">
-              {item.productName}
-            </div>
-            {/* Line 2: Qty × Rate → Amount (indented) */}
-            <div className="flex justify-between pl-[2mm] text-[9.5px]">
-              <span>
-                {formatCrates(item.quantity)} crt × {amt(item.unitPrice)}
-              </span>
-              <span className="font-bold tabular-nums">
-                {amt(item.totalAmount)}
-              </span>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-[1px]">
+        <table className="w-full text-[10px] leading-tight border-collapse">
+          <thead>
+            <tr className="border-b border-black text-[9px] uppercase font-bold">
+              <th className="text-left pb-[2px] font-bold">Item</th>
+              <th className="text-right pb-[2px] font-bold pl-1">Qty</th>
+              <th className="text-right pb-[2px] font-bold pl-1">Rate</th>
+              <th className="text-right pb-[2px] font-bold pl-1">Amount</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-dashed divide-zinc-300 print:divide-zinc-400">
+            {sale.items.map((item) => (
+              <tr key={item.id} className="align-top">
+                <td className="text-left py-[2px] pr-1 font-semibold break-words leading-tight">
+                  {item.productName}
+                </td>
+                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap text-[9.5px]">
+                  {formatCrates(item.quantity)}
+                </td>
+                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap text-[9.5px]">
+                  {amt(item.unitPrice)}
+                </td>
+                <td className="text-right py-[2px] pl-1 tabular-nums whitespace-nowrap font-bold text-[9.5px]">
+                  {amt(item.totalAmount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* ── Financial Totals ───────────────────────────────────────── */}
@@ -206,38 +207,38 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
           <>
             <Row
               label={`Subtotal (${sale.items.reduce((a, i) => a + i.quantity, 0)} crates):`}
-              value={`Rs. ${amt(sale.subtotal)}`}
+              value={amt(sale.subtotal)}
             />
             <Row
               label="Discount:"
-              value={`- Rs. ${amt(sale.discount)}`}
+              value={`-${amt(sale.discount)}`}
             />
           </>
         )}
 
-        {/* Double-rule total — the most prominent line */}
-        <div className="flex justify-between font-black text-xs leading-tight border-t-2 border-b-2 border-black py-[1px] my-[1mm]">
-          <span>TOTAL</span>
-          <span className="tabular-nums">Rs. {amt(sale.totalAmount)}</span>
+        {/* Prominent Total Line */}
+        <div className="flex justify-between font-black text-xs leading-tight border-t-2 border-b-2 border-black py-[2px] my-[1mm]">
+          <span className="uppercase">TOTAL</span>
+          <span className="tabular-nums font-black">{amt(sale.totalAmount)}</span>
         </div>
 
         <Row
-          label="Paid:"
-          value={`Rs. ${amt(sale.paidAmount)}`}
+          label="PAID"
+          value={amt(sale.paidAmount)}
           bold
         />
 
         {hasCredit && (
           <Row
-            label="Credit Due:"
-            value={`Rs. ${amt(sale.creditAmount)}`}
+            label="CREDIT"
+            value={amt(sale.creditAmount)}
             bold
             className="font-black"
           />
         )}
 
         {!hasCredit && (
-          <Row label="Balance:" value="Rs. 0  (PAID FULL)" />
+          <Row label="BALANCE" value="0 (PAID FULL)" />
         )}
 
         <Row label="Payment:" value={paymentMethodDisplay} />
@@ -248,8 +249,8 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
         <>
           <Divider />
           <Row
-            label="A/c Ledger Balance:"
-            value={`Rs. ${amt(sale.customer.outstandingBalance)}`}
+            label="Customer Ledger:"
+            value={amt(sale.customer.outstandingBalance)}
             bold
           />
         </>
@@ -281,7 +282,7 @@ export function ThermalReceipt({ sale }: ThermalReceiptProps) {
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
       <Divider />
-      <div className="text-center text-xs space-y-[1px] pb-[8mm] print:pb-[12mm]">
+      <div className="text-center text-xs space-y-[1px] pb-[3mm] print:pb-[4mm]">
         <div className="font-bold uppercase">{DEPOT_FOOTER_THANK}</div>
         <div>{DEPOT_FOOTER_LINE}</div>
         {/* Barcode-style invoice number reference */}

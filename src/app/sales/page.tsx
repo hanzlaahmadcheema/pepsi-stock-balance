@@ -6,7 +6,7 @@ import { listSales } from "@/lib/sales/service";
 import { formatCurrency } from "@/lib/formatters";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconShoppingCart } from "@/components/ui/icons";
+import { IconShoppingCart, IconReceipt } from "@/components/ui/icons";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 
 import { isCloudPortal } from "@/lib/config/portal-mode";
@@ -75,6 +75,14 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
               className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold transition-colors"
             >
               Customers & Balances
+            </Link>
+            <Link
+              href="/sales/receipt-preview"
+              className="px-3.5 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold transition-colors flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300"
+              title="80mm SpeedX Thermal Receipt Inspector & Digital Preview"
+            >
+              <IconReceipt className="w-4 h-4 text-zinc-500" />
+              <span>80mm Preview</span>
             </Link>
             {!isCloud && (
               <Link
@@ -319,12 +327,20 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
                             )}
                           </td>
                         )}
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <td className="px-6 py-4 text-right whitespace-nowrap space-x-2">
                           <Link
                             href={`/sales/${s.id}`}
                             className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                           >
-                            View Invoice
+                            View
+                          </Link>
+                          <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                          <Link
+                            href={`/sales/${s.id}?print=1`}
+                            className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="Print 80mm Receipt"
+                          >
+                            Print
                           </Link>
                         </td>
                       </tr>

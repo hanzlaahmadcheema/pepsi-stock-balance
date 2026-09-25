@@ -16,6 +16,8 @@ interface SaleDetailsPageProps {
   }>;
   searchParams: Promise<{
     print?: string;
+    new?: string;
+    completed?: string;
   }>;
 }
 
@@ -33,7 +35,7 @@ export async function generateMetadata({ params }: SaleDetailsPageProps) {
 
 export default async function SaleDetailsPage({ params, searchParams }: SaleDetailsPageProps) {
   const { id } = await params;
-  const { print } = await searchParams;
+  const sp = await searchParams;
 
   if (!id || !UUID_REGEX.test(id)) {
     notFound();
@@ -48,7 +50,7 @@ export default async function SaleDetailsPage({ params, searchParams }: SaleDeta
     notFound();
   }
 
-  const autoPrint = print === "1";
+  const showConfirmation = sp.print === "1" || sp.new === "1" || sp.completed === "1";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
@@ -57,8 +59,8 @@ export default async function SaleDetailsPage({ params, searchParams }: SaleDeta
       </div>
 
       <main className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-6 print:p-0 print:m-0 print:max-w-none">
-        {/* Auto-print + post-print return prompt (only when ?print=1) */}
-        {autoPrint && <PrintOnLoad invoiceNumber={sale.invoiceNumber} />}
+        {/* Post-sale confirmation prompt (when arriving from completed sale) */}
+        {showConfirmation && <PrintOnLoad invoiceNumber={sale.invoiceNumber} />}
 
         <InvoiceView sale={sale} isOwner={isOwner} />
       </main>

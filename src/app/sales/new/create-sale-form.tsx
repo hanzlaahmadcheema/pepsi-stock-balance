@@ -752,7 +752,7 @@ export function CreateSaleForm({
           >
             <span className="flex items-center gap-1.5 text-[0.95rem]">
               <IconReceipt className="w-4 h-4" />
-              <span>Ticket</span>
+              <span>Ticket &amp; Pay</span>
             </span>
             <span className="num text-[0.95rem] font-black">
               {totalCratesSold} crates — {formatCurrency(totalAmount)}
@@ -760,12 +760,12 @@ export function CreateSaleForm({
           </button>
         </div>
 
-        {/* Main 2-Column POS Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* POS Layout: catalog on top, added products below it, payment at the bottom */}
+        <div className="space-y-6">
           {/* ============================================================= */}
-          {/* LEFT COLUMN: Product Catalog List                             */}
+          {/* STEP 1 — PRODUCT CATALOG (pick items)                       */}
           {/* ============================================================= */}
-          <div className={`lg:col-span-7 xl:col-span-7 2xl:col-span-8 space-y-3 ${mobileTab === "ticket" ? "hidden lg:block" : "block"}`}>
+          <div className={`space-y-3 ${mobileTab === "ticket" ? "hidden lg:block" : "block"}`}>
             {/* Search & Brand Filter Toolbar */}
             <div className="panel">
               <div className="panel-body space-y-3">
@@ -823,7 +823,7 @@ export function CreateSaleForm({
                           <button
                             type="button"
                             onClick={() => setSearchQuery("")}
-                            className="btn btn-sm !min-h-11 !px-2 !py-1"
+                            className="btn btn-sm !min-h-11 !min-w-11 !px-2 !py-1"
                             aria-label="Clear the product search box"
                           >
                             <IconClose className="w-4 h-4" />
@@ -1049,22 +1049,17 @@ export function CreateSaleForm({
           </div>
 
           {/* ============================================================= */}
-          {/* RIGHT COLUMN: POS Order Ticket (Sticky)                        */}
+          {/* STEP 2 — ADDED PRODUCTS: one row per product, in columns      */}
           {/* ============================================================= */}
-          <div
-            className={`lg:col-span-5 xl:col-span-5 2xl:col-span-4 sticky top-4 space-y-4 ${
-              mobileTab === "catalog" ? "hidden lg:block" : "block"
-            }`}
-          >
-            <div className="panel shadow-[0_2px_0_0_var(--rule)]">
-              {/* Header */}
-              <div className="panel-head flex items-center justify-between !py-3">
+          <section className={`space-y-4 ${mobileTab === "catalog" ? "hidden lg:block" : "block"}`}>
+            <div className="panel">
+              <div className="panel-head flex flex-wrap items-center justify-between !py-3 gap-3">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded bg-navy text-white flex items-center justify-center font-black text-[0.9375rem] num">
                     TKT
                   </div>
                   <div>
-                    <h2 className="text-lg font-extrabold text-ink leading-tight">Order Ticket</h2>
+                    <h2 className="text-lg font-extrabold text-ink leading-tight">Added Products</h2>
                     <span className="text-[0.9375rem] text-ink-2 num">
                       {items.length} item{items.length !== 1 ? "s" : ""} • {totalCratesSold} crate{totalCratesSold !== 1 ? "s" : ""}
                     </span>
@@ -1082,7 +1077,134 @@ export function CreateSaleForm({
                 )}
               </div>
 
+              <div className="panel-body">
+                {items.length === 0 ? (
+                  <div className="py-10 text-center border-2 border-dashed border-rule rounded-md p-4">
+                    <IconReceipt className="w-9 h-9 text-ink-3 mx-auto mb-2" />
+                    <p className="text-[1.0625rem] font-bold text-ink">No products added yet</p>
+                    <p className="text-[0.9375rem] text-ink-2 mt-1">
+                      Pick a product from the list above to start this ticket.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="ledger-head grid grid-cols-12 gap-2 px-1 hidden sm:grid">
+                      <div className="col-span-4">Product</div>
+                      <div className="col-span-3">Quantity</div>
+                      <div className="col-span-2 text-right">Rate</div>
+                      <div className="col-span-2 text-right">Amount</div>
+                      <div className="col-span-1" />
+                    </div>
+
+                    {items.map((item, idx) => {
+                      const prod = products.find((p) => p.id === item.productId);
+                      if (!prod) return null;
+                      const lineTotal = item.quantity * item.unitPrice;
+
+                      return (
+                        <div
+                          key={item.key}
+                          className="ledger-row grid grid-cols-12 gap-2 px-1 py-3"
+                        >
+                          {/* Product */}
+                          <div className="col-span-12 sm:col-span-4 min-w-0">
+                            <div className="text-[0.9375rem] font-bold text-ink break-words">
+                              {prod.name}
+                            </div>
+                            <div className="mt-0.5 text-[0.875rem] text-ink-2 break-words">
+                              {prod.brand}
+                              {prod.sku ? <span className="num"> · {prod.sku}</span> : null}
+                            </div>
+                          </div>
+
+                          {/* Quantity: type it, or step it */}
+                          <div className="col-span-6 sm:col-span-3 flex items-center">
+                            <div className="flex items-center bg-surface border-2 border-rule-strong rounded-md">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateItemQuantity(idx, item.quantity - 1)}
+                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
+                                aria-label={`Remove one crate of ${prod.name} from the ticket`}
+                              >
+                                &minus;
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                max={prod.currentStock}
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleUpdateItemQuantity(idx, parseInt(e.target.value, 10) || 1)
+                                }
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none text-navy"
+                                aria-label={`Quantity of ${prod.name} in the ticket`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateItemQuantity(idx, item.quantity + 1)}
+                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
+                                aria-label={`Add one more crate of ${prod.name} to the ticket`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Rate */}
+                          <div className="col-span-6 sm:col-span-2 text-right">
+                            <span className="sm:hidden text-[0.875rem] text-ink-2">Rate </span>
+                            <span className="text-[0.9375rem] font-bold text-ink num">
+                              {formatCurrency(item.unitPrice)}
+                            </span>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="col-span-10 sm:col-span-2 text-right">
+                            <span className="sm:hidden text-[0.875rem] text-ink-2">Amount </span>
+                            <span className="text-[1.0625rem] font-black text-navy num">
+                              {formatCurrency(lineTotal)}
+                            </span>
+                          </div>
+
+                          {/* Remove */}
+                          <div className="col-span-2 sm:col-span-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="btn btn-sm !min-h-11 !min-w-11 !px-2"
+                              title={`Remove ${prod.name} from the ticket`}
+                            >
+                              <IconTrash className="w-4 h-4" />
+                              <span className="sr-only">
+                                Remove {prod.name} from the ticket
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* =========================================================== */}
+            {/* STEP 3 — CUSTOMER, TOTALS AND PAYMENT                     */}
+            {/* =========================================================== */}
+            <div className="panel">
+              <div className="panel-head flex flex-wrap items-center justify-between !py-3 gap-2">
+                <h2 className="text-lg font-extrabold text-ink leading-tight">
+                  Customer &amp; Payment
+                </h2>
+                <span className="text-[0.9375rem] text-ink-2 num">
+                  {totalCratesSold} crate{totalCratesSold !== 1 ? "s" : ""} ·{" "}
+                  {formatCurrency(totalAmount)} due
+                </span>
+              </div>
+
               <div className="panel-body space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Customer Selector & Pricing Tier */}
                 <div className="space-y-2 bg-surface-alt p-3 rounded-md border border-rule">
                   <div className="flex items-center justify-between gap-2">
@@ -1160,86 +1282,8 @@ export function CreateSaleForm({
                   </div>
                 </div>
 
-                {/* Ticket Cart Line Items List */}
-                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                  {items.length === 0 ? (
-                    <div className="py-8 text-center border-2 border-dashed border-rule rounded-md p-4">
-                      <IconReceipt className="w-9 h-9 text-ink-3 mx-auto mb-2" />
-                      <p className="text-[1.0625rem] font-bold text-ink">Ticket is empty</p>
-                      <p className="text-[0.9375rem] text-ink-2 mt-1">
-                        Use the product list on the left to add items.
-                      </p>
-                    </div>
-                  ) : (
-                    items.map((item, idx) => {
-                      const prod = products.find((p) => p.id === item.productId);
-                      if (!prod) return null;
-                      const lineTotal = item.quantity * item.unitPrice;
-
-                      return (
-                        <div
-                          key={item.key}
-                          className="p-3 rounded-md bg-surface-alt border border-rule flex items-center justify-between gap-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="font-bold text-ink text-[0.9375rem] break-words">
-                              {prod.name}
-                            </div>
-                            <div className="text-[0.9375rem] text-ink-2 num mt-0.5">
-                              {formatCurrency(item.unitPrice)} / crate
-                            </div>
-                            <div className="text-[1.0625rem] font-black text-ink num mt-1">
-                              Line total: {formatCurrency(lineTotal)}
-                            </div>
-                          </div>
-
-                          {/* Stepper */}
-                          <div className="flex flex-col items-end gap-1.5">
-                            <div className="flex items-center gap-1 bg-surface border-2 border-rule-strong rounded-md">
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemQuantity(idx, item.quantity - 1)}
-                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-ink hover:bg-surface-alt"
-                                aria-label={`Remove one crate of ${prod.name} from the ticket`}
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                min="1"
-                                max={prod.currentStock}
-                                value={item.quantity}
-                                onChange={(e) => handleUpdateItemQuantity(idx, parseInt(e.target.value, 10) || 1)}
-                                className="w-14 h-11 text-center text-[0.9375rem] font-black num bg-transparent focus:outline-none"
-                                aria-label={`Quantity of ${prod.name} in the ticket`}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateItemQuantity(idx, item.quantity + 1)}
-                                className="w-11 h-11 flex items-center justify-center text-xl font-bold text-navy hover:bg-navy-wash"
-                                aria-label={`Add one more crate of ${prod.name} to the ticket`}
-                              >
-                                +
-                              </button>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(idx)}
-                              className="btn btn-sm !min-h-11 !px-2"
-                              title={`Remove ${prod.name} from the ticket`}
-                            >
-                              <IconTrash className="w-4 h-4" />
-                              <span className="sr-only">Remove {prod.name} from the ticket</span>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-              {/* Container Returns & Discounts */}
-              <div className="pt-3 border-t-2 border-rule-strong space-y-3">
+                {/* Container Returns & Discounts */}
+                <div className="space-y-3 bg-surface-alt p-3 rounded-md border border-rule h-fit">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <label
@@ -1304,6 +1348,8 @@ export function CreateSaleForm({
                 </div>
               </div>
 
+                </div>
+
               {/* Totals & Grand Total Banner */}
               <div className="p-4 rounded-md bg-navy-deep text-white space-y-2">
                 <div className="flex items-center justify-between text-[0.9375rem] text-white/80">
@@ -1335,6 +1381,7 @@ export function CreateSaleForm({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Payment Method Selector Pills */}
               <div className="space-y-2">
                 <span className="text-[0.9375rem] font-bold text-ink-2 block">
@@ -1366,7 +1413,7 @@ export function CreateSaleForm({
               </div>
 
               {/* Payment Tender Row & Shortcuts */}
-              <div className="space-y-2 bg-surface-alt p-3 rounded-md border border-rule">
+              <div className="space-y-2 bg-surface-alt p-3 rounded-md border border-rule h-fit">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label htmlFor="pos-amount-received" className="text-[0.9375rem] font-bold text-ink flex items-center gap-1.5">
                     <span>Amount Received (Rs.)</span>
@@ -1435,6 +1482,7 @@ export function CreateSaleForm({
                   </div>
                 )}
               </div>
+              </div>
 
               {/* Main Action: Open Invoice Modal */}
               <button
@@ -1456,7 +1504,7 @@ export function CreateSaleForm({
               </button>
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         {/* Cashier Quick-Keys Helper Bar */}

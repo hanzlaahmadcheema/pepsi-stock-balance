@@ -173,7 +173,9 @@ async function wipeTransactionalData(db: PrismaClient, label: string) {
 // ──────────────────────────────────────────────
 
 async function main() {
-  const LOCAL_ENV = "environments/.env.local";
+  // Allow overriding the local env file via CLI arg:
+  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production
+  const LOCAL_ENV = process.argv[2] ?? "environments/.env.local";
   const PROD_ENV = "environments/.env.cloud-prod";
 
   console.log("=".repeat(60));

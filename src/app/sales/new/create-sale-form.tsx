@@ -32,6 +32,9 @@ type FormLineItem = {
   unitPrice: number;
 };
 
+// Search results are square tiles, so more of them fit than list rows did.
+const TILE_RESULT_CAP = 10;
+
 // Brand colors for visual identification
 const BRAND_STYLES: Record<string, { bg: string; text: string; border: string; accent: string }> = {
   pepsi: { bg: "bg-blue-50 dark:bg-blue-950/40", text: "text-blue-700 dark:text-blue-300", border: "border-blue-200 dark:border-blue-800", accent: "bg-blue-600" },
@@ -1212,44 +1215,65 @@ export function CreateSaleForm({
                     catalogue to browse by brand.
                   </p>
                 ) : (
-                  <ul>
-                    {filteredProducts.slice(0, 8).map((prod) => {
+                  <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-4">
+                    {filteredProducts.slice(0, TILE_RESULT_CAP).map((prod) => {
                       const inStock = prod.currentStock > 0;
                       const qtyInCart = items.find((i) => i.productId === prod.id)?.quantity || 0;
                       const price = getProductDefaultPrice(prod, saleType);
 
+                      // The whole tile is the button, so the target is the full
+                      // square rather than a small "Add" strip inside a row.
+                      const tileLabel = [
+                        inStock
+                          ? `Add one crate of ${prod.name}`
+                          : `${prod.name} is out of stock`,
+                        `${formatCurrency(price)} per crate`,
+                        inStock ? `${prod.currentStock} in stock` : null,
+                        qtyInCart > 0 ? `${qtyInCart} already in the ticket` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+
                       return (
-                        <li
-                          key={prod.id}
-                          className="ledger-row flex items-center gap-3 px-4 py-2"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[0.9375rem] font-bold text-ink break-words">
-                              {prod.name}
-                            </div>
-                            <div className="text-[0.875rem] text-ink-2 break-words">
-                              {prod.brand}
-                              {prod.sku ? <span className="num"> · {prod.sku}</span> : null}
-                              <span className="num">
-                                {" "}· {formatCurrency(price)}/crate · {prod.currentStock} in stock
-                              </span>
-                            </div>
-                          </div>
-
-                          {qtyInCart > 0 && (
-                            <span className="badge badge-good shrink-0">
-                              In ticket: {qtyInCart}
-                            </span>
-                          )}
-
+                        <li key={prod.id} className="min-w-0">
                           <button
                             type="button"
                             onClick={() => handleAddProductToTicket(prod, 1)}
                             disabled={!inStock}
-                            className="btn btn-sm btn-primary shrink-0 !min-h-11"
+                            aria-label={tileLabel}
+                            title={tileLabel}
+                            className={`w-full aspect-square min-h-40 flex flex-col justify-between gap-2 p-3 rounded-lg border-2 text-left transition-colors ${
+                              inStock
+                                ? "border-rule bg-surface hover:bg-surface-alt hover:border-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy cursor-pointer"
+                                : "border-rule bg-surface-alt cursor-not-allowed"
+                            }`}
                           >
-                            <IconPlus className="w-4 h-4" />
-                            <span>{inStock ? "Add" : "Out of stock"}</span>
+                            <span className="flex items-start justify-between gap-1 min-w-0">
+                              <span className="text-[0.9375rem] font-bold text-ink leading-snug line-clamp-2">
+                                {prod.name}
+                              </span>
+                              {qtyInCart > 0 && (
+                                <span className="badge badge-good shrink-0 num">
+                                  {qtyInCart}
+                                </span>
+                              )}
+                            </span>
+
+                            <span className="block min-w-0">
+                              <span className="block text-[0.875rem] text-ink-2 truncate">
+                                {prod.brand}
+                              </span>
+                              <span
+                                className={`block text-[0.9375rem] font-black num ${
+                                  inStock ? "text-navy" : "text-ink-3"
+                                }`}
+                              >
+                                {formatCurrency(price)}
+                              </span>
+                              <span className="block text-[0.875rem] text-ink-2 num">
+                                {inStock ? `${prod.currentStock} in stock` : "Out of stock"}
+                              </span>
+                            </span>
                           </button>
                         </li>
                       );
@@ -1257,10 +1281,10 @@ export function CreateSaleForm({
                   </ul>
                 )}
 
-                {filteredProducts.length > 8 && (
+                {filteredProducts.length > TILE_RESULT_CAP && (
                   <p className="px-4 py-2 border-t border-rule text-[0.9375rem] text-ink-2">
-                    {filteredProducts.length - 8} more match. Open the catalogue to see all{" "}
-                    {filteredProducts.length}.
+                    {filteredProducts.length - TILE_RESULT_CAP} more match. Open the catalogue to see
+                    all {filteredProducts.length}.
                   </p>
                 )}
               </div>
@@ -1311,7 +1335,7 @@ export function CreateSaleForm({
                     <div className="ledger-head grid grid-cols-12 gap-2 px-1 hidden sm:grid">
                       <div className="col-span-4">Product</div>
                       <div className="col-span-3">Quantity</div>
-                      <div className="col-span-2 text-right">Rate</div>
+                      <div className="col-span-2 text-right">Rate ✎</div>
                       <div className="col-span-2 text-right">Amount</div>
                       <div className="col-span-1" />
                     </div>
@@ -1371,12 +1395,20 @@ export function CreateSaleForm({
                             </div>
                           </div>
 
-                          {/* Rate */}
-                          <div className="col-span-6 sm:col-span-2 text-right">
-                            <span className="sm:hidden text-[0.875rem] text-ink-2">Rate </span>
-                            <span className="text-[0.9375rem] font-bold text-ink num">
-                              {formatCurrency(item.unitPrice)}
-                            </span>
+                          {/* Rate — editable inline */}
+                          <div className="col-span-6 sm:col-span-2 flex items-center justify-end">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={item.unitPrice}
+                              onChange={(e) =>
+                                handleUpdateItemPrice(idx, parseFloat(e.target.value) || 0)
+                              }
+                              onClick={(e) => (e.target as HTMLInputElement).select()}
+                              className="field !py-2 !px-2 !text-[0.9375rem] text-right num w-28"
+                              aria-label={`Unit rate per crate for ${prod.name}`}
+                            />
                           </div>
 
                           {/* Amount */}

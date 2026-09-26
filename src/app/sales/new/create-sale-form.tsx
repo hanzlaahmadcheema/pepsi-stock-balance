@@ -1215,7 +1215,7 @@ export function CreateSaleForm({
                     catalogue to browse by brand.
                   </p>
                 ) : (
-                  <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-4">
+                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-4">
                     {filteredProducts.slice(0, TILE_RESULT_CAP).map((prod) => {
                       const inStock = prod.currentStock > 0;
                       const qtyInCart = items.find((i) => i.productId === prod.id)?.quantity || 0;
@@ -1242,7 +1242,7 @@ export function CreateSaleForm({
                             disabled={!inStock}
                             aria-label={tileLabel}
                             title={tileLabel}
-                            className={`w-full aspect-square min-h-40 flex flex-col justify-between gap-2 p-3 rounded-lg border-2 text-left transition-colors ${
+                            className={`w-full aspect-square overflow-hidden flex flex-col justify-between gap-1.5 p-2.5 rounded-lg border-2 text-left transition-colors ${
                               inStock
                                 ? "border-rule bg-surface hover:bg-surface-alt hover:border-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy cursor-pointer"
                                 : "border-rule bg-surface-alt cursor-not-allowed"
@@ -1263,16 +1263,22 @@ export function CreateSaleForm({
                               <span className="block text-[0.875rem] text-ink-2 truncate">
                                 {prod.brand}
                               </span>
-                              <span
-                                className={`block text-[0.9375rem] font-black num ${
-                                  inStock ? "text-navy" : "text-ink-3"
-                                }`}
-                              >
-                                {formatCurrency(price)}
-                              </span>
-                              <span className="block text-[0.875rem] text-ink-2 num">
-                                {inStock ? `${prod.currentStock} in stock` : "Out of stock"}
-                              </span>
+                              {inStock ? (
+                                <>
+                                  <span className="block text-[0.9375rem] font-black text-navy num">
+                                    {formatCurrency(price)}
+                                  </span>
+                                  <span className="hidden text-[0.875rem] text-ink-2 num min-[420px]:block">
+                                    {prod.currentStock} in stock
+                                  </span>
+                                </>
+                              ) : (
+                                // A disabled tile shows no price, so the
+                                // out-of-stock stamp is the whole message.
+                                <span className="block text-[0.875rem] font-bold text-ink-3">
+                                  Out of stock
+                                </span>
+                              )}
                             </span>
                           </button>
                         </li>

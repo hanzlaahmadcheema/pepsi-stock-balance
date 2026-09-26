@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { toggleProductStatusAction } from "../actions";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 export function ProductStatusButton({
   productId,
@@ -11,7 +10,6 @@ export function ProductStatusButton({
   productId: string;
   isActive: boolean;
 }) {
-  const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -22,7 +20,6 @@ export function ProductStatusButton({
       if (res?.error) {
         setError(res.error);
       }
-      setModalOpen(false);
     });
   };
 
@@ -31,8 +28,11 @@ export function ProductStatusButton({
       <div className="inline-flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={handleToggle}
           disabled={isPending}
+          title={isActive
+            ? "Hide from new entries — click again to bring it back"
+            : "Make selectable again in new entries"}
           className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors cursor-pointer disabled:opacity-50 ${
             isActive
               ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40"
@@ -48,22 +48,6 @@ export function ProductStatusButton({
           </span>
         )}
       </div>
-
-      <ConfirmModal
-        isOpen={modalOpen}
-        title={isActive ? "Deactivate Product" : "Activate Product"}
-        description={
-          isActive
-            ? "Are you sure you want to deactivate this product? Deactivated products cannot be selected for new customer sales or receiving deliveries."
-            : "Are you sure you want to reactivate this product? It will immediately become available for sales and receiving."
-        }
-        confirmLabel={isActive ? "Confirm Deactivate" : "Confirm Activate"}
-        cancelLabel={isActive ? "Keep Active" : "Keep Inactive"}
-        variant={isActive ? "danger" : "primary"}
-        isPending={isPending}
-        onConfirm={handleToggle}
-        onClose={() => setModalOpen(false)}
-      />
     </>
   );
 }

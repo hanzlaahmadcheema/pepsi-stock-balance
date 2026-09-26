@@ -454,6 +454,22 @@ export function CreateSaleForm({
         return;
       }
 
+      // Enter while the invoice review is open: record the sale.
+      // The modal holds no inputs, so a bare Enter is unambiguous here.
+      if (
+        e.key === "Enter" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        showInvoiceModal &&
+        target?.tagName !== "BUTTON" &&
+        !isPending
+      ) {
+        e.preventDefault();
+        formRef.current?.requestSubmit();
+        return;
+      }
+
       // Ctrl + Enter or Cmd + Enter: Open invoice modal / submit
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
@@ -724,8 +740,10 @@ export function CreateSaleForm({
               </button>
               <button
                 type="button"
+                autoFocus
                 onClick={() => formRef.current?.requestSubmit()}
                 disabled={isPending}
+                title="Record this sale (Enter)"
                 className="btn btn-primary flex-[2] min-w-52"
               >
                 {isPending ? (

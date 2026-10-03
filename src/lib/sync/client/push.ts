@@ -180,15 +180,17 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
  */
 async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> {
   // 1. Products
+  const existingProductIds = new Set(
+    (
+      await tx.syncOutbox.findMany({
+        where: { operationType: "UPSERT_PRODUCT" },
+        select: { entityId: true },
+      })
+    ).map((r) => r.entityId)
+  );
   const products = await tx.product.findMany();
   for (const p of products) {
-    const existing = await tx.syncOutbox.findFirst({
-      where: {
-        operationType: "UPSERT_PRODUCT",
-        entityId: p.id,
-      },
-    });
-    if (!existing) {
+    if (!existingProductIds.has(p.id)) {
       await tx.syncOutbox.create({
         data: {
           operationId: crypto.randomUUID(),
@@ -205,21 +207,24 @@ async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> 
           status: "PENDING",
         },
       });
+      existingProductIds.add(p.id);
     }
   }
 
   // 2. Active Prices
+  const existingPriceIds = new Set(
+    (
+      await tx.syncOutbox.findMany({
+        where: { operationType: "CREATE_PRICE" },
+        select: { entityId: true },
+      })
+    ).map((r) => r.entityId)
+  );
   const prices = await tx.price.findMany({
     where: { effectiveTo: null },
   });
   for (const pr of prices) {
-    const existing = await tx.syncOutbox.findFirst({
-      where: {
-        operationType: "CREATE_PRICE",
-        entityId: pr.id,
-      },
-    });
-    if (!existing) {
+    if (!existingPriceIds.has(pr.id)) {
       await tx.syncOutbox.create({
         data: {
           operationId: crypto.randomUUID(),
@@ -234,19 +239,22 @@ async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> 
           status: "PENDING",
         },
       });
+      existingPriceIds.add(pr.id);
     }
   }
 
   // 3. Customers
+  const existingCustomerIds = new Set(
+    (
+      await tx.syncOutbox.findMany({
+        where: { operationType: "UPSERT_CUSTOMER" },
+        select: { entityId: true },
+      })
+    ).map((r) => r.entityId)
+  );
   const customers = await tx.customer.findMany();
   for (const c of customers) {
-    const existing = await tx.syncOutbox.findFirst({
-      where: {
-        operationType: "UPSERT_CUSTOMER",
-        entityId: c.id,
-      },
-    });
-    if (!existing) {
+    if (!existingCustomerIds.has(c.id)) {
       await tx.syncOutbox.create({
         data: {
           operationId: crypto.randomUUID(),
@@ -263,19 +271,22 @@ async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> 
           status: "PENDING",
         },
       });
+      existingCustomerIds.add(c.id);
     }
   }
 
   // 4. Suppliers
+  const existingSupplierIds = new Set(
+    (
+      await tx.syncOutbox.findMany({
+        where: { operationType: "UPSERT_SUPPLIER" },
+        select: { entityId: true },
+      })
+    ).map((r) => r.entityId)
+  );
   const suppliers = await tx.supplier.findMany();
   for (const s of suppliers) {
-    const existing = await tx.syncOutbox.findFirst({
-      where: {
-        operationType: "UPSERT_SUPPLIER",
-        entityId: s.id,
-      },
-    });
-    if (!existing) {
+    if (!existingSupplierIds.has(s.id)) {
       await tx.syncOutbox.create({
         data: {
           operationId: crypto.randomUUID(),
@@ -292,6 +303,7 @@ async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> 
           status: "PENDING",
         },
       });
+      existingSupplierIds.add(s.id);
     }
   }
 }

@@ -241,6 +241,19 @@ export async function startDaemonService(
           failedCount: res.failedCount,
           retryCount: res.retryCount,
         });
+      } else if (res.alreadyRunning) {
+        // Concurrency lock held by another trigger/worker, silently handled
+      } else if (res.nothingToPush) {
+        // Nothing to push
+      } else if (res.networkError) {
+        logWarn("PUSH", `Push deferred: ${res.networkError}`);
+      } else if (res.blockedByFailedOperationId) {
+        logWarn("PUSH", `Push queue blocked by failed op ${res.blockedByFailedOperationId}`);
+      } else if (res.failedCount > 0 || res.retryCount > 0) {
+        logWarn("PUSH", `Push batch completed with retries/failures`, {
+          failedCount: res.failedCount,
+          retryCount: res.retryCount,
+        });
       }
     },
     onPullResult: (res) => {

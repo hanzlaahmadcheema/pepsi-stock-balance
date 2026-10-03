@@ -154,22 +154,24 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
   if (!needsCompaction) return;
 
   // Use a temporary high offset to avoid unique constraint collisions during renumbering
-  const tempOffset = BigInt("9000000000000000000");
-  for (let i = 0; i < unappliedRows.length; i++) {
-    await tx.syncOutbox.update({
-      where: { id: unappliedRows[i].id },
-      data: { clientSequence: tempOffset + BigInt(i) },
-    });
-  }
+  await tx.$executeRaw`
+    UPDATE "SyncOutbox"
+    SET "clientSequence" = "clientSequence" + 9000000000000000000::bigint
+    WHERE status IN ('PENDING', 'IN_FLIGHT', 'FAILED')
+  `;
 
-  let nextSeq = baseSeq + BigInt(1);
-  for (let i = 0; i < unappliedRows.length; i++) {
-    await tx.syncOutbox.update({
-      where: { id: unappliedRows[i].id },
-      data: { clientSequence: nextSeq },
-    });
-    nextSeq += BigInt(1);
-  }
+  // Renumber contiguously starting from baseSeq + 1
+  await tx.$executeRaw`
+    WITH numbered AS (
+      SELECT id, ROW_NUMBER() OVER (ORDER BY "clientSequence" ASC) as rn
+      FROM "SyncOutbox"
+      WHERE status IN ('PENDING', 'IN_FLIGHT', 'FAILED')
+    )
+    UPDATE "SyncOutbox" s
+    SET "clientSequence" = ${baseSeq} + numbered.rn
+    FROM numbered
+    WHERE s.id = numbered.id
+  `;
 }
 
 // ─── Local Catalog Outbox Backfill ──────────────────────────────────────────
@@ -485,35 +487,29 @@ export async function pushPendingOperations(
           const gapMatch = errorText.match(/expected\s+(\d+)/i);
           if (gapMatch && gapMatch[1]) {
             const expSeq = BigInt(gapMatch[1]);
-            const tempOffset = BigInt("9000000000000000000");
-            const remaining = await tx.syncOutbox.findMany({
-              where: { status: { in: ["IN_FLIGHT", "PENDING"] } },
-              orderBy: { clientSequence: "asc" },
-              select: { id: true },
-            });
-            for (let i = 0; i < remaining.length; i++) {
-              await tx.syncOutbox.update({
-                where: { id: remaining[i].id },
-                data: { clientSequence: tempOffset + BigInt(i) },
-              });
-            }
-            let s = expSeq;
-            for (let i = 0; i < remaining.length; i++) {
-              await tx.syncOutbox.update({
-                where: { id: remaining[i].id },
-                data: {
-                  clientSequence: s,
-                  status: "PENDING",
-                  lastError: `Sequence aligned to ${s} (server requested ${expSeq}).`,
-                },
-              });
-              s += BigInt(1);
-            }
+            await tx.$executeRaw`
+              UPDATE "SyncOutbox"
+              SET "clientSequence" = "clientSequence" + 9000000000000000000::bigint
+              WHERE status IN ('IN_FLIGHT', 'PENDING')
+            `;
+            await tx.$executeRaw`
+              WITH numbered AS (
+                SELECT id, ROW_NUMBER() OVER (ORDER BY "clientSequence" ASC) as rn
+                FROM "SyncOutbox"
+                WHERE status IN ('IN_FLIGHT', 'PENDING')
+              )
+              UPDATE "SyncOutbox" s
+              SET "clientSequence" = ${expSeq} + numbered.rn - 1,
+                  status = 'PENDING',
+                  "lastError" = 'Sequence aligned after server request.'
+              FROM numbered
+              WHERE s.id = numbered.id
+            `;
             return {
               success: false,
               syncedCount: 0,
               failedCount: 0,
-              retryCount: remaining.length,
+              retryCount: pendingRows.length,
               nothingToPush: false,
               networkError: `Aligned outbox sequences to ${expSeq} after server sequence gap detection.`,
             };

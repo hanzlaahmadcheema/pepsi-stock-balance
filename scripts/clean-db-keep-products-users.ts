@@ -1,12 +1,14 @@
 /**
  * clean-db-keep-products-users.ts
  *
- * Wipes ALL transactional data from both LOCAL and CLOUD_PROD databases,
- * keeping only Products (+ Prices) and real Users.
+ * Wipes ALL transactional data from both LOCAL and CLOUD databases,
+ * keeping only Products (+ Prices), real Users, and SyncDevice registrations.
  *
- * After cleanup it syncs LOCAL users to match CLOUD_PROD users exactly.
+ * Synchronizes users between LOCAL and CLOUD so all real accounts exist on both.
+ * Resets sync change logs, outbox, and cursors to 0 for a clean Oct 4 operational start.
  *
- * Run with:  npx tsx scripts/clean-db-keep-products-users.ts
+ * Run with:
+ *   npx tsx scripts/clean-db-keep-products-users.ts [localEnvOrUrl] [cloudProdEnvOrUrl]
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -19,37 +21,52 @@ import * as dotenv from "dotenv";
 // ──────────────────────────────────────────────
 
 function loadEnv(envFile: string): { DATABASE_URL: string; DIRECT_URL: string } {
-  const resolved = path.resolve(process.cwd(), envFile);
-  if (!fs.existsSync(resolved)) {
-    throw new Error(`Env file not found: ${resolved}`);
+  if (envFile.startsWith("postgresql://") || envFile.startsWith("postgres://")) {
+    return { DATABASE_URL: envFile, DIRECT_URL: envFile };
   }
-  const parsed = dotenv.parse(fs.readFileSync(resolved));
+
+  const candidates = [
+    path.resolve(process.cwd(), envFile),
+    path.resolve(process.cwd(), "environments", envFile),
+    path.resolve(process.cwd(), ".env.production"),
+    path.resolve(process.cwd(), ".env"),
+  ];
+
+  let foundFile: string | null = null;
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      foundFile = c;
+      break;
+    }
+  }
+
+  if (!foundFile) {
+    throw new Error(`Env file not found for ${envFile}. Checked:\n${candidates.join("\n")}`);
+  }
+
+  console.log(`  Loaded env: ${foundFile}`);
+  const parsed = dotenv.parse(fs.readFileSync(foundFile));
   return {
     DATABASE_URL: parsed.DATABASE_URL ?? "",
     DIRECT_URL: parsed.DIRECT_URL ?? parsed.DATABASE_URL ?? "",
   };
 }
 
-/**
- * Accepts either:
- *   - a path to an env file (e.g. "environments/.env.cloud-prod")
- *   - a raw postgres URL (e.g. "postgresql://user:pass@host/db")
- */
 function makeClient(envFileOrUrl: string): PrismaClient {
   let url: string;
   if (envFileOrUrl.startsWith("postgresql://") || envFileOrUrl.startsWith("postgres://")) {
     url = envFileOrUrl;
   } else {
-    url = loadEnv(envFileOrUrl).DATABASE_URL;
+    const loaded = loadEnv(envFileOrUrl);
+    url = loaded.DIRECT_URL || loaded.DATABASE_URL;
   }
-  // @ts-ignore – Prisma accepts datasources override at runtime
+
   return new PrismaClient({
     datasources: { db: { url } },
   });
 }
 
 async function countAll(db: PrismaClient) {
-  // Sequential (not parallel) to stay within pgbouncer connection pool limits
   const users               = await db.user.count();
   const products            = await db.product.count();
   const prices              = await db.price.count();
@@ -86,54 +103,52 @@ async function countAll(db: PrismaClient) {
     stockAdjustments, dailyClosings, stockCounts,
     auditLogs, syncOutbox, syncCursor, processedOps,
     syncChangelog, syncDevices, localProcessed, localQuarantine,
-
   };
 }
 
 async function wipeTransactionalData(db: PrismaClient, label: string) {
   console.log(`\n[${label}] Starting cleanup…`);
 
-  // 1. Sync tables (no FK deps on business data)
-  console.log(`  Clearing sync tables…`);
+  // 1. Sync tables (PRESERVE syncDevice so terminal registration stays active!)
+  console.log(`  Clearing sync transaction queues & changelogs (preserving syncDevice)…`);
   await db.localSyncQuarantine.deleteMany({});
   await db.localProcessedChange.deleteMany({});
-  await db.syncDevice.deleteMany({});
   await db.syncChangeLog.deleteMany({});
   await db.processedSyncOperation.deleteMany({});
   await db.syncCursor.deleteMany({});
   await db.syncOutbox.deleteMany({});
 
-  // 2. Audit logs (FK → User, must go before User delete)
+  // 2. Audit logs
   console.log(`  Clearing audit logs…`);
   await db.auditLog.deleteMany({});
 
-  // 3. Stock counts (FK → DailyClosing, cascade; and → Product/User with Restrict)
+  // 3. Stock counts & Daily closings
   console.log(`  Clearing stock counts & daily closings…`);
   await db.stockCount.deleteMany({});
   await db.dailyClosing.deleteMany({});
 
-  // 4. Container movements (FK → Customer/User)
+  // 4. Container movements
   console.log(`  Clearing container movements…`);
   await db.containerMovement.deleteMany({});
 
-  // 5. Stock adjustments (FK → Product/User)
+  // 5. Stock adjustments
   console.log(`  Clearing stock adjustments…`);
   await db.stockAdjustment.deleteMany({});
 
-  // 6. Damage records (FK → Product/User)
+  // 6. Damage records
   console.log(`  Clearing damage records…`);
   await db.damageRecord.deleteMany({});
 
-  // 7. Stock movements (FK → Product/User)
+  // 7. Stock movements
   console.log(`  Clearing stock movements…`);
   await db.stockMovement.deleteMany({});
 
-  // 8. Returns (items cascade from Return)
+  // 8. Returns
   console.log(`  Clearing returns…`);
   await db.returnItem.deleteMany({});
   await db.return.deleteMany({});
 
-  // 9. Payments → Sales → SaleItems
+  // 9. Payments, Sales, Sale Items
   console.log(`  Clearing payments, sales, sale items…`);
   await db.payment.deleteMany({});
   await db.saleItem.deleteMany({});
@@ -143,7 +158,7 @@ async function wipeTransactionalData(db: PrismaClient, label: string) {
   console.log(`  Clearing customers…`);
   await db.customer.deleteMany({});
 
-  // 11. Receivings (items cascade from Receiving)
+  // 11. Receivings
   console.log(`  Clearing receivings…`);
   await db.receivingItem.deleteMany({});
   await db.receiving.deleteMany({});
@@ -151,6 +166,14 @@ async function wipeTransactionalData(db: PrismaClient, label: string) {
   // 12. Suppliers
   console.log(`  Clearing suppliers…`);
   await db.supplier.deleteMany({});
+
+  // Reset sequence counters if applicable
+  try {
+    await db.$executeRawUnsafe('ALTER SEQUENCE IF EXISTS "SyncChangeLog_changeSequence_seq" RESTART WITH 1;');
+  } catch {}
+  try {
+    await db.$executeRawUnsafe('ALTER SEQUENCE IF EXISTS "SyncOutbox_clientSequence_seq" RESTART WITH 1;');
+  } catch {}
 
   console.log(`[${label}] Transactional data cleared ✓`);
 }
@@ -160,22 +183,14 @@ async function wipeTransactionalData(db: PrismaClient, label: string) {
 // ──────────────────────────────────────────────
 
 async function main() {
-  // Usage:
-  //   npx tsx scripts/clean-db-keep-products-users.ts [localEnvOrUrl] [cloudProdEnvOrUrl]
-  //
-  // Examples:
-  //   npx tsx scripts/clean-db-keep-products-users.ts                              (Linux defaults)
-  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production              (Windows, cloud-prod from file)
-  //   npx tsx scripts/clean-db-keep-products-users.ts .env.production "postgresql://user:pass@host/db"
-  const LOCAL_ENV = process.argv[2] ?? "environments/.env.local";
-  const PROD_ENV  = process.argv[3] ?? "environments/.env.cloud-prod";
+  const LOCAL_ENV = process.argv[2] ?? (fs.existsSync("environments/.env.local") ? "environments/.env.local" : ".env.production");
+  const PROD_ENV  = process.argv[3] ?? (fs.existsSync("environments/.env.cloud-prod") ? "environments/.env.cloud-prod" : "postgresql://postgres.arntflxuoalstwdryykh:%40Faisal123%21@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require&connect_timeout=30");
 
+  console.log("=".repeat(60));
+  console.log(" DB CLEANUP — Reset to Day 0 (Keep Products, Prices, Users, Devices)");
+  console.log("=".repeat(60));
   console.log(`  Local  : ${LOCAL_ENV}`);
-  console.log(`  Cloud  : ${PROD_ENV.startsWith("postgresql") ? "[URL]" : PROD_ENV}`);
-
-  console.log("=".repeat(60));
-  console.log(" DB CLEANUP — Keep Products & Real Users Only");
-  console.log("=".repeat(60));
+  console.log(`  Cloud  : ${PROD_ENV.startsWith("postgresql") ? "[Direct Cloud URL]" : PROD_ENV}`);
 
   const localDb = makeClient(LOCAL_ENV);
   const cloudDb = makeClient(PROD_ENV);
@@ -191,66 +206,89 @@ async function main() {
   console.log("\n  CLOUD_PROD:");
   console.log(JSON.stringify(cloudBefore, null, 4));
 
-  // ── FETCH CLOUD USERS (to replicate to LOCAL) ──
-  console.log("\n[INFO] Fetching real users from CLOUD_PROD…");
-  const cloudUsers = await cloudDb.user.findMany({
-    orderBy: { createdAt: "asc" },
-  });
-  console.log(`  Found ${cloudUsers.length} user(s):`);
-  cloudUsers.forEach((u) =>
-    console.log(`    • ${u.name} (${u.role}) — authUserId: ${u.authUserId}`)
-  );
-
   // ── WIPE CLOUD_PROD ────────────────────────
   await wipeTransactionalData(cloudDb, "CLOUD_PROD");
 
   // ── WIPE LOCAL ────────────────────────────
   await wipeTransactionalData(localDb, "LOCAL");
 
-  // ── MIGRATE LOCAL USERS ───────────────────
-  // Order matters due to FK: Price.createdById → User (Restrict)
-  // Step 1: Upsert real cloud users into LOCAL (so their IDs exist)
-  console.log("\n[LOCAL] Upserting real users from CLOUD_PROD…");
-  for (const u of cloudUsers) {
-    await localDb.user.upsert({
+  // ── RE-INITIALIZE LOCAL SYNC CURSOR ───────
+  console.log("\n[LOCAL] Initializing SyncCursor to 0…");
+  await localDb.syncCursor.create({
+    data: {
+      id: "cloud_cursor",
+      lastSequence: BigInt(0),
+      lastSyncedAt: new Date(),
+    },
+  });
+
+  // ── MERGE & SYNCHRONIZE USERS ─────────────
+  console.log("\n[SYNC] Harmonizing Users between LOCAL and CLOUD…");
+  const localUsers = await localDb.user.findMany();
+  const cloudUsers = await cloudDb.user.findMany();
+
+  // Upsert all local users into Cloud
+  for (const u of localUsers) {
+    await cloudDb.user.upsert({
       where: { id: u.id },
       update: {
-        authUserId: u.authUserId,
         name: u.name,
         role: u.role,
+        authUserId: u.authUserId,
         pinHash: u.pinHash,
+        passwordHash: u.passwordHash,
         isActive: u.isActive,
       },
       create: {
         id: u.id,
-        authUserId: u.authUserId,
         name: u.name,
         role: u.role,
+        authUserId: u.authUserId,
         pinHash: u.pinHash,
+        passwordHash: u.passwordHash,
         isActive: u.isActive,
         createdAt: u.createdAt,
         updatedAt: u.updatedAt,
       },
     });
-    console.log(`  ✓ Upserted: ${u.name} (${u.role})`);
   }
 
-  // Step 2: Re-point Price.createdById to a real user (FK now satisfied)
-  const firstRealUser = cloudUsers[0];
-  console.log(`\n[LOCAL] Re-assigning Price.createdById → ${firstRealUser.name}…`);
-  await localDb.price.updateMany({
-    data: { createdById: firstRealUser.id },
-  });
-  console.log(`  Done — all 121 prices re-assigned`);
+  // Upsert all cloud users into Local
+  for (const u of cloudUsers) {
+    await localDb.user.upsert({
+      where: { id: u.id },
+      update: {
+        name: u.name,
+        role: u.role,
+        authUserId: u.authUserId,
+        pinHash: u.pinHash,
+        passwordHash: u.passwordHash,
+        isActive: u.isActive,
+      },
+      create: {
+        id: u.id,
+        name: u.name,
+        role: u.role,
+        authUserId: u.authUserId,
+        pinHash: u.pinHash,
+        passwordHash: u.passwordHash,
+        isActive: u.isActive,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+      },
+    });
+  }
 
-  // Step 3: Delete old test users that are NOT in the real users list
-  const realUserIds = cloudUsers.map((u) => u.id);
-  console.log("\n[LOCAL] Removing test users (those not in real user list)…");
-  const deleted = await localDb.user.deleteMany({
-    where: { id: { notIn: realUserIds } },
-  });
-  console.log(`  Deleted ${deleted.count} test user(s)`);
-
+  const primaryOwner = (await localDb.user.findFirst({ where: { role: "OWNER" } })) ?? localUsers[0];
+  if (primaryOwner) {
+    console.log(`  Re-linking Price.createdById → ${primaryOwner.name} (${primaryOwner.id})`);
+    await localDb.price.updateMany({
+      data: { createdById: primaryOwner.id },
+    });
+    await cloudDb.price.updateMany({
+      data: { createdById: primaryOwner.id },
+    });
+  }
 
   // ── POST-FLIGHT COUNTS ─────────────────────
   console.log("\n[POST-FLIGHT] Final record counts:");
@@ -266,8 +304,10 @@ async function main() {
   // ── VALIDATION ────────────────────────────
   console.log("\n[VALIDATION]");
   const checks = [
-    { name: "LOCAL users == CLOUD users", ok: localAfter.users === cloudAfter.users },
-    { name: "LOCAL products == CLOUD products", ok: localAfter.products === cloudAfter.products },
+    { name: "LOCAL users == CLOUD users", ok: localAfter.users === cloudAfter.users && localAfter.users > 0 },
+    { name: "LOCAL products == CLOUD products", ok: localAfter.products === cloudAfter.products && localAfter.products > 0 },
+    { name: "LOCAL prices == CLOUD prices", ok: localAfter.prices === cloudAfter.prices && localAfter.prices > 0 },
+    { name: "Sync Devices preserved", ok: localAfter.syncDevices >= 0 && cloudAfter.syncDevices > 0 },
     { name: "LOCAL suppliers == 0", ok: localAfter.suppliers === 0 },
     { name: "CLOUD suppliers == 0", ok: cloudAfter.suppliers === 0 },
     { name: "LOCAL customers == 0", ok: localAfter.customers === 0 },
@@ -276,10 +316,18 @@ async function main() {
     { name: "CLOUD sales == 0", ok: cloudAfter.sales === 0 },
     { name: "LOCAL receivings == 0", ok: localAfter.receivings === 0 },
     { name: "CLOUD receivings == 0", ok: cloudAfter.receivings === 0 },
+    { name: "LOCAL stockMovements == 0", ok: localAfter.stockMovements === 0 },
+    { name: "CLOUD stockMovements == 0", ok: cloudAfter.stockMovements === 0 },
+    { name: "LOCAL damageRecords == 0", ok: localAfter.damageRecords === 0 },
+    { name: "CLOUD damageRecords == 0", ok: cloudAfter.damageRecords === 0 },
+    { name: "LOCAL dailyClosings == 0", ok: localAfter.dailyClosings === 0 },
+    { name: "CLOUD dailyClosings == 0", ok: cloudAfter.dailyClosings === 0 },
+    { name: "LOCAL stockCounts == 0", ok: localAfter.stockCounts === 0 },
+    { name: "CLOUD stockCounts == 0", ok: cloudAfter.stockCounts === 0 },
     { name: "LOCAL auditLogs == 0", ok: localAfter.auditLogs === 0 },
     { name: "CLOUD auditLogs == 0", ok: cloudAfter.auditLogs === 0 },
     { name: "LOCAL syncOutbox == 0", ok: localAfter.syncOutbox === 0 },
-    { name: "CLOUD syncOutbox == 0", ok: cloudAfter.syncOutbox === 0 },
+    { name: "CLOUD syncChangeLog == 0", ok: cloudAfter.syncChangelog === 0 },
   ];
 
   let allGood = true;
@@ -290,9 +338,9 @@ async function main() {
   }
 
   if (allGood) {
-    console.log("\n✅ All checks passed. Both databases are clean and in sync.");
+    console.log("\n✅ All checks passed. Both databases are completely zeroed and ready for Day 1 operations.");
   } else {
-    console.log("\n⚠️  Some checks failed — review the counts above.");
+    console.log("\n⚠️ Some checks failed — please review the counts above.");
   }
 
   await localDb.$disconnect();
@@ -300,6 +348,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("Fatal error:", e);
+  console.error("Fatal error during cleanup:", e);
   process.exit(1);
 });

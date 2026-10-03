@@ -158,7 +158,8 @@ export async function getLocalSyncCursor(
 export async function applyLocalPullBatch(
   localDeviceId: string,
   batch: SyncBatchPullResponse,
-  dbClient: PrismaClient = prisma
+  dbClient: PrismaClient = prisma,
+  options?: { allowGaps?: boolean }
 ): Promise<LocalPullApplyResult> {
   if (!batch.success) {
     throw new PullApplyError(
@@ -203,28 +204,40 @@ export async function applyLocalPullBatch(
       const firstChangeSeq = BigInt(batch.changes[0].changeSequence);
       const expectedFirstSeq = currentCursor + BigInt(1);
 
-      // If the batch starts past our expected sequence, a gap occurred!
-      if (firstChangeSeq > expectedFirstSeq) {
-        throw new PullApplyError(
-          `Cursor gap detected: expected changeSequence ${expectedFirstSeq.toString()}, but received ${firstChangeSeq.toString()}.`,
-          "CURSOR_GAP_DETECTED",
-          { sequence: batch.changes[0].changeSequence }
-        );
+      // If allowGaps is not enabled, enforce strict continuous sequence from current cursor
+      if (!options?.allowGaps) {
+        if (firstChangeSeq > expectedFirstSeq) {
+          throw new PullApplyError(
+            `Cursor gap detected: expected changeSequence ${expectedFirstSeq.toString()}, but received ${firstChangeSeq.toString()}.`,
+            "CURSOR_GAP_DETECTED",
+            { sequence: batch.changes[0].changeSequence }
+          );
+        }
       }
 
-      // Changes inside the batch must be strictly sequential (no internal gaps or disorder)
+      // Changes inside the batch must be strictly sequential (or strictly increasing if allowGaps)
       for (let i = 0; i < batch.changes.length; i++) {
         const c = batch.changes[i];
         const currentSeq = BigInt(c.changeSequence);
 
         if (i > 0) {
           const prevSeq = BigInt(batch.changes[i - 1].changeSequence);
-          if (currentSeq !== prevSeq + BigInt(1)) {
-            throw new PullApplyError(
-              `Internal batch sequence disorder: sequence jumped from ${prevSeq.toString()} to ${currentSeq.toString()}.`,
-              "BATCH_SEQUENCE_DISORDER",
-              { sequence: c.changeSequence }
-            );
+          if (options?.allowGaps) {
+            if (currentSeq <= prevSeq) {
+              throw new PullApplyError(
+                `Internal batch sequence disorder: sequence did not increase (${prevSeq.toString()} -> ${currentSeq.toString()}).`,
+                "BATCH_SEQUENCE_DISORDER",
+                { sequence: c.changeSequence }
+              );
+            }
+          } else {
+            if (currentSeq !== prevSeq + BigInt(1)) {
+              throw new PullApplyError(
+                `Internal batch sequence disorder: sequence jumped from ${prevSeq.toString()} to ${currentSeq.toString()}.`,
+                "BATCH_SEQUENCE_DISORDER",
+                { sequence: c.changeSequence }
+              );
+            }
           }
         }
       }
@@ -1145,5 +1158,7 @@ export async function executePullCycle(params: {
     }
   }
 
-  return await applyLocalPullBatch(params.localDeviceId, batchResponse, params.dbClient);
+  return await applyLocalPullBatch(params.localDeviceId, batchResponse, params.dbClient, {
+    allowGaps: true,
+  });
 }

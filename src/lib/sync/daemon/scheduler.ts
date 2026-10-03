@@ -342,7 +342,12 @@ export class SyncScheduler {
           if (this.pullBackoffIndex === 0) {
             this.stopConnectivityProbe();
           }
-          this.scheduleNextPush(this.normalIntervalMs);
+          if (result.syncedCount >= 20) {
+            // Rapid drain: continue pushing next batch immediately after 500ms breather
+            this.scheduleNextPush(500);
+          } else {
+            this.scheduleNextPush(this.normalIntervalMs);
+          }
         }
 
         this.config.onPushResult?.(result);
@@ -422,7 +427,12 @@ export class SyncScheduler {
           if (this.pushBackoffIndex === 0) {
             this.stopConnectivityProbe();
           }
-          this.scheduleNextPull(this.normalIntervalMs);
+          if (result.hasMore) {
+            // Rapid drain: pull next chunk immediately after 500ms breather
+            this.scheduleNextPull(500);
+          } else {
+            this.scheduleNextPull(this.normalIntervalMs);
+          }
         }
 
         this.config.onPullResult?.(result);

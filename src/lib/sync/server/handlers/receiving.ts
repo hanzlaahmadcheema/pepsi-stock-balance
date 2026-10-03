@@ -106,7 +106,8 @@ export async function handlePostReceiving(
   });
 
   if (existingMovements > 0) {
-    throw new Error("This receiving record has already been posted to the stock ledger.");
+    // Idempotent retry: receiving record already posted to stock ledger
+    return;
   }
 
   const receivedAt = payload.receivedAt ? new Date(payload.receivedAt) : new Date();

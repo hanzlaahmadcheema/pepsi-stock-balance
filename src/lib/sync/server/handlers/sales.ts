@@ -205,7 +205,16 @@ export async function handleCreateSale(
 
   const soldAt = payload.soldAt ? new Date(payload.soldAt) : new Date();
 
-  // 6. Create Sale header
+  // 6. Check if sale already exists (idempotent replay)
+  const existingSale = await tx.sale.findUnique({
+    where: { id: operation.entityId },
+  });
+  if (existingSale) {
+    // Idempotent retry: sale already created
+    return;
+  }
+
+  // Create Sale header
   await tx.sale.create({
     data: {
       id: operation.entityId,

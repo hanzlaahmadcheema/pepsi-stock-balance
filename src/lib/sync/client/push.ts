@@ -48,7 +48,7 @@ export const SYNC_PUSH_ADVISORY_LOCK_ID = BigInt("88492001");
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /** Maximum number of operations to include in a single push batch. */
-const BATCH_LIMIT = 50;
+const BATCH_LIMIT = 20;
 
 /**
  * Operations that have been IN_FLIGHT for longer than this are assumed to be
@@ -584,7 +584,7 @@ export async function pushPendingOperations(
         serverResponse,
       };
     },
-    { timeout: 60000, maxWait: 20000 }
+    { timeout: 300000, maxWait: 30000 }
   );
 }
 

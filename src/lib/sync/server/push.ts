@@ -215,7 +215,7 @@ export async function processDevicePushBatch(
             },
           });
         },
-        { timeout: 60000, maxWait: 20000 }
+        { timeout: 120000, maxWait: 30000 }
       );
 
       // ── Step 5: ACK ────────────────────────────────────────────────────────

@@ -93,6 +93,14 @@ export async function handleCreateReturn(
     productQtyMap.set(item.productId, item.quantity);
   }
 
+  // Check if return record already exists (idempotent replay)
+  const existingReturn = await tx.return.findUnique({
+    where: { id: operation.entityId },
+  });
+  if (existingReturn) {
+    return;
+  }
+
   // 1. Fetch and validate sale
   const sale = await tx.sale.findUnique({
     where: { id: payload.saleId },

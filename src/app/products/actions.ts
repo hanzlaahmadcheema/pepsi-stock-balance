@@ -8,6 +8,7 @@ import { assertNotCloudPortal } from "@/lib/config/portal-mode";
 import { Role, PriceTier, Prisma } from "@prisma/client";
 import { updateProductPriceTransaction } from "@/lib/products/service";
 import { setProductCrateConfig, getContainerSettings } from "@/lib/containers/settings-service";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type ProductFormState = {
   error?: string;
@@ -127,17 +128,32 @@ export async function createProductAction(
           },
         });
 
+        await enqueueOutbox(tx, "UPSERT_PRODUCT", prod.id, {
+          name: prod.name,
+          brand: prod.brand,
+          sku: prod.sku,
+          minimumStockLevel: prod.minimumStockLevel,
+          latestPurchasePrice: Number(prod.latestPurchasePrice),
+          isActive: prod.isActive,
+        });
+
         const now = new Date();
-        if (initialPrices.length > 0) {
-          await tx.price.createMany({
-            data: initialPrices.map((pr) => ({
+        for (const pr of initialPrices) {
+          const createdPrice = await tx.price.create({
+            data: {
               productId: prod.id,
               tier: pr.tier,
               amount: new Prisma.Decimal(pr.amount.toFixed(2)),
               effectiveFrom: now,
               effectiveTo: null,
               createdById: user.id,
-            })),
+            },
+          });
+          await enqueueOutbox(tx, "CREATE_PRICE", createdPrice.id, {
+            productId: prod.id,
+            tier: pr.tier,
+            amount: pr.amount,
+            userId: user.id,
           });
         }
 
@@ -252,9 +268,20 @@ export async function updateProductDetailsAction(
   const crateConfigSubmitted = formData.get("crateConfigSubmitted") === "1";
 
   try {
-    await prisma.product.update({
-      where: { id: productId },
-      data: updateData,
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.product.update({
+        where: { id: productId },
+        data: updateData,
+      });
+
+      await enqueueOutbox(tx, "UPSERT_PRODUCT", updated.id, {
+        name: updated.name,
+        brand: updated.brand,
+        sku: updated.sku,
+        minimumStockLevel: updated.minimumStockLevel,
+        latestPurchasePrice: Number(updated.latestPurchasePrice),
+        isActive: updated.isActive,
+      });
     });
 
     if (crateConfigSubmitted || isReturnableRaw !== null || hasGlassCrateRaw !== null) {
@@ -307,9 +334,20 @@ export async function toggleProductStatusAction(
 
   const newStatus = !product.isActive;
 
-  await prisma.product.update({
-    where: { id: productId },
-    data: { isActive: newStatus },
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.product.update({
+      where: { id: productId },
+      data: { isActive: newStatus },
+    });
+
+    await enqueueOutbox(tx, "UPSERT_PRODUCT", updated.id, {
+      name: updated.name,
+      brand: updated.brand,
+      sku: updated.sku,
+      minimumStockLevel: updated.minimumStockLevel,
+      latestPurchasePrice: Number(updated.latestPurchasePrice),
+      isActive: updated.isActive,
+    });
   });
 
   revalidatePath("/products");

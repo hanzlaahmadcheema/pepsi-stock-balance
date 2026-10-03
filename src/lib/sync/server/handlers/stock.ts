@@ -86,9 +86,8 @@ export async function handleSubmitStockCount(
   });
 
   if (closing && closing.status === DailyClosingStatus.CLOSED) {
-    throw new Error(
-      `A stock count has already been finalized and closed for ${payload.businessDate}.`
-    );
+    // Idempotent retry: stock count already finalized and closed
+    return;
   }
 
   if (!closing) {
@@ -252,9 +251,8 @@ export async function handleResolveStockAdjustment(
   }
 
   if (adjustment.status !== AdjustmentStatus.PENDING) {
-    throw new Error(
-      `This adjustment has already been ${adjustment.status.toLowerCase()} and cannot be modified.`
-    );
+    // Idempotent retry: adjustment already resolved
+    return;
   }
 
   // 2. Concurrency Lock: Lock product row

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DamageType, MovementType, Prisma } from "@prisma/client";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type RecordDamageInput = {
   productId: string;
@@ -122,6 +123,15 @@ export async function recordDamage(input: RecordDamageInput): Promise<{ damageRe
           notes: `Damage write-off: ${damageType}${reason ? ` — ${reason.trim()}` : ""}`,
           createdById: userId,
         },
+      });
+
+      await enqueueOutbox(tx, "RECORD_DAMAGE", damageRecord.id, {
+        productId,
+        quantity,
+        damageType,
+        reason: reason?.trim() || null,
+        notes: notes?.trim() || null,
+        userId,
       });
 
       return { damageRecordId: damageRecord.id };

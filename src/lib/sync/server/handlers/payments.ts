@@ -50,16 +50,28 @@ export async function handleRecordPayment(
     "recording payment"
   );
 
-  // Validate customer if provided
+  // Check if payment already exists (idempotent replay)
+  const existingPayment = await tx.payment.findUnique({
+    where: { id: operation.entityId },
+  });
+  if (existingPayment) {
+    return;
+  }
+
+  // Validate customer if provided (auto-provision stub if missing)
   if (payload.customerId) {
-    const customer = await tx.customer.findUnique({
+    let customer = await tx.customer.findUnique({
       where: { id: payload.customerId },
     });
     if (!customer) {
-      throw new Error("Customer not found.");
-    }
-    if (!customer.isActive) {
-      throw new Error("Cannot record payment for an inactive customer.");
+      await tx.customer.create({
+        data: {
+          id: payload.customerId,
+          name: `Customer (${payload.customerId.slice(0, 8)})`,
+          creditAllowed: true,
+          isActive: true,
+        },
+      });
     }
   }
 

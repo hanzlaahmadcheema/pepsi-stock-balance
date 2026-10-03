@@ -44,20 +44,18 @@ export const DEFAULT_NORMAL_INTERVAL_MS = 30_000;
 export const DEFAULT_DEBOUNCE_MS = 1_000;
 
 /**
- * Agreed exponential backoff schedule for offline / network failures:
- * 5s → 10s → 20s → 40s → 80s → 160s → 300s max.
+ * Responsive backoff schedule for offline / network failures:
+ * 3s → 5s → 10s → 15s → 30s max.
  */
 export const DEFAULT_BACKOFF_SCHEDULE_MS = [
+  3_000,    // 3s
   5_000,    // 5s
   10_000,   // 10s
-  20_000,   // 20s
-  40_000,   // 40s
-  80_000,   // 80s
-  160_000,  // 160s
-  300_000,  // 300s (max)
+  15_000,   // 15s
+  30_000,   // 30s (max)
 ];
 
-export const MAX_BACKOFF_MS = 300_000;
+export const MAX_BACKOFF_MS = 30_000;
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -148,6 +146,7 @@ export class SyncScheduler {
   private pushTimer: NodeJS.Timeout | null = null;
   private pullTimer: NodeJS.Timeout | null = null;
   private debounceTimer: NodeJS.Timeout | null = null;
+  private connectivityProbeTimer: NodeJS.Timeout | null = null;
 
   private pushBackoffIndex: number = 0;
   private pullBackoffIndex: number = 0;
@@ -224,6 +223,7 @@ export class SyncScheduler {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
+    this.stopConnectivityProbe();
     this.pendingDebouncedPush = false;
 
     if (activeSchedulerInstance === this) {
@@ -339,6 +339,9 @@ export class SyncScheduler {
           this.lastPushSuccess = true;
           this.lastPushError = null;
           this.pushBackoffIndex = 0; // Reset backoff
+          if (this.pullBackoffIndex === 0) {
+            this.stopConnectivityProbe();
+          }
           this.scheduleNextPush(this.normalIntervalMs);
         }
 
@@ -416,6 +419,9 @@ export class SyncScheduler {
           this.lastPullSuccess = true;
           this.lastPullError = null;
           this.pullBackoffIndex = 0; // Reset backoff
+          if (this.pushBackoffIndex === 0) {
+            this.stopConnectivityProbe();
+          }
           this.scheduleNextPull(this.normalIntervalMs);
         }
 
@@ -477,6 +483,7 @@ export class SyncScheduler {
     if (this.pushBackoffIndex < this.backoffScheduleMs.length) {
       this.pushBackoffIndex++;
     }
+    this.startConnectivityProbe();
     this.scheduleNextPush(delay);
   }
 
@@ -485,7 +492,73 @@ export class SyncScheduler {
     if (this.pullBackoffIndex < this.backoffScheduleMs.length) {
       this.pullBackoffIndex++;
     }
+    this.startConnectivityProbe();
     this.scheduleNextPull(delay);
+  }
+
+  /**
+   * Fast connectivity probe running every 5s during backoff.
+   * As soon as Cloud becomes reachable, immediately clears backoff and triggers sync.
+   */
+  private startConnectivityProbe(): void {
+    if (this.connectivityProbeTimer || !this.running) return;
+    this.connectivityProbeTimer = setInterval(async () => {
+      if (!this.running) {
+        this.stopConnectivityProbe();
+        return;
+      }
+      if (this.pushBackoffIndex === 0 && this.pullBackoffIndex === 0) {
+        this.stopConnectivityProbe();
+        return;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const res = await this.fetchFn(
+          `${this.config.cloudBaseUrl}/api/sync/pull?deviceId=${encodeURIComponent(
+            this.config.deviceId
+          )}&limit=1`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${this.config.deviceToken}`,
+              "X-Device-Id": this.config.deviceId,
+            },
+            signal: controller.signal,
+          }
+        );
+        clearTimeout(timeoutId);
+
+        if (res.ok || res.status === 401 || res.status === 200 || res.status === 207) {
+          // Cloud is reachable! Reset backoff and trigger immediate sync.
+          this.pushBackoffIndex = 0;
+          this.pullBackoffIndex = 0;
+          this.stopConnectivityProbe();
+
+          if (this.pushTimer) {
+            clearTimeout(this.pushTimer);
+            this.pushTimer = null;
+          }
+          if (this.pullTimer) {
+            clearTimeout(this.pullTimer);
+            this.pullTimer = null;
+          }
+
+          void this.runPushCycle();
+          void this.runPullCycle();
+        }
+      } catch {
+        // Still offline, will retry in 5s
+      }
+    }, 5000);
+  }
+
+  private stopConnectivityProbe(): void {
+    if (this.connectivityProbeTimer) {
+      clearInterval(this.connectivityProbeTimer);
+      this.connectivityProbeTimer = null;
+    }
   }
 
   private getPushIntervalMs(): number {

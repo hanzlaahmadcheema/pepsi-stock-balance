@@ -49,6 +49,10 @@ export function DbStatusIndicator() {
       setCloudMs(data.cloud.latencyMs);
       if (typeof data.sync?.pendingCount === "number") {
         setPendingCount(data.sync.pendingCount);
+        if (data.cloud.ok && data.sync.pendingCount > 0) {
+          // Internet is available and operations are waiting: auto-sync immediately!
+          void fetch("/api/sync/trigger", { method: "POST" }).catch(() => {});
+        }
       }
       setLastChecked(new Date());
     } catch {
@@ -64,6 +68,10 @@ export function DbStatusIndicator() {
 
     const handleOnline = () => {
       check();
+      // Auto-trigger sync as soon as browser detects online connection
+      void fetch("/api/sync/trigger", { method: "POST" })
+        .then(() => check())
+        .catch(() => {});
     };
 
     const handleOffline = () => {

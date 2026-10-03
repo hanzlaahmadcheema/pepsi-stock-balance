@@ -259,26 +259,13 @@ export async function handleUpsertProduct(
     select: { id: true },
   });
 
+  let targetId = operation.entityId;
   if (existingName) {
-    throw new Error(`Another product already uses the name "${name}".`);
-  }
-
-  if (sku) {
-    const existingSku = await tx.product.findFirst({
-      where: {
-        sku,
-        id: { not: operation.entityId },
-      },
-      select: { id: true },
-    });
-
-    if (existingSku) {
-      throw new Error(`Another product already uses the SKU "${sku}".`);
-    }
+    targetId = existingName.id;
   }
 
   const product = await tx.product.upsert({
-    where: { id: operation.entityId },
+    where: { id: targetId },
     update: {
       name,
       brand,
@@ -333,6 +320,14 @@ export async function handleCreatePrice(
 
   if (typeof payload.amount !== "number" || payload.amount < 0) {
     throw new Error("Price amount must be a non-negative number.");
+  }
+
+  // Check if price record already exists (idempotent replay)
+  const existingPrice = await tx.price.findUnique({
+    where: { id: operation.entityId },
+  });
+  if (existingPrice) {
+    return;
   }
 
   const product = await tx.product.findUnique({

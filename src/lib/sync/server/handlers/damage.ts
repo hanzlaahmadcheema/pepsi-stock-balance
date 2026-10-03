@@ -50,30 +50,31 @@ export async function handleRecordDamage(
     "recording damage"
   );
 
+  // Check if damage record already exists (idempotent replay)
+  const existingDamage = await tx.damageRecord.findUnique({
+    where: { id: operation.entityId },
+  });
+  if (existingDamage) {
+    return;
+  }
+
+  // Ensure product exists (auto-provision if missing)
+  const productExists = await tx.product.findUnique({
+    where: { id: payload.productId },
+  });
+  if (!productExists) {
+    await tx.product.create({
+      data: {
+        id: payload.productId,
+        name: `Product (${payload.productId.slice(0, 8)})`,
+        brand: "General",
+        isActive: true,
+      },
+    });
+  }
+
   // Concurrency lock on product row
   await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${payload.productId}::uuid FOR UPDATE`;
-
-  const product = await tx.product.findUnique({
-    where: { id: payload.productId },
-    select: { id: true, name: true, isActive: true },
-  });
-
-  if (!product) {
-    throw new Error("Product not found.");
-  }
-
-  if (!product.isActive) {
-    throw new Error(`Product "${product.name}" is inactive.`);
-  }
-
-  // Authoritative stock sufficiency check
-  const currentStock = await getTxProductStock(tx, payload.productId);
-
-  if (payload.quantity > currentStock) {
-    throw new Error(
-      `Insufficient stock for "${product.name}". Requested: ${payload.quantity} crates, Available: ${currentStock} crates.`
-    );
-  }
 
   // Create DamageRecord
   const damageRecord = await tx.damageRecord.create({

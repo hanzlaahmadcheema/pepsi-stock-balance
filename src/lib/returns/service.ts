@@ -9,6 +9,7 @@ import {
   SaleStatus,
   Prisma,
 } from "@prisma/client";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type ReturnItemInput = {
   productId: string;
@@ -382,6 +383,15 @@ export async function createReturnTransaction(
         },
         reason: reason?.trim() || "Return entered into quarantine",
       },
+    });
+
+    await enqueueOutbox(tx, "CREATE_RETURN", returnRecord.id, {
+      saleId: sale.id,
+      reason: reason?.trim() || undefined,
+      notes: notes?.trim() || undefined,
+      items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      containers,
+      userId,
     });
 
     return { returnId: returnRecord.id };

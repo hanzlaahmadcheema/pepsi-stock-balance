@@ -172,39 +172,103 @@ async function compactOutboxSequences(tx: TransactionClient): Promise<void> {
   }
 }
 
-// ─── Local Suppliers Outbox Backfill ──────────────────────────────────────────
+// ─── Local Catalog Outbox Backfill ──────────────────────────────────────────
 
 /**
- * Ensures any local suppliers in the database have a corresponding UPSERT_SUPPLIER record
- * in SyncOutbox. This guarantees that suppliers created on the depot are propagated to Cloud
- * before or alongside any receiving records referencing them.
+ * Ensures all local products, prices, customers, and suppliers have corresponding
+ * outbox records enqueued before transactions that reference them are pushed.
  */
-async function ensureLocalSuppliersEnqueued(tx: TransactionClient): Promise<void> {
-  const receivingOps = await tx.syncOutbox.findMany({
-    where: {
-      operationType: "RECEIVE_STOCK",
-      status: { in: ["PENDING", "IN_FLIGHT"] },
-    },
-    select: { payload: true },
-  });
-
-  if (receivingOps.length === 0) return;
-
-  const supplierIds = new Set<string>();
-  for (const op of receivingOps) {
-    const p = op.payload as Record<string, unknown> | null;
-    if (p && typeof p.supplierId === "string") {
-      supplierIds.add(p.supplierId);
+async function ensureLocalCatalogEnqueued(tx: TransactionClient): Promise<void> {
+  // 1. Products
+  const products = await tx.product.findMany();
+  for (const p of products) {
+    const existing = await tx.syncOutbox.findFirst({
+      where: {
+        operationType: "UPSERT_PRODUCT",
+        entityId: p.id,
+      },
+    });
+    if (!existing) {
+      await tx.syncOutbox.create({
+        data: {
+          operationId: crypto.randomUUID(),
+          operationType: "UPSERT_PRODUCT",
+          entityId: p.id,
+          payload: {
+            name: p.name,
+            brand: p.brand,
+            sku: p.sku,
+            minimumStockLevel: p.minimumStockLevel,
+            latestPurchasePrice: Number(p.latestPurchasePrice),
+            isActive: p.isActive,
+          },
+          status: "PENDING",
+        },
+      });
     }
   }
 
-  if (supplierIds.size === 0) return;
-
-  const localSuppliers = await tx.supplier.findMany({
-    where: { id: { in: Array.from(supplierIds) } },
+  // 2. Active Prices
+  const prices = await tx.price.findMany({
+    where: { effectiveTo: null },
   });
+  for (const pr of prices) {
+    const existing = await tx.syncOutbox.findFirst({
+      where: {
+        operationType: "CREATE_PRICE",
+        entityId: pr.id,
+      },
+    });
+    if (!existing) {
+      await tx.syncOutbox.create({
+        data: {
+          operationId: crypto.randomUUID(),
+          operationType: "CREATE_PRICE",
+          entityId: pr.id,
+          payload: {
+            productId: pr.productId,
+            tier: pr.tier,
+            amount: Number(pr.amount),
+            userId: pr.createdById || undefined,
+          },
+          status: "PENDING",
+        },
+      });
+    }
+  }
 
-  for (const s of localSuppliers) {
+  // 3. Customers
+  const customers = await tx.customer.findMany();
+  for (const c of customers) {
+    const existing = await tx.syncOutbox.findFirst({
+      where: {
+        operationType: "UPSERT_CUSTOMER",
+        entityId: c.id,
+      },
+    });
+    if (!existing) {
+      await tx.syncOutbox.create({
+        data: {
+          operationId: crypto.randomUUID(),
+          operationType: "UPSERT_CUSTOMER",
+          entityId: c.id,
+          payload: {
+            name: c.name,
+            phone: c.phone,
+            address: c.address,
+            priceTier: c.priceTier,
+            creditAllowed: c.creditAllowed,
+            isActive: c.isActive,
+          },
+          status: "PENDING",
+        },
+      });
+    }
+  }
+
+  // 4. Suppliers
+  const suppliers = await tx.supplier.findMany();
+  for (const s of suppliers) {
     const existing = await tx.syncOutbox.findFirst({
       where: {
         operationType: "UPSERT_SUPPLIER",
@@ -292,13 +356,22 @@ export async function pushPendingOperations(
       // 2. Recover orphaned IN_FLIGHT operations from a prior crash.
       await recoverOrphanedInFlightOps(tx);
 
-      // 2a. Auto-recover operations that failed due to "Supplier not found"
-      // Since Cloud auto-provisions missing suppliers and local depot backfills them,
-      // this failure is transient and can be retried immediately.
+      // 2a. Auto-recover operations that were previously marked FAILED due to transient or recoverable conditions
       await tx.syncOutbox.updateMany({
         where: {
           status: "FAILED",
-          lastError: { contains: "Supplier not found" },
+          OR: [
+            { lastError: { contains: "Supplier not found" } },
+            { lastError: { contains: "Product not found" } },
+            { lastError: { contains: "Customer not found" } },
+            { lastError: { contains: "Foreign key constraint" } },
+            { lastError: { contains: "already been posted" } },
+            { lastError: { contains: "already cancelled" } },
+            { lastError: { contains: "Unique constraint failed" } },
+            { lastError: { contains: "Max retries" } },
+            { lastError: { contains: "Insufficient stock" } },
+            { lastError: { contains: "Invoice not found" } },
+          ],
         },
         data: {
           status: "PENDING",
@@ -307,8 +380,11 @@ export async function pushPendingOperations(
         },
       });
 
-      // 2b. Ensure any local suppliers exist in SyncOutbox
-      await ensureLocalSuppliersEnqueued(tx);
+      // 2b. Ensure catalog records (products, prices, customers, suppliers) exist in SyncOutbox
+      await ensureLocalCatalogEnqueued(tx);
+
+      // 2c. Compact sequences to guarantee strict contiguity
+      await compactOutboxSequences(tx);
 
       // 3. Check if any FAILED operations exist in the outbox.
       // Under strict sequence ordering, no operation at or after a FAILED operation
@@ -493,6 +569,29 @@ export async function pushPendingOperations(
         } else if (rejectedMap.has(row.operationId)) {
           const rejection = rejectedMap.get(row.operationId)!;
 
+          // Check if rejection was actually due to entity already being recorded/applied
+          const isAlreadyApplied =
+            rejection.error.includes("already been posted") ||
+            rejection.error.includes("already exists") ||
+            rejection.error.includes("already cancelled") ||
+            rejection.error.includes("already finalized") ||
+            rejection.error.includes("already resolved") ||
+            rejection.error.includes("Unique constraint failed");
+
+          if (isAlreadyApplied) {
+            // The server already processed this record in a prior attempt that dropped connection
+            await tx.syncOutbox.update({
+              where: { id: row.id },
+              data: {
+                status: "SYNCED",
+                syncedAt: new Date(),
+                lastError: null,
+              },
+            });
+            syncedCount++;
+            continue;
+          }
+
           if (rejection.errorCode === "SEQUENCE_GAP" && rejection.expectedSequence) {
             // Self-healing sequence alignment:
             // Cloud indicates what sequence it expects next from this device.
@@ -530,8 +629,15 @@ export async function pushPendingOperations(
             rejection.errorCode !== "TRANSIENT_ERROR" &&
             rejection.errorCode !== undefined;
 
-          if (isDeterministic) {
-            // Permanent failure — quarantine.
+          // Check if error is missing catalog data which can be backfilled
+          const isMissingCatalogData =
+            rejection.error.includes("Supplier not found") ||
+            rejection.error.includes("Product not found") ||
+            rejection.error.includes("Customer not found") ||
+            rejection.error.includes("Foreign key constraint");
+
+          if (isDeterministic && !isMissingCatalogData) {
+            // Permanent validation failure — quarantine.
             await tx.syncOutbox.update({
               where: { id: row.id },
               data: {
@@ -541,29 +647,18 @@ export async function pushPendingOperations(
             });
             failedCount++;
           } else {
-            // Transient — reset for retry, with exhaustion check.
+            // Transient or recoverable catalog error — keep as PENDING for retry.
+            // Never permanently fail a transient error due to retry count!
             const newRetryCount = (row.retryCount ?? 0) + 1;
-            if (newRetryCount >= MAX_RETRY_COUNT) {
-              await tx.syncOutbox.update({
-                where: { id: row.id },
-                data: {
-                  status: "FAILED",
-                  lastError: `Max retries (${MAX_RETRY_COUNT}) exceeded. Last: ${rejection.error}`,
-                  retryCount: newRetryCount,
-                },
-              });
-              failedCount++;
-            } else {
-              await tx.syncOutbox.update({
-                where: { id: row.id },
-                data: {
-                  status: "PENDING",
-                  lastError: rejection.error,
-                  retryCount: newRetryCount,
-                },
-              });
-              retryCount++;
-            }
+            await tx.syncOutbox.update({
+              where: { id: row.id },
+              data: {
+                status: "PENDING",
+                lastError: rejection.error,
+                retryCount: newRetryCount,
+              },
+            });
+            retryCount++;
           }
         } else {
           // Not in ACK list and not in rejected list: operation was not processed

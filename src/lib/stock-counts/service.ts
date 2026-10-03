@@ -5,6 +5,7 @@ import {
   MovementType,
   Prisma,
 } from "@prisma/client";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export type StockCountItemInput = {
   productId: string;
@@ -461,6 +462,17 @@ export async function submitStockCountTransaction(
           ? "Physical stock count submitted with discrepancies (Pending Owner Approval)"
           : "Physical stock count matched system stock (Closed)",
       },
+    });
+
+    await enqueueOutbox(tx, "SUBMIT_STOCK_COUNT", closing.id, {
+      businessDate,
+      counts: counts.map((c) => ({
+        productId: c.productId,
+        physicalQuantity: c.physicalQuantity,
+        reason: c.reason?.trim() || undefined,
+      })),
+      notes: notes?.trim() || undefined,
+      userId,
     });
 
     return { closingId: closing.id };

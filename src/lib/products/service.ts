@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PriceTier, Prisma } from "@prisma/client";
+import { enqueueOutbox } from "@/lib/sync/outbox";
 
 export { PriceTier };
 
@@ -258,6 +259,13 @@ export async function updateProductPriceTransaction(
         effectiveTo: null,
         createdById,
       },
+    });
+
+    await enqueueOutbox(tx, "CREATE_PRICE", newPrice.id, {
+      productId: newPrice.productId,
+      tier: newPrice.tier,
+      amount: Number(newPrice.amount),
+      userId: createdById,
     });
 
     return newPrice;

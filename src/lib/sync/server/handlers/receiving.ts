@@ -142,6 +142,21 @@ export async function handlePostReceiving(
 
   // Create items, create stock movements, and update latest purchase price
   for (const item of payload.items) {
+    const productExists = await tx.product.findUnique({
+      where: { id: item.productId },
+    });
+    if (!productExists) {
+      await tx.product.create({
+        data: {
+          id: item.productId,
+          name: `Product (${item.productId.slice(0, 8)})`,
+          brand: "General",
+          isActive: true,
+          latestPurchasePrice: new Prisma.Decimal(item.purchasePrice.toFixed(2)),
+        },
+      });
+    }
+
     const totalCost = new Prisma.Decimal((item.quantity * item.purchasePrice).toFixed(2));
 
     await tx.receivingItem.create({

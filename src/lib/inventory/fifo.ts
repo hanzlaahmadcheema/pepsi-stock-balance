@@ -17,6 +17,12 @@ export interface FifoOptions {
   saleDate?: Date;
   additionalPriorConsumed?: number;
   exactPriorConsumed?: number;
+  cachedFallbackUnitCost?: number;
+  cachedReceivingBatches?: {
+    id: string;
+    quantity: number;
+    purchasePrice: Prisma.Decimal | number;
+  }[];
 }
 
 /**
@@ -35,46 +41,52 @@ export async function calculateFifoCostForSaleItem(
   }
 
   // 1. Fetch product for fallback latestPurchasePrice
-  const product = await tx.product.findUnique({
-    where: { id: productId },
-    select: { latestPurchasePrice: true },
-  });
-  const fallbackUnitCost = Number(product?.latestPurchasePrice || 0);
+  let fallbackUnitCost = options?.cachedFallbackUnitCost;
+  if (fallbackUnitCost === undefined) {
+    const product = await tx.product.findUnique({
+      where: { id: productId },
+      select: { latestPurchasePrice: true },
+    });
+    fallbackUnitCost = Number(product?.latestPurchasePrice || 0);
+  }
 
   // 2. Fetch inward receiving batches for this product in chronological order
   // If posted stock movements exist, only consider posted receivings.
-  const postedMovements = await tx.stockMovement.findMany({
-    where: {
-      productId,
-      referenceType: "Receiving",
-      movementType: MovementType.RECEIVING,
-    },
-    select: { referenceId: true },
-    distinct: ["referenceId"],
-  });
+  let receivingItems = options?.cachedReceivingBatches;
+  if (!receivingItems) {
+    const postedMovements = await tx.stockMovement.findMany({
+      where: {
+        productId,
+        referenceType: "Receiving",
+        movementType: MovementType.RECEIVING,
+      },
+      select: { referenceId: true },
+      distinct: ["referenceId"],
+    });
 
-  const receivingWhere: Prisma.ReceivingItemWhereInput = { productId };
-  if (postedMovements.length > 0) {
-    const postedReceivingIds = postedMovements.map((m) => m.referenceId);
-    receivingWhere.receivingId = { in: postedReceivingIds };
-  }
+    const receivingWhere: Prisma.ReceivingItemWhereInput = { productId };
+    if (postedMovements.length > 0) {
+      const postedReceivingIds = postedMovements.map((m) => m.referenceId);
+      receivingWhere.receivingId = { in: postedReceivingIds };
+    }
 
-  const receivingItems = await tx.receivingItem.findMany({
-    where: receivingWhere,
-    include: {
-      receiving: {
-        select: {
-          receivedAt: true,
-          createdAt: true,
+    receivingItems = await tx.receivingItem.findMany({
+      where: receivingWhere,
+      include: {
+        receiving: {
+          select: {
+            receivedAt: true,
+            createdAt: true,
+          },
         },
       },
-    },
-    orderBy: [
-      { receiving: { receivedAt: "asc" } },
-      { receiving: { createdAt: "asc" } },
-      { id: "asc" },
-    ],
-  });
+      orderBy: [
+        { receiving: { receivedAt: "asc" } },
+        { receiving: { createdAt: "asc" } },
+        { id: "asc" },
+      ],
+    });
+  }
 
   // If no receivings exist at all, use fallback latestPurchasePrice
   if (receivingItems.length === 0) {
@@ -176,19 +188,91 @@ export async function calculateFifoCostForSaleItem(
  * Re-evaluates and synchronizes all historical sales using the FIFO cost model.
  * Safe, idempotent, and updates purchaseCostAtSale on each completed SaleItem.
  */
-export async function recalculateAllSalesFifo(tx: TxClient): Promise<{ updatedCount: number }> {
+export async function recalculateAllSalesFifo(
+  tx: TxClient,
+  filterProductIds?: string[]
+): Promise<{ updatedCount: number }> {
+  const where: Prisma.SaleWhereInput = {
+    status: SaleStatus.COMPLETED,
+  };
+  if (filterProductIds && filterProductIds.length > 0) {
+    where.items = { some: { productId: { in: filterProductIds } } };
+  }
+
   const completedSales = await tx.sale.findMany({
-    where: { status: SaleStatus.COMPLETED },
+    where,
     orderBy: [
       { soldAt: "asc" },
       { createdAt: "asc" },
     ],
     include: {
       items: {
+        ...(filterProductIds && filterProductIds.length > 0
+          ? { where: { productId: { in: filterProductIds } } }
+          : {}),
         orderBy: { id: "asc" },
       },
     },
   });
+
+  if (completedSales.length === 0) {
+    return { updatedCount: 0 };
+  }
+
+  // Pre-fetch products and receiving batches for all distinct productIds in these sales
+  const distinctProductIds = Array.from(
+    new Set(completedSales.flatMap((s) => s.items.map((i) => i.productId)))
+  );
+
+  const productMap = new Map<string, number>();
+  const receivingBatchMap = new Map<string, { id: string; quantity: number; purchasePrice: Prisma.Decimal }[]>();
+
+  const products = await tx.product.findMany({
+    where: { id: { in: distinctProductIds } },
+    select: { id: true, latestPurchasePrice: true },
+  });
+  for (const p of products) {
+    productMap.set(p.id, Number(p.latestPurchasePrice || 0));
+  }
+
+  const postedMovements = await tx.stockMovement.findMany({
+    where: {
+      productId: { in: distinctProductIds },
+      referenceType: "Receiving",
+      movementType: MovementType.RECEIVING,
+    },
+    select: { referenceId: true, productId: true },
+  });
+
+  const receivingWhere: Prisma.ReceivingItemWhereInput = {
+    productId: { in: distinctProductIds },
+  };
+  if (postedMovements.length > 0) {
+    receivingWhere.receivingId = { in: postedMovements.map((m) => m.referenceId) };
+  }
+
+  const allReceivingItems = await tx.receivingItem.findMany({
+    where: receivingWhere,
+    include: {
+      receiving: {
+        select: {
+          receivedAt: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: [
+      { receiving: { receivedAt: "asc" } },
+      { receiving: { createdAt: "asc" } },
+      { id: "asc" },
+    ],
+  });
+
+  for (const rItem of allReceivingItems) {
+    const list = receivingBatchMap.get(rItem.productId) || [];
+    list.push(rItem);
+    receivingBatchMap.set(rItem.productId, list);
+  }
 
   const productConsumedMap = new Map<string, number>();
   let updatedCount = 0;
@@ -202,6 +286,8 @@ export async function recalculateAllSalesFifo(tx: TxClient): Promise<{ updatedCo
         item.quantity,
         {
           exactPriorConsumed: priorConsumed,
+          cachedFallbackUnitCost: productMap.get(item.productId) || 0,
+          cachedReceivingBatches: receivingBatchMap.get(item.productId) || [],
         }
       );
 

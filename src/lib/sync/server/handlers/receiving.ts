@@ -209,8 +209,9 @@ export async function handlePostReceiving(
     sourceDeviceId: device.deviceId,
   });
 
-  // Reconcile FIFO acquisition costs across historical sales
-  await recalculateAllSalesFifo(tx);
+  // Reconcile FIFO acquisition costs across historical sales for affected products
+  const affectedProductIds = payload.items.map((i) => i.productId);
+  await recalculateAllSalesFifo(tx, affectedProductIds);
 }
 
 /**
